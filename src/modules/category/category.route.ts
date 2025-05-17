@@ -1,6 +1,11 @@
 import { Router } from 'express';
 
-import { createCategory, listCategories } from './category.controller';
+import {
+  createCategory,
+  deleteCategory,
+  listCategories,
+  updateCategory,
+} from './category.controller';
 import { createCategorySchema } from './category.validator';
 
 import authenticate from '@/middleware/authenticate.middleware';
@@ -18,5 +23,15 @@ router.post(
   validate(createCategorySchema),
   createCategory
 );
+
+router.patch(
+  '/:categoryId',
+  authenticate,
+  authorize('OWNER', 'ADMIN'),
+  validate(createCategorySchema),
+  updateCategory
+);
+
+router.delete('/:categoryId', authenticate, authorize('OWNER', 'ADMIN'), deleteCategory);
 
 export default router;

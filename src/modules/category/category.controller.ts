@@ -9,7 +9,7 @@ async function createCategory(req: Request, res: Response) {
   const request = req as AuthenticatedRequest;
 
   const { id: restaurantId } = request.params;
-  const user = request.user!;
+  const user = request.user;
   const data = request.body;
 
   const restaurant = await prisma.restaurant.findUnique({
@@ -31,6 +31,34 @@ async function createCategory(req: Request, res: Response) {
   sendResponse({ res, message: 'Category created', data: category });
 }
 
+async function updateCategory(req: Request, res: Response) {
+  const request = req as AuthenticatedRequest;
+
+  const categoryId = request.params.categoryId;
+
+  const user = request.user;
+
+  const { name } = request.body;
+
+  const category = await prisma.category.findUnique({
+    where: { id: categoryId },
+    include: { restaurant: true },
+  });
+
+  if (!category) throw new NotFoundError('Category not found');
+
+  if (user.role !== 'ADMIN' && category.restaurant.ownerId !== user.userId) {
+    throw new ForbiddenError('You do not own this category');
+  }
+
+  const updated = await prisma.category.update({
+    where: { id: categoryId },
+    data: { name },
+  });
+
+  sendResponse({ res, message: 'Category updated', data: updated });
+}
+
 async function listCategories(req: Request, res: Response) {
   const restaurantId = req.params.id;
 
@@ -44,4 +72,29 @@ async function listCategories(req: Request, res: Response) {
   sendResponse({ res, message: 'Categories with items', data: categories });
 }
 
-export { createCategory, listCategories };
+async function deleteCategory(req: Request, res: Response) {
+  const request = req as AuthenticatedRequest;
+
+  const categoryId = request.params.categoryId;
+
+  const user = request.user;
+
+  const category = await prisma.category.findUnique({
+    where: { id: categoryId },
+    include: { restaurant: true },
+  });
+
+  if (!category) throw new NotFoundError('Category not found');
+
+  if (user.role !== 'ADMIN' && category.restaurant.ownerId !== user.userId) {
+    throw new ForbiddenError('You do not own this category');
+  }
+
+  await prisma.category.delete({
+    where: { id: categoryId },
+  });
+
+  sendResponse({ res, message: 'Category deleted' });
+}
+
+export { createCategory, listCategories, updateCategory, deleteCategory };

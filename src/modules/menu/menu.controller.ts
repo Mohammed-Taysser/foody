@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { Prisma } from '@prisma/client';
 
 import { createMenuItemSchema } from './menu.validator';
 
@@ -41,16 +42,38 @@ async function addMenuItem(req: Request, res: Response) {
 }
 
 async function getMenuItems(req: Request, res: Response) {
-  const restaurantId = req.params.id;
+  const { id: restaurantId } = req.params;
+  const { page = '1', limit = '10', available } = req.query;
+
+  const take = Number(limit);
+  const skip = (Number(page) - 1) * take;
+
+  const where: Prisma.MenuItemWhereInput = { restaurantId };
+
+  if (available !== undefined) {
+    where.available = available === 'true';
+  }
 
   const items = await prisma.menuItem.findMany({
-    where: { restaurantId },
+    where,
+    skip,
+    take,
+    orderBy: { createdAt: 'desc' },
   });
+
+  const total = await prisma.menuItem.count({ where });
 
   sendResponse({
     res,
-    message: 'Restaurant menu items',
-    data: items,
+    message: 'Paginated menu items',
+    data: {
+      data: items,
+      metadata: {
+        total,
+        page: Number(page),
+        limit: take,
+      },
+    },
   });
 }
 
