@@ -1,11 +1,11 @@
 {
   "name": "foody",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "",
   "main": "dist/server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "ts-node-dev --respawn src/server.ts",
+    "dev": "ts-node-dev --respawn --require tsconfig-paths/register src/server.ts",
     "lint": "eslint . --ext .ts",
     "format": "prettier --write .",
     "prepare": "husky install"
@@ -28,6 +28,7 @@
     "lint-staged": "^16.0.0",
     "prettier": "^3.5.3",
     "ts-node-dev": "^2.0.0",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.32.1"
   },
