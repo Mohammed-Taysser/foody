@@ -2,9 +2,9 @@ import express from 'express';
 import morgan from 'morgan';
 
 import errorHandlerMiddleware from '@/middleware/error.middleware';
-import { NotFoundError, UnauthorizedError } from '@/utils/errors';
-import sendResponse from '@/utils/sendResponse';
+import { NotFoundError } from '@/utils/errors';
 import authRoutes from '@/modules/auth/auth.route';
+import userRoutes from '@/modules/user/user.route';
 
 const app = express();
 
@@ -21,13 +21,7 @@ app.get('/health', (_req, res) => {
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.get('/error', () => {
-  throw new UnauthorizedError('This is a test error');
-});
-
-app.get('/success', (_, res) => {
-  sendResponse({ res, message: 'It works!', data: { hello: 'world' } });
-});
+app.use('/api/users', userRoutes);
 
 // 404 Handler
 app.use((_req, _res, next) => {
