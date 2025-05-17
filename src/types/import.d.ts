@@ -1,7 +1,7 @@
 import { Request } from 'express';
 
 interface AuthenticatedRequest extends Request {
-  user: AuthenticatedUser;
+  user: User;
 }
 
 export { AuthenticatedRequest };

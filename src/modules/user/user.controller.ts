@@ -5,6 +5,7 @@ import { updateProfileSchema } from './user.validator';
 import sendResponse from '@/utils/sendResponse';
 import { AuthenticatedRequest } from '@/types/import';
 import { UnauthorizedError } from '@/utils/errors';
+import prisma from '@/config/prisma';
 
 async function updateMe(req: Request, res: Response) {
   const request = req as AuthenticatedRequest;
@@ -16,12 +17,10 @@ async function updateMe(req: Request, res: Response) {
 
   const data = updateProfileSchema.parse(req.body);
 
-  // 🔧 Replace this with real DB update logic later
-  const updatedUser = {
-    id: user.userId,
-    email: data.email || user.email,
-    name: data.name || 'John Doe',
-  };
+  const updatedUser = await prisma.user.update({
+    where: { id: user.userId },
+    data,
+  });
 
   sendResponse({
     res,

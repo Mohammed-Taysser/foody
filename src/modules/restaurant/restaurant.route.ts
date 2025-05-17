@@ -4,7 +4,7 @@ import { createRestaurant, getRestaurants } from './restaurant.controller';
 import { createRestaurantSchema } from './restaurant.validator';
 
 import ZodValidate from '@/middleware/ZodValidate.middleware';
-import authenticate from '@/middleware/auth.middleware';
+import authenticate from '@/middleware/authenticate.middleware';
 
 const router = Router();
 
