@@ -33,7 +33,10 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.string().transform(Number),
   JWT_SECRET: z.string().min(10),
-  JWT_EXPIRES_IN: z.string().regex(/^\d+[smhd]$/, {
+  JWT_ACCESS_EXPIRES_IN: z.string().regex(/^\d+[smhd]$/, {
+    message: 'JWT_EXPIRES_IN must be a duration like "7d", "15m", "1h", or "30s"',
+  }),
+  JWT_REFRESH_EXPIRES_IN: z.string().regex(/^\d+[smhd]$/, {
     message: 'JWT_EXPIRES_IN must be a duration like "7d", "15m", "1h", or "30s"',
   }),
 });

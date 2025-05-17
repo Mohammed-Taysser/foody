@@ -1,11 +1,11 @@
+import { Role, User } from '@prisma/client';
 import bcrypt from 'bcrypt';
-import jwt, { SignOptions } from 'jsonwebtoken';
-import { Role } from '@prisma/client';
+import jwt from 'jsonwebtoken';
 
 import CONFIG from '@/config/env';
 
 interface CreateTokenPayload {
-  userId: string;
+  id: string;
   email: string;
   role: Role;
 }
@@ -18,10 +18,20 @@ async function comparePassword(password: string, hash: string) {
   return bcrypt.compare(password, hash);
 }
 
-function generateToken(payload: CreateTokenPayload) {
+function generateRefreshToken(payload: CreateTokenPayload): string {
   return jwt.sign(payload, CONFIG.JWT_SECRET, {
-    expiresIn: CONFIG.JWT_EXPIRES_IN as SignOptions['expiresIn'],
+    expiresIn: CONFIG.JWT_REFRESH_EXPIRES_IN as jwt.SignOptions['expiresIn'],
   });
 }
 
-export { comparePassword, generateToken, hashPassword };
+function generateAccessToken(payload: CreateTokenPayload): string {
+  return jwt.sign(payload, CONFIG.JWT_SECRET, {
+    expiresIn: CONFIG.JWT_ACCESS_EXPIRES_IN as jwt.SignOptions['expiresIn'],
+  });
+}
+
+function verifyToken(token: string) {
+  return jwt.verify(token, CONFIG.JWT_SECRET) as User;
+}
+
+export { comparePassword, generateAccessToken, generateRefreshToken, hashPassword, verifyToken };

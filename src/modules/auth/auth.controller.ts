@@ -1,11 +1,17 @@
 import { Request, Response } from 'express';
 
-import { comparePassword, generateToken, hashPassword } from './auth.service';
+import {
+  comparePassword,
+  generateAccessToken,
+  generateRefreshToken,
+  hashPassword,
+  verifyToken,
+} from './auth.service';
 
+import prisma from '@/config/prisma';
 import { AuthenticatedRequest } from '@/types/import';
 import { BadRequestError, UnauthorizedError } from '@/utils/errors';
 import sendResponse from '@/utils/sendResponse';
-import prisma from '@/config/prisma';
 
 async function register(req: Request, res: Response) {
   const data = req.body;
@@ -28,12 +34,19 @@ async function register(req: Request, res: Response) {
     },
   });
 
-  const token = generateToken({ userId: newUser.id, email: newUser.email, role: newUser.role });
+  const payload = { id: newUser.id, email: newUser.email, role: newUser.role };
+
+  const accessToken = generateAccessToken(payload);
+  const refreshToken = generateRefreshToken(payload);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { password, ...restUser } = newUser;
 
-  sendResponse({ res, message: 'User registered', data: { token, user: restUser } });
+  sendResponse({
+    res,
+    message: 'User registered',
+    data: { accessToken, refreshToken, user: restUser },
+  });
 }
 
 async function login(req: Request, res: Response) {
@@ -53,12 +66,19 @@ async function login(req: Request, res: Response) {
     throw new UnauthorizedError('Invalid credentials');
   }
 
-  const token = generateToken({ userId: user.id, email: user.email, role: user.role });
+  const payload = { id: user.id, email: user.email, role: user.role };
+
+  const accessToken = generateAccessToken(payload);
+  const refreshToken = generateRefreshToken(payload);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { password, ...restUser } = user;
 
-  sendResponse({ res, message: 'Login successful', data: { token, user: restUser } });
+  sendResponse({
+    res,
+    message: 'Login successful',
+    data: { accessToken, refreshToken, user: restUser },
+  });
 }
 
 function getProfile(req: Request, res: Response) {
@@ -77,4 +97,27 @@ function getProfile(req: Request, res: Response) {
   });
 }
 
-export { getProfile, login, register };
+function refreshToken(req: Request, res: Response) {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken) {
+    throw new UnauthorizedError('Refresh token is required');
+  }
+
+  try {
+    const payload = verifyToken(refreshToken);
+    const newAccessToken = generateAccessToken(payload);
+
+    sendResponse({
+      res,
+      message: 'New access token issued',
+      data: {
+        accessToken: newAccessToken,
+      },
+    });
+  } catch {
+    throw new UnauthorizedError('Invalid or expired refresh token');
+  }
+}
+
+export { getProfile, login, register, refreshToken };

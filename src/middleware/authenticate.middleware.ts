@@ -1,10 +1,9 @@
-import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import { NextFunction, Request, Response } from 'express';
 
-import { UnauthorizedError } from '@/utils/errors';
-import { AuthenticatedRequest } from '@/types/import';
-import CONFIG from '@/config/env';
 import prisma from '@/config/prisma';
+import { verifyToken } from '@/modules/auth/auth.service';
+import { AuthenticatedRequest } from '@/types/import';
+import { UnauthorizedError } from '@/utils/errors';
 
 async function authenticateMiddleware(req: Request, _res: Response, next: NextFunction) {
   const request = req as AuthenticatedRequest;
@@ -16,7 +15,7 @@ async function authenticateMiddleware(req: Request, _res: Response, next: NextFu
 
   const token = authHeader.split(' ')[1];
 
-  const decoded = jwt.verify(token, CONFIG.JWT_SECRET);
+  const decoded = verifyToken(token);
 
   if (!decoded) {
     throw new UnauthorizedError('Invalid token');
@@ -28,7 +27,7 @@ async function authenticateMiddleware(req: Request, _res: Response, next: NextFu
 
   const user = await prisma.user.findFirst({
     where: {
-      id: decoded.userId,
+      id: decoded.id,
     },
   });
 
