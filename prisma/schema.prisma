@@ -34,6 +34,7 @@ model Restaurant {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   MenuItem    MenuItem[]
+  Category    Category[]
 }
 
 model MenuItem {
@@ -44,6 +45,18 @@ model MenuItem {
   available    Boolean    @default(true)
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
   restaurantId String
+  categoryId   String?
+  category     Category?  @relation(fields: [categoryId], references: [id])
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Category {
+  id           String     @id @default(cuid())
+  name         String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurantId String
+  items        MenuItem[]
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 }

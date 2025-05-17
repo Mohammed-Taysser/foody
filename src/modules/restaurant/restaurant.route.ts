@@ -7,6 +7,7 @@ import ZodValidate from '@/middleware/ZodValidate.middleware';
 import authenticate from '@/middleware/authenticate.middleware';
 import authorize from '@/middleware/authorize.middleware';
 import menuRoutes from '@/modules/menu/menu.route';
+import categoryRoutes from '@/modules/category/category.route';
 
 const router = Router();
 
@@ -20,5 +21,6 @@ router.post(
 );
 
 router.use('/:id/menu', menuRoutes);
+router.use('/:id/categories', categoryRoutes);
 
 export default router;

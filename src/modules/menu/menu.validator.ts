@@ -5,6 +5,7 @@ const createMenuItemSchema = z.object({
   description: z.string().optional(),
   price: z.number().min(0.01),
   available: z.boolean().optional(),
+  categoryId: z.string().optional(),
 });
 
 const updateMenuItemSchema = createMenuItemSchema.partial();
