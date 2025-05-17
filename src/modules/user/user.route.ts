@@ -3,7 +3,7 @@ import { Router } from 'express';
 import { updateMe } from './user.controller';
 import { updateProfileSchema } from './user.validator';
 
-import zodValidate from '@/middleware/validateRequest';
+import zodValidate from '@/middleware/ZodValidate.middleware';
 import authenticate from '@/middleware/auth.middleware';
 
 const router = Router();

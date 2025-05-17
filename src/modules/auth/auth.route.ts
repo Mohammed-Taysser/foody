@@ -1,9 +1,9 @@
 import { Router } from 'express';
 
-import { register, login, getProfile } from './auth.controller';
+import { getProfile, login, register } from './auth.controller';
 import { loginSchema, registerSchema } from './auth.validator';
 
-import ZodValidate from '@/middleware/validateRequest';
+import ZodValidate from '@/middleware/ZodValidate.middleware';
 import authenticateMiddleware from '@/middleware/auth.middleware';
 
 const router = Router();
