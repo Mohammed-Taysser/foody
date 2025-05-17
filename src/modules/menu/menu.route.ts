@@ -1,7 +1,7 @@
 import { Router } from 'express';
 
-import { addMenuItem, getMenuItems } from './menu.controller';
-import { createMenuItemSchema } from './menu.validator';
+import { addMenuItem, deleteMenuItem, getMenuItems, updateMenuItem } from './menu.controller';
+import { createMenuItemSchema, updateMenuItemSchema } from './menu.validator';
 
 import authenticate from '@/middleware/authenticate.middleware';
 import authorize from '@/middleware/authorize.middleware';
@@ -18,5 +18,15 @@ router.post(
   validate(createMenuItemSchema),
   addMenuItem
 );
+
+router.patch(
+  '/:itemId',
+  authenticate,
+  authorize('OWNER', 'ADMIN'),
+  validate(updateMenuItemSchema),
+  updateMenuItem
+);
+
+router.delete('/:itemId', authenticate, authorize('OWNER', 'ADMIN'), deleteMenuItem);
 
 export default router;

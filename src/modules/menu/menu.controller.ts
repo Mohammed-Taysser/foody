@@ -54,4 +54,56 @@ async function getMenuItems(req: Request, res: Response) {
   });
 }
 
-export { addMenuItem, getMenuItems };
+async function updateMenuItem(req: Request, res: Response) {
+  const request = req as AuthenticatedRequest;
+
+  const itemId = request.params.itemId;
+  const restaurantId = request.params.id;
+  const user = request.user;
+  const data = request.body;
+
+  const item = await prisma.menuItem.findUnique({
+    where: { id: itemId, restaurantId },
+    include: { restaurant: true },
+  });
+
+  if (!item) throw new NotFoundError('Menu item not found');
+
+  if (user.role !== 'ADMIN' && item.restaurant.ownerId !== user.userId) {
+    throw new ForbiddenError('You do not have permission to update this item');
+  }
+
+  const updatedItem = await prisma.menuItem.update({
+    where: { id: itemId },
+    data,
+  });
+
+  sendResponse({ res, message: 'Menu item updated', data: updatedItem });
+}
+
+async function deleteMenuItem(req: Request, res: Response) {
+  const request = req as AuthenticatedRequest;
+
+  const itemId = request.params.itemId;
+  const restaurantId = request.params.id;
+  const user = request.user;
+
+  const item = await prisma.menuItem.findUnique({
+    where: { id: itemId, restaurantId },
+    include: { restaurant: true },
+  });
+
+  if (!item) throw new NotFoundError('Menu item not found');
+
+  if (user.role !== 'ADMIN' && item.restaurant.ownerId !== user.userId) {
+    throw new ForbiddenError('You do not have permission to delete this item');
+  }
+
+  await prisma.menuItem.delete({
+    where: { id: itemId },
+  });
+
+  sendResponse({ res, message: 'Menu item deleted' });
+}
+
+export { addMenuItem, getMenuItems, updateMenuItem, deleteMenuItem };

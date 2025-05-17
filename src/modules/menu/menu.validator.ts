@@ -7,4 +7,6 @@ const createMenuItemSchema = z.object({
   available: z.boolean().optional(),
 });
 
-export { createMenuItemSchema };
+const updateMenuItemSchema = createMenuItemSchema.partial();
+
+export { createMenuItemSchema, updateMenuItemSchema };
