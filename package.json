@@ -1,6 +1,6 @@
 {
   "name": "foody",
-  "version": "1.0.16",
+  "version": "1.0.17",
   "description": "",
   "main": "dist/server.js",
   "scripts": {
@@ -52,6 +52,8 @@
     "dotenv-safe": "^9.1.0",
     "eslint-plugin-prettier": "^5.4.0",
     "express": "^5.1.0",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "prisma": "^6.8.2",
