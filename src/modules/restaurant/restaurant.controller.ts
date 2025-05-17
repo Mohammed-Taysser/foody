@@ -1,22 +1,34 @@
 import { Request, Response } from 'express';
 
-import { createRestaurantSchema } from './restaurant.validator';
-
-import sendResponse from '@/utils/sendResponse';
 import prisma from '@/config/prisma';
-import { AuthenticatedRequest } from '@/types/import';
+import sendResponse from '@/utils/sendResponse';
 
 async function createRestaurant(req: Request, res: Response) {
-  const request = req as AuthenticatedRequest;
+  const data = req.body;
 
-  const data = createRestaurantSchema.parse(req.body);
+  const owner = await prisma.user.findUnique({
+    where: { id: data.ownerId },
+  });
+
+  if (!owner) {
+    throw new Error('Owner not found');
+  }
 
   const newRestaurant = await prisma.restaurant.create({
     data: {
       name: data.name,
       description: data.description,
       location: data.location,
-      ownerId: request.user.userId,
+      ownerId: owner.id,
+    },
+    include: {
+      owner: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
     },
   });
 

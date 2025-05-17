@@ -2,8 +2,8 @@ class BaseError extends Error {
   public statusCode: number;
   public isOperational: boolean;
 
-  constructor(message: string, statusCode: number, isOperational = true) {
-    super(message);
+  constructor(message: string | string[], statusCode: number, isOperational = true) {
+    super(Array.isArray(message) ? message.join('\n') : message);
     this.statusCode = statusCode;
     this.isOperational = isOperational;
     Error.captureStackTrace(this, this.constructor);
@@ -11,37 +11,37 @@ class BaseError extends Error {
 }
 
 class BadRequestError extends BaseError {
-  constructor(message = 'Bad Request') {
+  constructor(message: string | string[] = 'Bad Request') {
     super(message, 400);
   }
 }
 
 class UnauthorizedError extends BaseError {
-  constructor(message = 'Unauthorized') {
+  constructor(message: string | string[] = 'Unauthorized') {
     super(message, 401);
   }
 }
 
 class NotFoundError extends BaseError {
-  constructor(message = 'Not Found') {
+  constructor(message: string | string[] = 'Not Found') {
     super(message, 404);
   }
 }
 
 class ForbiddenError extends BaseError {
-  constructor(message = 'Forbidden') {
+  constructor(message: string | string[] = 'Forbidden') {
     super(message, 403);
   }
 }
 
 class ConflictError extends BaseError {
-  constructor(message = 'Conflict') {
+  constructor(message: string | string[] = 'Conflict') {
     super(message, 409);
   }
 }
 
 class InternalServerError extends BaseError {
-  constructor(message = 'Internal Server Error') {
+  constructor(message: string | string[] = 'Internal Server Error') {
     super(message, 500);
   }
 }

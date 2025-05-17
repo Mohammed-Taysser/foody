@@ -15,7 +15,7 @@ function ZodValidate(schema: ZodSchema, source: RequestPart = 'body') {
       if (err instanceof ZodError) {
         const issues = err.errors;
         const messages = issues.map((e) => `${e.path.join('.')}: ${e.message}`);
-        throw new BadRequestError(`Validation failed:\n${messages.join('\n')}`);
+        throw new BadRequestError(messages);
       }
 
       next(err);

@@ -8,13 +8,13 @@ datasource db {
 }
 
 model User {
-  id       String    @id @default(cuid())
-  name     String
-  email    String    @unique
-  password String
-  role     Role      @default(CUSTOMER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String       @id @default(cuid())
+  name        String
+  email       String       @unique
+  password    String
+  role        Role         @default(CUSTOMER)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
   restaurants Restaurant[]
 }
 
@@ -25,12 +25,25 @@ enum Role {
 }
 
 model Restaurant {
-  id          String   @id @default(cuid())
+  id          String     @id @default(cuid())
   name        String
   description String?
   location    String
   ownerId     String
-  owner       User     @relation(fields: [ownerId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  owner       User       @relation(fields: [ownerId], references: [id])
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  MenuItem    MenuItem[]
+}
+
+model MenuItem {
+  id           String     @id @default(cuid())
+  name         String
+  description  String?
+  price        Float
+  available    Boolean    @default(true)
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurantId String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 }

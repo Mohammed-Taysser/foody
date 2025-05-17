@@ -6,6 +6,7 @@ import { createRestaurantSchema } from './restaurant.validator';
 import ZodValidate from '@/middleware/ZodValidate.middleware';
 import authenticate from '@/middleware/authenticate.middleware';
 import authorize from '@/middleware/authorize.middleware';
+import menuRoutes from '@/modules/menu/menu.route';
 
 const router = Router();
 
@@ -17,5 +18,7 @@ router.post(
   ZodValidate(createRestaurantSchema),
   createRestaurant
 );
+
+router.use('/:id/menu', menuRoutes);
 
 export default router;
