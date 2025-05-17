@@ -1,8 +1,13 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 
 import { BaseError } from '@/utils/errors';
 
-function errorHandlerMiddleware(err: Error, _req: Request, res: Response) {
+function errorHandlerMiddleware(
+  err: Error,
+  _req: Request,
+  res: Response,
+  _next: NextFunction // eslint-disable-line @typescript-eslint/no-unused-vars
+) {
   const status = err instanceof BaseError ? err.statusCode : 500;
   const message = err.message || 'Internal server error';
 
