@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 
 import { comparePassword, generateToken, hashPassword } from './auth.service';
 
+import { AuthenticatedRequest } from '@/types/import';
 import { BadRequestError, UnauthorizedError } from '@/utils/errors';
 import sendResponse from '@/utils/sendResponse';
 
@@ -44,4 +45,18 @@ async function login(req: Request, res: Response) {
   sendResponse({ res, message: 'Login successful', data: { token } });
 }
 
-export { login, register };
+function getProfile(req: Request, res: Response) {
+  const request = req as AuthenticatedRequest;
+
+  const user = request.user;
+
+  if (!user) throw new UnauthorizedError('Not authenticated');
+
+  sendResponse({
+    res,
+    message: 'Current user',
+    data: user,
+  });
+}
+
+export { getProfile, login, register };

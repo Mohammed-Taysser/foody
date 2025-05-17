@@ -1,12 +1,13 @@
 {
   "name": "foody",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "",
   "main": "dist/server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "ts-node-dev --respawn --require tsconfig-paths/register src/server.ts",
+    "dev": "ts-node-dev --respawn --transpile-only --require tsconfig-paths/register src/server.ts",
     "lint": "eslint . --ext .ts",
+    "build": "rimraf ./dist && tsc",
     "lint:fix": "eslint . --ext .ts --fix",
     "format": "prettier --write .",
     "prepare": "husky install"
