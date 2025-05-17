@@ -12,9 +12,16 @@ model User {
   name     String
   email    String    @unique
   password String
+  role     Role      @default(CUSTOMER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   restaurants Restaurant[]
+}
+
+enum Role {
+  ADMIN
+  OWNER
+  CUSTOMER
 }
 
 model Restaurant {

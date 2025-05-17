@@ -26,18 +26,14 @@ async function register(req: Request, res: Response) {
       email: data.email,
       password: hashed,
     },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      createdAt: true,
-      updatedAt: true,
-    },
   });
 
-  const token = generateToken({ userId: newUser.id, email: newUser.email });
+  const token = generateToken({ userId: newUser.id, email: newUser.email, role: newUser.role });
 
-  sendResponse({ res, message: 'User registered', data: { token, user: newUser } });
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { password, ...restUser } = newUser;
+
+  sendResponse({ res, message: 'User registered', data: { token, user: restUser } });
 }
 
 async function login(req: Request, res: Response) {
@@ -57,7 +53,7 @@ async function login(req: Request, res: Response) {
     throw new UnauthorizedError('Invalid credentials');
   }
 
-  const token = generateToken({ userId: user.id, email: user.email });
+  const token = generateToken({ userId: user.id, email: user.email, role: user.role });
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { password, ...restUser } = user;

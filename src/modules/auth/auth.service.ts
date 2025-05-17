@@ -1,11 +1,13 @@
 import bcrypt from 'bcrypt';
 import jwt, { SignOptions } from 'jsonwebtoken';
+import { Role } from '@prisma/client';
 
 import CONFIG from '@/config/env';
 
 interface CreateTokenPayload {
   userId: string;
   email: string;
+  role: Role;
 }
 
 async function hashPassword(password: string) {

@@ -5,10 +5,17 @@ import { createRestaurantSchema } from './restaurant.validator';
 
 import ZodValidate from '@/middleware/ZodValidate.middleware';
 import authenticate from '@/middleware/authenticate.middleware';
+import authorize from '@/middleware/authorize.middleware';
 
 const router = Router();
 
 router.get('/', getRestaurants);
-router.post('/', authenticate, ZodValidate(createRestaurantSchema), createRestaurant);
+router.post(
+  '/',
+  authenticate,
+  authorize('OWNER', 'ADMIN'),
+  ZodValidate(createRestaurantSchema),
+  createRestaurant
+);
 
 export default router;
