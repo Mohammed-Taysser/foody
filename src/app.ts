@@ -1,18 +1,19 @@
 import express from 'express';
-import morgan from 'morgan';
 import helmet from 'helmet';
+import morgan from 'morgan';
 
+import CONFIG from './config/env';
 import apiLimiter from './middleware/apiLimiter.middleware';
 
 import errorHandlerMiddleware from '@/middleware/error.middleware';
-import { NotFoundError } from '@/utils/errors';
 import authRoutes from '@/modules/auth/auth.route';
-import userRoutes from '@/modules/user/user.route';
 import restaurantRoutes from '@/modules/restaurant/restaurant.route';
+import userRoutes from '@/modules/user/user.route';
+import { NotFoundError } from '@/utils/errors';
 
 const app = express();
 
-if (process.env.NODE_ENV !== 'test') {
+if (CONFIG.NODE_ENV !== 'test') {
   app.use(morgan('dev'));
 }
 

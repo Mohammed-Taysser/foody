@@ -1,12 +1,11 @@
 import { faker } from '@faker-js/faker';
-import { PrismaClient } from '@prisma/client';
 import chalk from 'chalk';
 
-import tokenService from '../src/services/token.service';
+import tokenService from '../services/token.service';
 
-const prisma = new PrismaClient();
+import prisma from '@/config/prisma';
 
-async function main() {
+async function seedDummyData() {
   console.log(chalk.blue('\n🌱 Seeding data...\n'));
 
   await prisma.menuItem.deleteMany();
@@ -45,7 +44,11 @@ async function main() {
     )
   );
 
-  console.log(`${owners.length} owners created`);
+  console.log(`\n${owners.length} owners created`);
+
+  for (const owner of owners) {
+    console.log(`  - Owner created: ${chalk.gray(owner.email)}`);
+  }
 
   // Seed restaurants + categories + menu items
   for (const owner of owners) {
@@ -99,13 +102,15 @@ async function main() {
     );
   }
 
-  console.log(chalk.green('🏗 Seed complete!'));
+  console.log(chalk.green('\n🏗 Seed complete!'));
 }
 
-main()
+seedDummyData()
   .then(() => process.exit(0))
   .catch((err) => {
     console.error('❌ Seed failed:', err);
     process.exit(1);
   })
   .finally(() => prisma.$disconnect());
+
+export default seedDummyData;

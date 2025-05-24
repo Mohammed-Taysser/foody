@@ -1,12 +1,12 @@
 {
   "name": "foody",
-  "version": "1.0.20",
+  "version": "1.0.21",
   "description": "",
   "main": "dist/server.js",
   "scripts": {
     "test": "cross-env NODE_ENV=test jest",
     "dev": "ts-node-dev --respawn --transpile-only --require tsconfig-paths/register src/server.ts",
-    "seed": "ts-node --transpile-only --require tsconfig-paths/register prisma/seed.ts",
+    "seed": "ts-node --transpile-only --require tsconfig-paths/register src/scripts/seed.ts",
     "lint": "eslint . --ext .ts",
     "build": "rimraf ./dist && tsc",
     "lint:fix": "eslint . --ext .ts --fix",
@@ -65,7 +65,6 @@
     "express-rate-limit": "^7.5.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
-    "morgan": "^1.10.0",
     "prisma": "^6.8.2",
     "zod": "^3.24.4"
   },

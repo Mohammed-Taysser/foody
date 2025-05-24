@@ -8,6 +8,14 @@ class TokenService {
   private readonly ACCESS_EXPIRY = CONFIG.JWT_ACCESS_EXPIRES_IN;
   private readonly REFRESH_EXPIRY = CONFIG.JWT_REFRESH_EXPIRES_IN;
 
+  private preparePayload(payload: UserTokenPayload): UserTokenPayload {
+    return {
+      id: payload.id,
+      email: payload.email,
+      role: payload.role,
+    };
+  }
+
   async hash(password: string): Promise<string> {
     return bcrypt.hash(password, 10);
   }
@@ -17,13 +25,13 @@ class TokenService {
   }
 
   signAccessToken(payload: UserTokenPayload): string {
-    return jwt.sign(payload, this.SECRET, {
+    return jwt.sign(this.preparePayload(payload), this.SECRET, {
       expiresIn: this.ACCESS_EXPIRY,
     });
   }
 
   signRefreshToken(payload: UserTokenPayload): string {
-    return jwt.sign(payload, this.SECRET, {
+    return jwt.sign(this.preparePayload(payload), this.SECRET, {
       expiresIn: this.REFRESH_EXPIRY,
     });
   }

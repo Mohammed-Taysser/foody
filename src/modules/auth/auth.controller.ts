@@ -99,13 +99,16 @@ function refreshToken(req: Request, res: Response) {
 
   try {
     const payload = tokenService.verifyToken<UserTokenPayload>(refreshToken);
+
     const newAccessToken = tokenService.signAccessToken(payload);
+    const newRefreshToken = tokenService.signRefreshToken(payload);
 
     sendResponse({
       res,
       message: 'New access token issued',
       data: {
         accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
       },
     });
   } catch {
