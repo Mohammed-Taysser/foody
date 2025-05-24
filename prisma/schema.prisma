@@ -12,16 +12,10 @@ model User {
   name        String
   email       String       @unique
   password    String
-  role        Role         @default(CUSTOMER)
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+  role        Role         @default(CUSTOMER)
   restaurants Restaurant[]
-}
-
-enum Role {
-  ADMIN
-  OWNER
-  CUSTOMER
 }
 
 model Restaurant {
@@ -30,11 +24,11 @@ model Restaurant {
   description String?
   location    String
   ownerId     String
-  owner       User       @relation(fields: [ownerId], references: [id])
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
-  MenuItem    MenuItem[]
   Category    Category[]
+  MenuItem    MenuItem[]
+  owner       User       @relation(fields: [ownerId], references: [id])
 }
 
 model MenuItem {
@@ -43,20 +37,26 @@ model MenuItem {
   description  String?
   price        Float
   available    Boolean    @default(true)
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
   restaurantId String
-  categoryId   String?
-  category     Category?  @relation(fields: [categoryId], references: [id])
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+  categoryId   String?
+  category     Category?  @relation(fields: [categoryId], references: [id])
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
 }
 
 model Category {
   id           String     @id @default(cuid())
   name         String
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
   restaurantId String
-  items        MenuItem[]
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  items        MenuItem[]
+}
+
+enum Role {
+  ADMIN
+  OWNER
+  CUSTOMER
 }

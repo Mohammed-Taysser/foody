@@ -74,6 +74,9 @@ importers:
       '@types/supertest':
         specifier: ^6.0.3
         version: 6.0.3
+      cross-env:
+        specifier: ^7.0.3
+        version: 7.0.3
       eslint:
         specifier: ^9.27.0
         version: 9.27.0(jiti@2.4.2)
@@ -1662,6 +1665,14 @@ packages:
       {
         integrity: sha512-dcKFX3jn0MpIaXjisoRvexIJVEKzaq7z2rZKxf+MSr9TkdmHmsU4m2lcLojrj/FHl8mk5VxMmYA+ftRkP/3oKQ==,
       }
+
+  cross-env@7.0.3:
+    resolution:
+      {
+        integrity: sha512-+/HKd6EgcQCJGh2PSjZuUitQBQynKor4wrFbRg4DtAgS1aWO+gU52xpH7M9ScGgXSYmAVS9bIJ8EzuaGw0oNAw==,
+      }
+    engines: { node: '>=10.14', npm: '>=6', yarn: '>=1' }
+    hasBin: true
 
   cross-spawn@7.0.6:
     resolution:
@@ -5877,6 +5888,10 @@ snapshots:
       - ts-node
 
   create-require@1.1.1: {}
+
+  cross-env@7.0.3:
+    dependencies:
+      cross-spawn: 7.0.6
 
   cross-spawn@7.0.6:
     dependencies:
