@@ -1,14 +1,7 @@
 import { Request, Response } from 'express';
 
-import {
-  comparePassword,
-  generateAccessToken,
-  generateRefreshToken,
-  hashPassword,
-  verifyToken,
-} from './auth.service';
-
 import prisma from '@/config/prisma';
+import tokenService from '@/services/token.service';
 import { AuthenticatedRequest } from '@/types/import';
 import { BadRequestError, UnauthorizedError } from '@/utils/errors';
 import sendResponse from '@/utils/sendResponse';
@@ -24,7 +17,7 @@ async function register(req: Request, res: Response) {
     throw new BadRequestError('Email already registered');
   }
 
-  const hashed = await hashPassword(data.password);
+  const hashed = await tokenService.hash(data.password);
 
   const newUser = await prisma.user.create({
     data: {
@@ -36,8 +29,8 @@ async function register(req: Request, res: Response) {
 
   const payload = { id: newUser.id, email: newUser.email, role: newUser.role };
 
-  const accessToken = generateAccessToken(payload);
-  const refreshToken = generateRefreshToken(payload);
+  const accessToken = tokenService.signAccessToken(payload);
+  const refreshToken = tokenService.signRefreshToken(payload);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { password, ...restUser } = newUser;
@@ -60,7 +53,7 @@ async function login(req: Request, res: Response) {
     throw new UnauthorizedError('Invalid credentials');
   }
 
-  const valid = await comparePassword(data.password, user.password);
+  const valid = await tokenService.compare(data.password, user.password);
 
   if (!valid) {
     throw new UnauthorizedError('Invalid credentials');
@@ -68,8 +61,8 @@ async function login(req: Request, res: Response) {
 
   const payload = { id: user.id, email: user.email, role: user.role };
 
-  const accessToken = generateAccessToken(payload);
-  const refreshToken = generateRefreshToken(payload);
+  const accessToken = tokenService.signAccessToken(payload);
+  const refreshToken = tokenService.signRefreshToken(payload);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { password, ...restUser } = user;
@@ -105,8 +98,8 @@ function refreshToken(req: Request, res: Response) {
   }
 
   try {
-    const payload = verifyToken(refreshToken);
-    const newAccessToken = generateAccessToken(payload);
+    const payload = tokenService.verifyToken<UserTokenPayload>(refreshToken);
+    const newAccessToken = tokenService.signAccessToken(payload);
 
     sendResponse({
       res,
@@ -120,4 +113,4 @@ function refreshToken(req: Request, res: Response) {
   }
 }
 
-export { getProfile, login, register, refreshToken };
+export { getProfile, login, refreshToken, register };

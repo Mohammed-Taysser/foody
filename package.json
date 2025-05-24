@@ -1,11 +1,12 @@
 {
   "name": "foody",
-  "version": "1.0.19",
+  "version": "1.0.20",
   "description": "",
   "main": "dist/server.js",
   "scripts": {
     "test": "cross-env NODE_ENV=test jest",
     "dev": "ts-node-dev --respawn --transpile-only --require tsconfig-paths/register src/server.ts",
+    "seed": "ts-node --transpile-only --require tsconfig-paths/register prisma/seed.ts",
     "lint": "eslint . --ext .ts",
     "build": "rimraf ./dist && tsc",
     "lint:fix": "eslint . --ext .ts --fix",
@@ -27,6 +28,7 @@
   "devDependencies": {
     "@eslint/js": "^9.27.0",
     "@eslint/json": "^0.12.0",
+    "@faker-js/faker": "^9.8.0",
     "@types/bcrypt": "^5.0.2",
     "@types/dotenv-safe": "^8.1.6",
     "@types/express": "^5.0.2",
@@ -35,6 +37,7 @@
     "@types/morgan": "^1.9.9",
     "@types/node": "^22.15.18",
     "@types/supertest": "^6.0.3",
+    "chalk": "4.1.2",
     "cross-env": "^7.0.3",
     "eslint": "^9.27.0",
     "eslint-config-prettier": "^10.1.5",
@@ -46,6 +49,7 @@
     "prettier": "^3.5.3",
     "supertest": "^7.1.1",
     "ts-jest": "^29.3.4",
+    "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.8.3",

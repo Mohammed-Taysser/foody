@@ -1,9 +1,9 @@
 import { NextFunction, Request, Response } from 'express';
 
 import prisma from '@/config/prisma';
-import { verifyToken } from '@/modules/auth/auth.service';
 import { AuthenticatedRequest } from '@/types/import';
 import { UnauthorizedError } from '@/utils/errors';
+import tokenService from '@/services/token.service';
 
 async function authenticateMiddleware(req: Request, _res: Response, next: NextFunction) {
   const request = req as AuthenticatedRequest;
@@ -15,7 +15,7 @@ async function authenticateMiddleware(req: Request, _res: Response, next: NextFu
 
   const token = authHeader.split(' ')[1];
 
-  const decoded = verifyToken(token);
+  const decoded = tokenService.verifyToken(token);
 
   if (!decoded) {
     throw new UnauthorizedError('Invalid token');

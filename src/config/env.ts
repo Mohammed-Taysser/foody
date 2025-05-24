@@ -1,6 +1,7 @@
 import { config as loadEnvSafe } from 'dotenv-safe';
 import type { DotenvParseOutput } from 'dotenv';
 import { z } from 'zod';
+import { SignOptions } from 'jsonwebtoken';
 
 // 🌟 STEP 1: Load and validate presence (via .env.example)
 try {
@@ -35,10 +36,10 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(10),
   JWT_ACCESS_EXPIRES_IN: z.string().regex(/^\d+[smhd]$/, {
     message: 'JWT_EXPIRES_IN must be a duration like "7d", "15m", "1h", or "30s"',
-  }),
+  }) as z.ZodType<SignOptions['expiresIn']>,
   JWT_REFRESH_EXPIRES_IN: z.string().regex(/^\d+[smhd]$/, {
     message: 'JWT_EXPIRES_IN must be a duration like "7d", "15m", "1h", or "30s"',
-  }),
+  }) as z.ZodType<SignOptions['expiresIn']>,
 });
 
 // Validate and catch errors with friendly messages
