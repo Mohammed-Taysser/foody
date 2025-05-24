@@ -18,7 +18,7 @@ async function updateMe(req: Request, res: Response) {
   const data = updateProfileSchema.parse(req.body);
 
   const updatedUser = await prisma.user.update({
-    where: { id: user.userId },
+    where: { id: user.id },
     data,
   });
 

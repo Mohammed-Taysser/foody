@@ -2,13 +2,8 @@ import { faker } from '@faker-js/faker';
 import request from 'supertest';
 
 import app from '@/app';
-import prisma from '@/config/prisma';
 
-afterAll(async () => {
-  await prisma.$disconnect();
-});
-
-describe('Register', () => {
+describe('POST /auth/register', () => {
   it('should register and return tokens + user', async () => {
     const dummyEmail = faker.internet.email();
 
@@ -18,7 +13,7 @@ describe('Register', () => {
       password: '123456789',
     });
 
-    expect(res.statusCode).toBe(200);
+    expect(res.statusCode).toBe(201);
     expect(res.body.data.accessToken).toBeDefined();
     expect(res.body.data.refreshToken).toBeDefined();
     expect(res.body.data.user.email).toBe(dummyEmail);
@@ -44,7 +39,7 @@ describe('Register', () => {
   });
 });
 
-describe('Login', () => {
+describe('POST /auth/login', () => {
   it('should reject login with invalid credentials', async () => {
     const res = await request(app).post('/api/auth/login').send({
       email: 'wrong@example.com',
@@ -76,7 +71,7 @@ describe('Login', () => {
   });
 });
 
-describe('Refresh token', () => {
+describe('POST /auth/refresh', () => {
   it('should refresh token', async () => {
     const dummyEmail = faker.internet.email();
 
@@ -110,7 +105,7 @@ describe('Refresh token', () => {
   });
 });
 
-describe('Profile', () => {
+describe('GET /auth/me', () => {
   it('should get profile', async () => {
     const dummyEmail = faker.internet.email();
 

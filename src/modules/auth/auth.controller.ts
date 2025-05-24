@@ -24,6 +24,7 @@ async function register(req: Request, res: Response) {
       name: data.name,
       email: data.email,
       password: hashed,
+      role: data.role,
     },
   });
 
@@ -39,6 +40,7 @@ async function register(req: Request, res: Response) {
     res,
     message: 'User registered',
     data: { accessToken, refreshToken, user: restUser },
+    statusCode: 201,
   });
 }
 

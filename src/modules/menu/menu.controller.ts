@@ -1,12 +1,12 @@
-import { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
+import { Request, Response } from 'express';
 
 import { createMenuItemSchema } from './menu.validator';
 
 import prisma from '@/config/prisma';
-import sendResponse from '@/utils/sendResponse';
-import { NotFoundError, ForbiddenError } from '@/utils/errors';
 import { AuthenticatedRequest } from '@/types/import';
+import { ForbiddenError, NotFoundError } from '@/utils/errors';
+import sendResponse from '@/utils/sendResponse';
 
 async function addMenuItem(req: Request, res: Response) {
   const request = req as AuthenticatedRequest;
@@ -23,7 +23,7 @@ async function addMenuItem(req: Request, res: Response) {
     throw new NotFoundError('Restaurant not found');
   }
 
-  if (user.role !== 'ADMIN' && restaurant.ownerId !== user.userId) {
+  if (user.role !== 'ADMIN' && restaurant.ownerId !== user.id) {
     throw new ForbiddenError('You do not own this restaurant');
   }
 
@@ -92,7 +92,7 @@ async function updateMenuItem(req: Request, res: Response) {
 
   if (!item) throw new NotFoundError('Menu item not found');
 
-  if (user.role !== 'ADMIN' && item.restaurant.ownerId !== user.userId) {
+  if (user.role !== 'ADMIN' && item.restaurant.ownerId !== user.id) {
     throw new ForbiddenError('You do not have permission to update this item');
   }
 
@@ -118,7 +118,7 @@ async function deleteMenuItem(req: Request, res: Response) {
 
   if (!item) throw new NotFoundError('Menu item not found');
 
-  if (user.role !== 'ADMIN' && item.restaurant.ownerId !== user.userId) {
+  if (user.role !== 'ADMIN' && item.restaurant.ownerId !== user.id) {
     throw new ForbiddenError('You do not have permission to delete this item');
   }
 
@@ -129,4 +129,4 @@ async function deleteMenuItem(req: Request, res: Response) {
   sendResponse({ res, message: 'Menu item deleted' });
 }
 
-export { addMenuItem, getMenuItems, updateMenuItem, deleteMenuItem };
+export { addMenuItem, deleteMenuItem, getMenuItems, updateMenuItem };

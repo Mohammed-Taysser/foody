@@ -16,8 +16,11 @@ async function createCategory(req: Request, res: Response) {
     where: { id: restaurantId },
   });
 
-  if (!restaurant) throw new NotFoundError('Restaurant not found');
-  if (user.role !== 'ADMIN' && restaurant.ownerId !== user.userId) {
+  if (!restaurant) {
+    throw new NotFoundError('Restaurant not found');
+  }
+
+  if (user.role !== 'ADMIN' && restaurant.ownerId !== user.id) {
     throw new ForbiddenError('You do not own this restaurant');
   }
 
@@ -47,7 +50,7 @@ async function updateCategory(req: Request, res: Response) {
 
   if (!category) throw new NotFoundError('Category not found');
 
-  if (user.role !== 'ADMIN' && category.restaurant.ownerId !== user.userId) {
+  if (user.role !== 'ADMIN' && category.restaurant.ownerId !== user.id) {
     throw new ForbiddenError('You do not own this category');
   }
 
@@ -84,9 +87,11 @@ async function deleteCategory(req: Request, res: Response) {
     include: { restaurant: true },
   });
 
-  if (!category) throw new NotFoundError('Category not found');
+  if (!category) {
+    throw new NotFoundError('Category not found');
+  }
 
-  if (user.role !== 'ADMIN' && category.restaurant.ownerId !== user.userId) {
+  if (user.role !== 'ADMIN' && category.restaurant.ownerId !== user.id) {
     throw new ForbiddenError('You do not own this category');
   }
 
@@ -97,4 +102,4 @@ async function deleteCategory(req: Request, res: Response) {
   sendResponse({ res, message: 'Category deleted' });
 }
 
-export { createCategory, listCategories, updateCategory, deleteCategory };
+export { createCategory, deleteCategory, listCategories, updateCategory };
