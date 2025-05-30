@@ -1,6 +1,8 @@
 import express from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import swaggerUi from 'swagger-ui-express';
+import YAML from 'yamljs';
 
 import CONFIG from './config/env';
 import apiLimiter from './middleware/apiLimiter.middleware';
@@ -16,6 +18,10 @@ const app = express();
 if (CONFIG.NODE_ENV !== 'test') {
   app.use(morgan('dev'));
 }
+
+const swaggerDocument = YAML.load('./docs/swagger.yaml');
+
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use(helmet());
 

@@ -2,7 +2,6 @@ import { Request, Response } from 'express';
 
 import prisma from '@/config/prisma';
 import tokenService from '@/services/token.service';
-import { AuthenticatedRequest } from '@/types/import';
 import { BadRequestError, UnauthorizedError } from '@/utils/errors';
 import sendResponse from '@/utils/sendResponse';
 
@@ -76,22 +75,6 @@ async function login(req: Request, res: Response) {
   });
 }
 
-function getProfile(req: Request, res: Response) {
-  const request = req as AuthenticatedRequest;
-
-  const user = request.user;
-
-  if (!user) {
-    throw new UnauthorizedError('Not authenticated');
-  }
-
-  sendResponse({
-    res,
-    message: 'Current user',
-    data: user,
-  });
-}
-
 function refreshToken(req: Request, res: Response) {
   const { refreshToken } = req.body;
 
@@ -118,4 +101,4 @@ function refreshToken(req: Request, res: Response) {
   }
 }
 
-export { getProfile, login, refreshToken, register };
+export { login, refreshToken, register };

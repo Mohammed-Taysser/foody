@@ -2,10 +2,10 @@ import { Request, Response } from 'express';
 
 import { updateProfileSchema } from './user.validator';
 
-import sendResponse from '@/utils/sendResponse';
+import prisma from '@/config/prisma';
 import { AuthenticatedRequest } from '@/types/import';
 import { UnauthorizedError } from '@/utils/errors';
-import prisma from '@/config/prisma';
+import sendResponse from '@/utils/sendResponse';
 
 async function updateMe(req: Request, res: Response) {
   const request = req as AuthenticatedRequest;
@@ -29,4 +29,20 @@ async function updateMe(req: Request, res: Response) {
   });
 }
 
-export { updateMe };
+function getProfile(req: Request, res: Response) {
+  const request = req as AuthenticatedRequest;
+
+  const user = request.user;
+
+  if (!user) {
+    throw new UnauthorizedError('Not authenticated');
+  }
+
+  sendResponse({
+    res,
+    message: 'Current user',
+    data: user,
+  });
+}
+
+export { getProfile, updateMe };

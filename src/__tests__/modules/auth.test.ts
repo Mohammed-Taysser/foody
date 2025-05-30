@@ -104,31 +104,3 @@ describe('POST /auth/refresh', () => {
     expect(res.body.success).toBe(false);
   });
 });
-
-describe('GET /auth/me', () => {
-  it('should get profile', async () => {
-    const dummyEmail = faker.internet.email();
-
-    const registerResponse = await request(app).post('/api/auth/register').send({
-      name: faker.person.fullName(),
-      email: dummyEmail,
-      password: '123456789',
-    });
-
-    const accessToken = registerResponse.body.data.accessToken;
-
-    const profileResponse = await request(app)
-      .get('/api/auth/me')
-      .set('Authorization', `Bearer ${accessToken}`);
-
-    expect(profileResponse.statusCode).toBe(200);
-    expect(profileResponse.body.data.email).toBe(dummyEmail);
-  });
-
-  it('should fail profile if not authenticated', async () => {
-    const res = await request(app).get('/api/auth/me');
-
-    expect(res.statusCode).toBe(401);
-    expect(res.body.success).toBe(false);
-  });
-});
