@@ -1,0 +1,39 @@
+#!/usr/bin/env sh
+# exit immediately on any error
+set -e
+# treat unset vars as errors
+set -u
+
+# ANSI color codes
+RED="$(tput setaf 1)"
+GREEN="$(tput setaf 2)"
+YELLOW="$(tput setaf 3)"
+RESET="$(tput sgr0)"
+
+MSG_FILE="$1"
+
+# 1. Skip merge or revert commits
+if grep -qE '^(Merge|Revert)' "$MSG_FILE"; then
+  printf "${YELLOW}→ Skipping commitlint for merge/revert commit${RESET}\n"
+  exit 0
+fi
+
+# 2. Skip if user included [skip commitlint] in their message
+if grep -q '\[skip commitlint\]' "$MSG_FILE"; then
+  printf "${YELLOW}→ Skipping commitlint (skip tag detected)${RESET}\n"
+  exit 0
+fi
+
+printf "\n${YELLOW}→ Running commitlint...${RESET}\n"
+
+# 3. Run commitlint, capture output
+if ! output=$(npx --no-install commitlint --edit "$MSG_FILE" 2>&1); then
+  printf "${RED}✖ Commit message lint failed!${RESET}\n\n"
+  # show commitlint's own error details
+  printf "%s\n" "$output"
+  printf "\n${YELLOW}Hint: use '${GREEN}npm run commit${RESET}${YELLOW}' to launch Commitizen's interactive prompt for a valid message.${RESET}\n\n"
+  exit 1
+fi
+
+printf "${GREEN}✔ Commit message lint passed!${RESET}\n\n"
+exit 0

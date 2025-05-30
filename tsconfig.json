@@ -11,6 +11,8 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "baseUrl": "./src",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "paths": {
       "@/*": ["*"]
     }

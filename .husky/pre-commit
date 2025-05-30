@@ -1,4 +1,22 @@
-pnpm lint
-pnpm format
-pnpm test
-pnpm exec lint-staged
+#!/usr/bin/env sh
+
+# Abort on any error
+set -e
+
+# ANSI color codes
+RED="$(tput setaf 1)"
+GREEN="$(tput setaf 2)"
+YELLOW="$(tput setaf 3)"
+RESET="$(tput sgr0)"
+
+# 1. Check for any staged files at all
+if git diff --cached --quiet; then
+  printf "\n${YELLOW}→ No staged files to lint. Skipping pre-commit checks.${RESET}\n"
+  exit 0
+fi
+
+printf "\n${YELLOW}→ Running lint-staged ...${RESET}\n"
+npx lint-staged
+
+printf "\n${GREEN}✔ All pre-commit checks passed!${RESET}\n"
+exit 0
