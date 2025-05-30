@@ -1,6 +1,6 @@
 {
   "name": "foody",
-  "version": "1.0.23",
+  "version": "1.0.24",
   "description": "API documentation for the Foody restaurant platform",
   "main": "dist/server.js",
   "repository": {
@@ -34,7 +34,7 @@
     "url": "https://mohammed-taysser.github.io/portfolio"
   },
   "license": "ISC",
-  "packageManager": "pnpm@10.10.0",
+  "packageManager": "pnpm@10.11.0",
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
@@ -48,9 +48,11 @@
     "@types/jsonwebtoken": "^9.0.9",
     "@types/morgan": "^1.9.9",
     "@types/node": "^22.15.18",
+    "@types/prompts": "^2.4.9",
     "@types/supertest": "^6.0.3",
     "@types/swagger-ui-express": "^4.1.8",
     "@types/yamljs": "^0.2.34",
+    "boxen": "^8.0.1",
     "chalk": "4.1.2",
     "commitizen": "^4.3.1",
     "cross-env": "^7.0.3",
@@ -64,6 +66,7 @@
     "lint-staged": "^16.0.0",
     "morgan": "^1.10.0",
     "prettier": "^3.5.3",
+    "prompts": "^2.4.2",
     "supertest": "^7.1.1",
     "ts-jest": "^29.3.4",
     "ts-node": "^10.9.2",

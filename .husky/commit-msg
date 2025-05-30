@@ -1,6 +1,12 @@
 #!/usr/bin/env sh
 # exit immediately on any error
 set -e
+
+# Check if TERM is set; if not, set a default
+if [ -z "$TERM" ]; then
+  export TERM=xterm-256color
+fi
+
 # treat unset vars as errors
 set -u
 

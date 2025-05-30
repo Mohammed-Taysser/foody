@@ -1,3 +1,4 @@
 {
-  "src/**/*.{ts,json,js}": ["npm run lint", "npm run format", "npm run test"]
+  "src/**/*.{ts,json}": ["npm run lint", "npm run format"],
+  "*.{ts}": ["npm run test"]
 }
