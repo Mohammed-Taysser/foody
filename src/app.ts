@@ -2,26 +2,23 @@ import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
 import hpp from 'hpp';
-import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
 
 import ennValidation from '@/config/env';
-import apiLimiter from '@/middleware/apiLimiter.middleware';
+import apiLimiter from '@/middleware/api-rate-limit.middleware';
 import compressionMiddleware from '@/middleware/compression.middleware';
 import errorHandlerMiddleware from '@/middleware/error.middleware';
-import requestLoggerMiddleware from '@/middleware/request-logger.middleware';
+import loggerMiddleware from '@/middleware/logger.middleware';
 import authRoutes from '@/modules/auth/auth.route';
 import restaurantRoutes from '@/modules/restaurant/restaurant.route';
 import userRoutes from '@/modules/user/user.route';
-import { NotFoundError } from '@/utils/errors';
+import { NotFoundError } from '@/utils/errors.utils';
 
 const app = express();
 
 if (ennValidation.NODE_ENV !== 'test') {
-  app.use(morgan('dev'));
-
-  app.use(requestLoggerMiddleware);
+  app.use(loggerMiddleware);
 }
 
 // Load swagger document with absolute path

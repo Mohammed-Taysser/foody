@@ -5,7 +5,7 @@ import { createMenuItemSchema } from './menu.validator';
 
 import prisma from '@/config/prisma';
 import { AuthenticatedRequest } from '@/types/import';
-import { ForbiddenError, NotFoundError } from '@/utils/errors';
+import { ForbiddenError, NotFoundError } from '@/utils/errors.utils';
 import sendResponse from '@/utils/sendResponse';
 
 async function addMenuItem(req: Request, res: Response) {

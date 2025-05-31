@@ -1,9 +1,9 @@
 import { NextFunction, Request, Response } from 'express';
 
 import prisma from '@/config/prisma';
-import { AuthenticatedRequest } from '@/types/import';
-import { UnauthorizedError } from '@/utils/errors';
 import tokenService from '@/services/token.service';
+import { AuthenticatedRequest } from '@/types/import';
+import { UnauthorizedError } from '@/utils/errors.utils';
 
 async function authenticateMiddleware(req: Request, _res: Response, next: NextFunction) {
   const request = req as AuthenticatedRequest;

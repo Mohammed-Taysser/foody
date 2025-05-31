@@ -37,6 +37,28 @@ describe('POST /auth/register', () => {
     expect(res.statusCode).toBe(400);
     expect(res.body.success).toBe(false);
   });
+
+  it('should fail when required fields are missing', async () => {
+    const res = await request(app).post('/api/auth/register').send({
+      email: faker.internet.email(),
+    });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.success).toBe(false);
+    expect(res.body.details.length).toBeGreaterThan(0);
+  });
+
+  it('should fail when invalid email is provided', async () => {
+    const res = await request(app).post('/api/auth/register').send({
+      name: faker.person.fullName(),
+      email: 'invalid_email',
+      password: '123456789',
+    });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.success).toBe(false);
+    expect(res.body.details.length).toBeGreaterThan(0);
+  });
 });
 
 describe('POST /auth/login', () => {
@@ -68,6 +90,34 @@ describe('POST /auth/login', () => {
     expect(res.body.data.accessToken).toBeDefined();
     expect(res.body.data.refreshToken).toBeDefined();
     expect(res.body.data.user.email).toBe(dummyEmail);
+  });
+
+  it('should fail when email is missing', async () => {
+    const res = await request(app).post('/api/auth/login').send({
+      password: '123456789',
+    });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.success).toBe(false);
+    expect(res.body.details.length).toBeGreaterThan(0);
+  });
+
+  it('should fail when password is missing', async () => {
+    const res = await request(app).post('/api/auth/login').send({
+      email: faker.internet.email(),
+    });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.success).toBe(false);
+    expect(res.body.details.length).toBeGreaterThan(0);
+  });
+
+  it('should return error for missing fields', async () => {
+    const res = await request(app).post('/api/auth/login').send({});
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.success).toBe(false);
+    expect(res.body.details.length).toBeGreaterThan(0);
   });
 });
 
@@ -102,5 +152,15 @@ describe('POST /auth/refresh', () => {
 
     expect(res.statusCode).toBe(400);
     expect(res.body.success).toBe(false);
+  });
+
+  it('should fail with an invalid refresh token', async () => {
+    const res = await request(app).post('/api/auth/refresh').send({
+      refreshToken: 'invalid.token.value',
+    });
+
+    expect(res.statusCode).toBe(401);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toBe('Invalid or expired refresh token');
   });
 });

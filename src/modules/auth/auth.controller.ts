@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 
 import prisma from '@/config/prisma';
 import tokenService from '@/services/token.service';
-import { BadRequestError, UnauthorizedError } from '@/utils/errors';
+import { BadRequestError, UnauthorizedError } from '@/utils/errors.utils';
 import sendResponse from '@/utils/sendResponse';
 
 async function register(req: Request, res: Response) {

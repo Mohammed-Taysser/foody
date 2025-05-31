@@ -6,6 +6,6 @@ const stream = {
   write: (message: string) => LOGGER.http(message.trim()),
 };
 
-const requestLoggerMiddleware = morgan('combined', { stream });
+const loggerMiddleware = [morgan('dev'), morgan('combined', { stream })];
 
-export default requestLoggerMiddleware;
+export default loggerMiddleware;

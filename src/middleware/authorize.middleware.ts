@@ -1,8 +1,8 @@
-import { Request, Response, NextFunction } from 'express';
 import { User } from '@prisma/client';
+import { NextFunction, Request, Response } from 'express';
 
-import { ForbiddenError } from '@/utils/errors';
 import { AuthenticatedRequest } from '@/types/import';
+import { ForbiddenError } from '@/utils/errors.utils';
 
 function authorizeMiddleware(...roles: User['role'][]) {
   return (req: Request, _res: Response, next: NextFunction) => {

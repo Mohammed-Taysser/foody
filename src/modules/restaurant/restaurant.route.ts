@@ -3,11 +3,11 @@ import { Router } from 'express';
 import { createRestaurant, getRestaurants } from './restaurant.controller';
 import { createRestaurantSchema } from './restaurant.validator';
 
-import ZodValidate from '@/middleware/ZodValidate.middleware';
 import authenticate from '@/middleware/authenticate.middleware';
 import authorize from '@/middleware/authorize.middleware';
-import menuRoutes from '@/modules/menu/menu.route';
+import ZodValidate from '@/middleware/zod-validate.middleware';
 import categoryRoutes from '@/modules/category/category.route';
+import menuRoutes from '@/modules/menu/menu.route';
 
 const router = Router();
 

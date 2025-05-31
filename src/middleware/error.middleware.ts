@@ -1,6 +1,8 @@
 import { NextFunction, Request, Response } from 'express';
 
-import { BaseError } from '@/utils/errors';
+import CONFIG from '@/config/env';
+import { BaseError } from '@/utils/errors.utils';
+import { ErrorMiddlewareResponse } from '@/types/error';
 
 function errorHandlerMiddleware(
   err: Error,
@@ -10,12 +12,19 @@ function errorHandlerMiddleware(
 ) {
   const status = err instanceof BaseError ? err.statusCode : 500;
   const message = err.message || 'Internal server error';
+  const details = err instanceof BaseError ? err.details : undefined;
 
-  res.status(status).json({
+  const body: ErrorMiddlewareResponse = {
     success: false,
     message,
-    ...(process.env.NODE_ENV !== 'production' && { stack: err.stack }),
-  });
+    details,
+  };
+
+  if (CONFIG.NODE_ENV === 'development') {
+    body.stack = err.stack;
+  }
+
+  res.status(status).json(body);
 }
 
 export default errorHandlerMiddleware;

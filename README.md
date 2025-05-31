@@ -1,4 +1,71 @@
-# DOCS
+# Foody
+
+## Overview
+
+## Key Features
+
+## Architecture
+
+## Technology Stack
+
+## Testing
+
+### Test Structure
+
+- Unit Tests
+- Integration Tests
+- End-to-End Tests
+
+### Test Coverage Requirements
+
+- Statements: 80%
+- Branches: 75%
+- Functions: 85%
+- Lines: 80%
+
+### Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run specific test file
+npm test -- tests/services/campaign.service.test.ts
+
+# Run tests in watch mode
+npm run test:watch
+```
+
+## Deployment
+
+### Environment Variables
+
+## Development Guide
+
+### Setup
+
+1. Clone the repository
+2. Install dependencies: `npm install`
+3. Copy `.env.example` to `.env`
+4. Start development server: `npm run dev`
+
+### Code Style
+
+- Follow TypeScript best practices
+- Use ESLint and Prettier
+- Write unit tests for new features
+- Update documentation for API changes
+
+### Git Workflow
+
+1. Create feature branch
+2. Make changes
+3. Write tests
+4. Update documentation
+5. Create pull request
 
 ## Why Add Refresh Tokens?
 

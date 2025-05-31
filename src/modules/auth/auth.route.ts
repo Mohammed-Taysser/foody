@@ -3,7 +3,7 @@ import { Router } from 'express';
 import { login, refreshToken, register } from './auth.controller';
 import { loginSchema, refreshTokenSchema, registerSchema } from './auth.validator';
 
-import ZodValidate from '@/middleware/ZodValidate.middleware';
+import ZodValidate from '@/middleware/zod-validate.middleware';
 
 const router = Router();
 

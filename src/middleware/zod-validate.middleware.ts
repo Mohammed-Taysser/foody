@@ -1,7 +1,7 @@
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { ZodError, ZodSchema } from 'zod';
 
-import { BadRequestError } from '@/utils/errors';
+import { BadRequestError } from '@/utils/errors.utils';
 
 type RequestPart = 'body' | 'query' | 'params';
 
@@ -13,9 +13,7 @@ function ZodValidate(schema: ZodSchema, source: RequestPart = 'body') {
       next();
     } catch (err) {
       if (err instanceof ZodError) {
-        const issues = err.errors;
-        const messages = issues.map((e) => `${e.path.join('.')}: ${e.message}`);
-        throw new BadRequestError(messages);
+        throw new BadRequestError(err.errors);
       }
 
       next(err);

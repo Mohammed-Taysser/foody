@@ -5,7 +5,7 @@ import { createMenuItemSchema, updateMenuItemSchema } from './menu.validator';
 
 import authenticate from '@/middleware/authenticate.middleware';
 import authorize from '@/middleware/authorize.middleware';
-import validate from '@/middleware/ZodValidate.middleware';
+import validate from '@/middleware/zod-validate.middleware';
 
 const router = Router({ mergeParams: true });
 

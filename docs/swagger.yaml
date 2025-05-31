@@ -3,6 +3,8 @@ info:
   title: Foody API
   version: 1.0.22
   description: API documentation for the Foody restaurant platform
+  contact:
+    email: support@whatsapp-marketing.com
 externalDocs:
   description: GitHub Repository
   url: https://github.com/mohammed-taysser/foody
@@ -615,6 +617,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+      description: JWT token obtained from authentication endpoint
 
   parameters:
     PaginationLimit:

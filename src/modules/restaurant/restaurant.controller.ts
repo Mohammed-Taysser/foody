@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 
 import prisma from '@/config/prisma';
-import { BadRequestError, NotFoundError } from '@/utils/errors';
+import { BadRequestError, NotFoundError } from '@/utils/errors.utils';
 import sendResponse from '@/utils/sendResponse';
 
 async function createRestaurant(req: Request, res: Response) {

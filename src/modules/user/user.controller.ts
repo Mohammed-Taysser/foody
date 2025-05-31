@@ -4,7 +4,7 @@ import { updateProfileSchema } from './user.validator';
 
 import prisma from '@/config/prisma';
 import { AuthenticatedRequest } from '@/types/import';
-import { UnauthorizedError } from '@/utils/errors';
+import { ConflictError, UnauthorizedError } from '@/utils/errors.utils';
 import sendResponse from '@/utils/sendResponse';
 
 async function updateMe(req: Request, res: Response) {
@@ -13,6 +13,16 @@ async function updateMe(req: Request, res: Response) {
 
   if (!user) {
     throw new UnauthorizedError('Unauthorized: no user found in request');
+  }
+
+  if (user.email) {
+    const existingUser = await prisma.user.findUnique({
+      where: { email: user.email },
+    });
+
+    if (existingUser && existingUser.id !== user.id) {
+      throw new ConflictError('Email already registered');
+    }
   }
 
   const data = updateProfileSchema.parse(req.body);
