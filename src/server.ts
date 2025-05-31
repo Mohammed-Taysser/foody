@@ -1,8 +1,9 @@
 import chalk from 'chalk';
 
-import { logServerInfo } from './utils/logger';
+import LOGGER from './services/log.service';
 import { isPortAvailable } from './utils/network';
 import { promptYesNo } from './utils/prompts';
+import { logServerInfo } from './utils/system-info-logs';
 
 import app from '@/app';
 import CONFIG from '@/config/env';
@@ -22,9 +23,7 @@ async function startServer() {
     port++;
   }
 
-  app.listen(port, () => {
-    console.log(chalk.green(`Server is running on http://localhost:${port}`));
-  });
+  app.listen(port);
 
   return port;
 }
@@ -34,6 +33,6 @@ startServer()
     logServerInfo(startTime, port);
   })
   .catch((error) => {
-    console.error(chalk.red('Error starting server:'), error);
+    LOGGER.error('Error starting server:', error);
     process.exit(1);
   });

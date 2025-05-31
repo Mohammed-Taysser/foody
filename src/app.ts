@@ -4,10 +4,10 @@ import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
 
-import CONFIG from './config/env';
-import apiLimiter from './middleware/apiLimiter.middleware';
-
+import CONFIG from '@/config/env';
+import apiLimiter from '@/middleware/apiLimiter.middleware';
 import errorHandlerMiddleware from '@/middleware/error.middleware';
+import requestLoggerMiddleware from '@/middleware/request-logger.middleware';
 import authRoutes from '@/modules/auth/auth.route';
 import restaurantRoutes from '@/modules/restaurant/restaurant.route';
 import userRoutes from '@/modules/user/user.route';
@@ -17,6 +17,8 @@ const app = express();
 
 if (CONFIG.NODE_ENV !== 'test') {
   app.use(morgan('dev'));
+
+  app.use(requestLoggerMiddleware);
 }
 
 const swaggerDocument = YAML.load('./docs/swagger.yaml');

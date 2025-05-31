@@ -1,6 +1,6 @@
 {
   "name": "foody",
-  "version": "1.0.24",
+  "version": "1.0.25",
   "description": "API documentation for the Foody restaurant platform",
   "main": "dist/server.js",
   "repository": {
@@ -52,7 +52,6 @@
     "@types/supertest": "^6.0.3",
     "@types/swagger-ui-express": "^4.1.8",
     "@types/yamljs": "^0.2.34",
-    "boxen": "^8.0.1",
     "chalk": "4.1.2",
     "commitizen": "^4.3.1",
     "cross-env": "^7.0.3",
@@ -73,7 +72,8 @@
     "ts-node-dev": "^2.0.0",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.8.3",
-    "typescript-eslint": "^8.32.1"
+    "typescript-eslint": "^8.32.1",
+    "winston": "^3.17.0"
   },
   "dependencies": {
     "@prisma/client": "^6.8.2",
@@ -87,6 +87,7 @@
     "jsonwebtoken": "^9.0.2",
     "prisma": "^6.8.2",
     "swagger-ui-express": "^5.0.1",
+    "winston-daily-rotate-file": "^5.0.0",
     "yamljs": "^0.3.0",
     "zod": "^3.24.4"
   },
