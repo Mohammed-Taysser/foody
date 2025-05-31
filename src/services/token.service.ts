@@ -1,12 +1,12 @@
 import bcrypt from 'bcrypt';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 
-import CONFIG from '@/config/env';
+import ennValidation from '@/config/env';
 
 class TokenService {
-  private readonly SECRET = CONFIG.JWT_SECRET;
-  private readonly ACCESS_EXPIRY = CONFIG.JWT_ACCESS_EXPIRES_IN;
-  private readonly REFRESH_EXPIRY = CONFIG.JWT_REFRESH_EXPIRES_IN;
+  private readonly SECRET = ennValidation.JWT_SECRET;
+  private readonly ACCESS_EXPIRY = ennValidation.JWT_ACCESS_EXPIRES_IN;
+  private readonly REFRESH_EXPIRY = ennValidation.JWT_REFRESH_EXPIRES_IN;
 
   private preparePayload(payload: UserTokenPayload): UserTokenPayload {
     return {

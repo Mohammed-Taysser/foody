@@ -6,12 +6,12 @@ import { promptYesNo } from './utils/prompts';
 import { logServerInfo } from './utils/system-info-logs';
 
 import app from '@/app';
-import CONFIG from '@/config/env';
+import ennValidation from '@/config/env';
 
 const startTime = Date.now();
 
 async function startServer() {
-  let port = CONFIG.PORT;
+  let port = ennValidation.PORT;
 
   while (!(await isPortAvailable(port))) {
     console.log(chalk.red(`Port ${port} is already in use.`));

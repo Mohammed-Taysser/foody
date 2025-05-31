@@ -1,12 +1,12 @@
-import { config as loadEnvSafe } from 'dotenv-safe';
 import type { DotenvParseOutput } from 'dotenv';
-import { z } from 'zod';
+import { config as loadEnvSafe } from 'dotenv-safe';
 import { SignOptions } from 'jsonwebtoken';
+import { z } from 'zod';
 
 // 🌟 STEP 1: Load and validate presence (via .env.example)
 try {
   loadEnvSafe({
-    allowEmptyValues: false,
+    allowEmptyValues: true,
     example: '.env.example',
     path: '.env',
   });
@@ -33,6 +33,16 @@ try {
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.string().transform(Number),
+  ALLOWED_ORIGINS: z
+    .string()
+    .default('')
+    .transform((val) => {
+      const origins = val
+        .split(',')
+        .map((origin) => origin.trim())
+        .filter((origin) => origin !== '');
+      return origins;
+    }),
   JWT_SECRET: z.string().min(10),
   JWT_ACCESS_EXPIRES_IN: z.string().regex(/^\d+[smhd]$/, {
     message: 'JWT_EXPIRES_IN must be a duration like "7d", "15m", "1h", or "30s"',
@@ -43,22 +53,24 @@ const envSchema = z.object({
 });
 
 // Validate and catch errors with friendly messages
-let CONFIG: z.infer<typeof envSchema>;
+// let CONFIG: z.infer<typeof envSchema>;
+const ennValidation = envSchema.safeParse(process.env);
 
-try {
-  CONFIG = envSchema.parse(process.env);
-} catch (error) {
+if (!ennValidation.success) {
   console.error('❌ Environment variable validation failed:\n');
 
-  if (error instanceof z.ZodError) {
-    for (const issue of error.errors) {
+  if (ennValidation.error instanceof z.ZodError) {
+    for (const issue of ennValidation.error.errors) {
       console.error(`• ${issue.path.join('.')}: ${issue.message}`);
     }
   } else {
-    console.error(error);
+    console.error(ennValidation.error);
   }
 
   process.exit(1); // Exit with failure
 }
+
+// 🌟 STEP 3: Extract the validated environment variables
+const CONFIG = ennValidation.data;
 
 export default CONFIG;

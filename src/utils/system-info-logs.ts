@@ -6,7 +6,7 @@ import pkg from '../../package.json';
 
 import { getLocalIp } from './network';
 
-import CONFIG from '@/config/env';
+import ennValidation from '@/config/env';
 
 function logServerInfo(startTime: number, port: number) {
   const duration = Date.now() - startTime;
@@ -28,7 +28,7 @@ function logServerInfo(startTime: number, port: number) {
     chalk.gray('🖥️  Platform:  '),
     chalk.white(`${os.type()} ${os.arch()} (${os.platform()})`)
   );
-  console.log(`🔧 ${chalk.gray('ENV:')}        ${chalk.white(CONFIG.NODE_ENV)}`);
+  console.log(`🔧 ${chalk.gray('ENV:')}        ${chalk.white(ennValidation.NODE_ENV)}`);
   console.log();
 
   console.log(chalk.green('➜') + '  Local:   ' + chalk.cyan(localUrl));
