@@ -43,7 +43,26 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RegisterPayload'
+              type: object
+              required: [name, email, password]
+              properties:
+                name:
+                  type: string
+                  format: string
+                  example: 'John Doe'
+                email:
+                  type: string
+                  format: email
+                  example: 'john@example.com'
+                password:
+                  type: string
+                  format: password
+                  example: 'StrongPassword123'
+                role:
+                  type: string
+                  default: CUSTOMER
+                  format: string
+                  enum: [CUSTOMER, OWNER, ADMIN]
       responses:
         201:
           description: User registered successfully
@@ -66,7 +85,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LoginPayload'
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: 1B3yK@example.com
+                password:
+                  type: string
+                  format: password
+                  example: 'StrongPassword123'
       responses:
         200:
           description: Successful login
@@ -612,41 +641,7 @@ components:
             - Email is already registered
             - Password must be at least 6 characters
 
-    LoginPayload:
-      type: object
-      required: [email, password]
-      properties:
-        email:
-          type: string
-          format: email
-          example: 1B3yK@example.com
-        password:
-          type: string
-          format: password
-          example: 'StrongPassword123'
-
-    RegisterPayload:
-      type: object
-      required: [name, email, password]
-      properties:
-        name:
-          type: string
-          format: string
-          example: 'John Doe'
-        email:
-          type: string
-          format: email
-          example: 'john@example.com'
-        password:
-          type: string
-          format: password
-          example: 'StrongPassword123'
-        role:
-          type: string
-          default: CUSTOMER
-          format: string
-          enum: [CUSTOMER, OWNER, ADMIN]
-
+   
     AuthResponse:
       type: object
       properties:
