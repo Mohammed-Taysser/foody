@@ -641,7 +641,6 @@ components:
             - Email is already registered
             - Password must be at least 6 characters
 
-   
     AuthResponse:
       type: object
       properties:

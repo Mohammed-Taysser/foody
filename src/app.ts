@@ -5,7 +5,7 @@ import hpp from 'hpp';
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
 
-import ennValidation from '@/config/env';
+import { default as CONFIG, default as ennValidation } from '@/config/env';
 import apiLimiter from '@/middleware/api-rate-limit.middleware';
 import compressionMiddleware from '@/middleware/compression.middleware';
 import errorHandlerMiddleware from '@/middleware/error.middleware';
@@ -13,7 +13,7 @@ import loggerMiddleware from '@/middleware/logger.middleware';
 import authRoutes from '@/modules/auth/auth.route';
 import restaurantRoutes from '@/modules/restaurant/restaurant.route';
 import userRoutes from '@/modules/user/user.route';
-import { NotFoundError } from '@/utils/errors.utils';
+import { ForbiddenError, NotFoundError } from '@/utils/errors.utils';
 
 const app = express();
 
@@ -29,10 +29,24 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.use(hpp());
 
 // secure apps by setting various HTTP headers
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  })
+);
 
 // enable CORS - Cross Origin Resource Sharing
-app.use(cors());
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin || CONFIG.ALLOWED_ORIGINS.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new ForbiddenError(`CORS: Origin ${origin} is not allowed`));
+      }
+    },
+  })
+);
 
 // parse body params and attache them to req.body
 app.use(express.urlencoded({ extended: true, limit: '30mb' }));
