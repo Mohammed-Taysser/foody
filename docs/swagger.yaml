@@ -17,7 +17,7 @@ servers:
     description: Production server with custom domain
     variables:
       server:
-        default:
+        default: ''
 tags:
   - name: Auth
     description: Authentication related endpoints
@@ -43,7 +43,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/requestBodies/AuthRegisterRequest'
+              $ref: '#/components/schemas/RegisterPayload'
       responses:
         201:
           description: User registered successfully
@@ -66,7 +66,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/requestBodies/AuthLoginRequest'
+              $ref: '#/components/schemas/LoginPayload'
       responses:
         200:
           description: Successful login
@@ -130,6 +130,182 @@ paths:
                     properties:
                       data:
                         $ref: '#/components/schemas/User'
+
+  /users:
+    get:
+      summary: Get all users
+      tags:
+        - Users
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: All users
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+
+    post:
+      summary: Create a new user
+      tags:
+        - Users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - email
+                - password
+                - role
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+                role:
+                  type: string
+                  enum: [CUSTOMER, OWNER, ADMIN]
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: User created
+                  data:
+                    schema:
+                      allOf:
+                        - $ref: '#/components/schemas/SuccessResponse'
+                        - type: object
+                          properties:
+                            data:
+                              $ref: '#/components/schemas/User'
+
+  /users/{userId}:
+    get:
+      summary: Get a user by ID
+      tags:
+        - Users
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+          description: The ID of the user
+      responses:
+        '200':
+          description: User found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: User found
+                  data:
+                    $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      summary: Update a user by ID
+      tags:
+        - Users
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+          description: The ID of the user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+                role:
+                  type: string
+                  enum: [CUSTOMER, OWNER, ADMIN]
+
+      responses:
+        '200':
+          description: User updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: User updated
+                  data:
+                    $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags: [Users]
+      summary: Delete a user
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: User deleted successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        example: { deleted: true }
 
   /restaurants:
     get:
@@ -197,7 +373,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/inputs/CategoryInput'
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  format: string
+                  example: 'Burgers'
       responses:
         200:
           description: Category updated
@@ -390,52 +572,6 @@ paths:
                         example: { deleted: true }
 
 components:
-  inputs:
-    CategoryInput:
-      type: object
-      required: [name]
-      properties:
-        name:
-          type: string
-          format: string
-          example: 'Burgers'
-
-  requestBodies:
-    AuthLoginRequest:
-      type: object
-      required: [email, password]
-      properties:
-        email:
-          type: string
-          format: email
-          example: 1B3yK@example.com
-        password:
-          type: string
-          format: password
-          example: 'StrongPassword123'
-
-    AuthRegisterRequest:
-      type: object
-      required: [name, email, password]
-      properties:
-        name:
-          type: string
-          format: string
-          example: 'John Doe'
-        email:
-          type: string
-          format: email
-          example: 'john@example.com'
-        password:
-          type: string
-          format: password
-          example: 'StrongPassword123'
-        role:
-          type: string
-          default: CUSTOMER
-          format: string
-          enum: [CUSTOMER, OWNER, ADMIN]
-
   schemas:
     SuccessResponse:
       type: object
@@ -476,6 +612,51 @@ components:
             - Email is already registered
             - Password must be at least 6 characters
 
+    LoginPayload:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: 1B3yK@example.com
+        password:
+          type: string
+          format: password
+          example: 'StrongPassword123'
+
+    RegisterPayload:
+      type: object
+      required: [name, email, password]
+      properties:
+        name:
+          type: string
+          format: string
+          example: 'John Doe'
+        email:
+          type: string
+          format: email
+          example: 'john@example.com'
+        password:
+          type: string
+          format: password
+          example: 'StrongPassword123'
+        role:
+          type: string
+          default: CUSTOMER
+          format: string
+          enum: [CUSTOMER, OWNER, ADMIN]
+
+    AuthResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        user:
+          $ref: '#/components/schemas/User'
+
     User:
       type: object
       properties:
@@ -503,16 +684,6 @@ components:
           type: string
           format: date-time
           example: 2022-01-01T00:00:00.000Z
-
-    AuthResponse:
-      type: object
-      properties:
-        accessToken:
-          type: string
-        refreshToken:
-          type: string
-        user:
-          $ref: '#/components/schemas/User'
 
     Category:
       type: object

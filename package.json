@@ -1,6 +1,6 @@
 {
   "name": "foody",
-  "version": "1.0.27",
+  "version": "1.0.28",
   "description": "API documentation for the Foody restaurant platform",
   "main": "dist/server.js",
   "repository": {
@@ -10,7 +10,7 @@
   "scripts": {
     "build": "rimraf ./dist && tsc",
     "commit": "cz",
-    "dev": "ts-node-dev --respawn --transpile-only --require tsconfig-paths/register src/server.ts",
+    "dev": "ts-node-dev --respawn --transpile-only --require tsconfig-paths/register --watch .env src/server.ts",
     "format:fix": "prettier --write .",
     "format": "prettier --check .",
     "lint:fix": "eslint src --ext .ts --fix",

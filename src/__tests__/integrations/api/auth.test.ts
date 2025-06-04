@@ -34,7 +34,7 @@ describe('POST /auth/register', () => {
       password: '123456789',
     });
 
-    expect(res.statusCode).toBe(400);
+    expect(res.statusCode).toBe(409);
     expect(res.body.success).toBe(false);
   });
 
