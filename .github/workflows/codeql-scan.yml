@@ -11,7 +11,7 @@ on:
       - dev
 
 permissions:
-  security-events: write    # Grant permission to upload code scanning results
+  security-events: write # Grant permission to upload code scanning results
 
 jobs:
   analyze:

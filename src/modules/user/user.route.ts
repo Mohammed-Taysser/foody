@@ -4,22 +4,25 @@ import {
   createUser,
   deleteUser,
   getProfile,
-  getUsers,
   getUser,
+  getUsers,
+  getUsersList,
   updateMe,
   updateUser,
 } from './user.controller';
-import { createUserSchema, updateProfileSchema } from './user.validator';
+import { createUserSchema, updateUserSchema } from './user.validator';
 
 import authenticateMiddleware from '@/middleware/authenticate.middleware';
 import authorizeMiddleware from '@/middleware/authorize.middleware';
 import zodValidate from '@/middleware/zod-validate.middleware';
+import basePaginationSchema from '@/validations/pagination.validation';
 
 const router = Router();
 
-router.patch('/me', authenticateMiddleware, zodValidate(updateProfileSchema), updateMe);
+router.patch('/me', authenticateMiddleware, zodValidate(updateUserSchema), updateMe);
 router.get('/me', authenticateMiddleware, getProfile);
-router.get('/', getUsers);
+router.get('/list', getUsersList);
+router.get('/', zodValidate(basePaginationSchema, 'query'), getUsers);
 router.get('/:userId', getUser);
 router.post(
   '/',
@@ -33,7 +36,7 @@ router.patch(
   '/:userId',
   authenticateMiddleware,
   authorizeMiddleware('ADMIN'),
-  zodValidate(updateProfileSchema),
+  zodValidate(updateUserSchema),
   updateUser
 );
 router.delete('/:userId', authenticateMiddleware, authorizeMiddleware('ADMIN'), deleteUser);

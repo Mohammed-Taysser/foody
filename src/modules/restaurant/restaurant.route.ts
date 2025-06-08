@@ -1,17 +1,24 @@
 import { Router } from 'express';
 
-import { createRestaurant, getRestaurants } from './restaurant.controller';
-import { createRestaurantSchema } from './restaurant.validator';
+import {
+  createRestaurant,
+  deleteRestaurant,
+  getRestaurantById,
+  getRestaurants,
+  getRestaurantsList,
+  updateRestaurant,
+} from './restaurant.controller';
+import { createRestaurantSchema, updateRestaurantSchema } from './restaurant.validator';
 
 import authenticate from '@/middleware/authenticate.middleware';
 import authorize from '@/middleware/authorize.middleware';
 import ZodValidate from '@/middleware/zod-validate.middleware';
-import categoryRoutes from '@/modules/category/category.route';
-import menuRoutes from '@/modules/menu/menu.route';
+import basePaginationSchema from '@/validations/pagination.validation';
 
 const router = Router();
 
-router.get('/', getRestaurants);
+router.get('/', ZodValidate(basePaginationSchema, 'query'), getRestaurants);
+
 router.post(
   '/',
   authenticate,
@@ -20,7 +27,17 @@ router.post(
   createRestaurant
 );
 
-router.use('/:id/menu', menuRoutes);
-router.use('/:id/categories', categoryRoutes);
+router.get('/list', getRestaurantsList);
+router.get('/:restaurantId', getRestaurantById);
+
+router.delete('/:restaurantId', authenticate, authorize('OWNER', 'ADMIN'), deleteRestaurant);
+
+router.patch(
+  '/:restaurantId',
+  authenticate,
+  authorize('OWNER', 'ADMIN'),
+  ZodValidate(updateRestaurantSchema),
+  updateRestaurant
+);
 
 export default router;

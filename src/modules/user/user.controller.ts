@@ -1,20 +1,18 @@
 import { Request, Response } from 'express';
 
-import { updateProfileSchema } from './user.validator';
-
 import prisma from '@/config/prisma';
 import tokenService from '@/services/token.service';
 import { AuthenticatedRequest } from '@/types/import';
-import { ConflictError, NotFoundError, UnauthorizedError } from '@/utils/errors.utils';
+import { ConflictError, NotFoundError } from '@/utils/errors.utils';
 import sendResponse from '@/utils/sendResponse';
 
 async function updateMe(req: Request, res: Response) {
   const request = req as AuthenticatedRequest;
   const user = request.user;
 
-  if (user.email) {
+  if (request.body.email) {
     const existingUser = await prisma.user.findUnique({
-      where: { email: user.email },
+      where: { email: request.body.email },
     });
 
     if (existingUser && existingUser.id !== user.id) {
@@ -22,11 +20,9 @@ async function updateMe(req: Request, res: Response) {
     }
   }
 
-  const data = updateProfileSchema.parse(req.body);
-
   const updatedUser = await prisma.user.update({
     where: { id: user.id },
-    data,
+    data: request.body,
   });
 
   sendResponse({
@@ -41,10 +37,6 @@ function getProfile(req: Request, res: Response) {
 
   const user = request.user;
 
-  if (!user) {
-    throw new UnauthorizedError('Not authenticated');
-  }
-
   sendResponse({
     res,
     message: 'Current user',
@@ -53,12 +45,34 @@ function getProfile(req: Request, res: Response) {
 }
 
 async function getUsers(req: Request, res: Response) {
-  const users = await prisma.user.findMany();
+  const request = req as AuthenticatedRequest;
+  const query = request.parsedQuery;
+
+  const page = query.page as number;
+  const limit = query.limit as number;
+  const skip = (page - 1) * limit;
+
+  const [data, total] = await Promise.all([
+    prisma.user.findMany({
+      skip,
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+    }),
+    prisma.user.count(),
+  ]);
 
   sendResponse({
     res,
     message: 'All users',
-    data: users,
+    data: {
+      data,
+      metadata: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    },
   });
 }
 
@@ -145,14 +159,34 @@ async function deleteUser(req: Request, res: Response) {
     throw new NotFoundError('User not found');
   }
 
-  await prisma.user.delete({
+  const deletedUser = await prisma.user.delete({
     where: { id: userId },
   });
 
   sendResponse({
     res,
     message: 'User deleted',
+    data: deletedUser,
   });
 }
 
-export { createUser, deleteUser, getProfile, getUser, getUsers, updateMe, updateUser };
+async function getUsersList(req: Request, res: Response) {
+  const users = await prisma.user.findMany({
+    select: {
+      id: true,
+      name: true,
+    },
+  });
+  sendResponse({ res, message: 'Users list', data: users });
+}
+
+export {
+  createUser,
+  deleteUser,
+  getProfile,
+  getUser,
+  getUsers,
+  getUsersList,
+  updateMe,
+  updateUser,
+};

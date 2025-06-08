@@ -1,7 +1,12 @@
 import { z } from 'zod';
 
-const createCategorySchema = z.object({
+const baseCategorySchema = z.object({
   name: z.string().min(2),
+  restaurantId: z.string(),
 });
 
-export { createCategorySchema };
+const createCategorySchema = baseCategorySchema.extend({});
+
+const updateCategorySchema = baseCategorySchema.partial();
+
+export { createCategorySchema, updateCategorySchema };

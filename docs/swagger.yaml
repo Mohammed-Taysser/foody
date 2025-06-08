@@ -4,7 +4,9 @@ info:
   version: 1.0.22
   description: API documentation for the Foody restaurant platform
   contact:
-    email: support@whatsapp-marketing.com
+    name: Mohammed Taysser
+    url: https://github.com/mohammed-taysser
+    email: mohamedtaysser983@gmail.com
 externalDocs:
   description: GitHub Repository
   url: https://github.com/mohammed-taysser/foody
@@ -160,11 +162,48 @@ paths:
                       data:
                         $ref: '#/components/schemas/User'
 
+    patch:
+      tags: [Users]
+      summary: Update current user
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+                role:
+                  type: string
+                  enum: [CUSTOMER, OWNER, ADMIN]
+      responses:
+        200:
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/User'
+
   /users:
     get:
       summary: Get all users
       tags:
         - Users
+      parameters:
+        - $ref: '#/components/parameters/PageParameter'
+        - $ref: '#/components/parameters/LimitParameter'
       responses:
         '200':
           description: List of users
@@ -177,9 +216,14 @@ paths:
                     type: string
                     example: All users
                   data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/User'
+                    type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/User'
+                      metadata:
+                        $ref: '#/components/schemas/PaginationMetadata'
 
     post:
       summary: Create a new user
@@ -225,6 +269,19 @@ paths:
                           properties:
                             data:
                               $ref: '#/components/schemas/User'
+
+  /users/list:
+    get:
+      summary: Get a list of users
+      tags:
+        - Users
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
 
   /users/{userId}:
     get:
@@ -340,34 +397,52 @@ paths:
     get:
       tags: [Restaurants]
       summary: Get all restaurants
+      parameters:
+        - $ref: '#/components/parameters/PageParameter'
+        - $ref: '#/components/parameters/LimitParameter'
       responses:
         200:
           description: List of restaurants
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: All restaurants
+                  data:
+                    type: object
                     properties:
                       data:
                         type: array
                         items:
                           $ref: '#/components/schemas/Restaurant'
+                      metadata:
+                        $ref: '#/components/schemas/PaginationMetadata'
 
-  /restaurants/{id}/categories:
-    get:
-      tags: [Categories]
-      summary: List all categories for a restaurant
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
+    post:
+      tags: [Restaurants]
+      summary: Create a new restaurant
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - address
+              properties:
+                name:
+                  type: string
+                address:
+                  type: string
       responses:
-        200:
-          description: Categories with their items
+        201:
+          description: Restaurant created successfully
           content:
             application/json:
               schema:
@@ -376,22 +451,204 @@ paths:
                   - type: object
                     properties:
                       data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/Category'
+                        $ref: '#/components/schemas/Restaurant'
 
-  /restaurants/{id}/categories/{categoryId}:
+  /restaurants/list:
+    get:
+      tags: [Restaurants]
+      summary: Get a list of restaurants
+      responses:
+        200:
+          description: List of restaurants
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+
+  /restaurants/{restaurantId}:
+    get:
+      tags: [Restaurants]
+      summary: Get a specific restaurant by ID
+      parameters:
+        - in: path
+          name: restaurantId
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Restaurant found
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Restaurant'
+
     patch:
-      tags: [Categories]
-      summary: Update a category
+      tags: [Restaurants]
+      summary: Update a specific restaurant by ID
       security:
         - bearerAuth: []
       parameters:
         - in: path
-          name: id
+          name: restaurantId
           required: true
           schema:
             type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                address:
+                  type: string
+      responses:
+        200:
+          description: Restaurant updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Restaurant'
+
+    delete:
+      tags: [Restaurants]
+      summary: Delete a specific restaurant by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: restaurantId
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Restaurant deleted successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        example: { deleted: true }
+
+  /categories:
+    get:
+      tags: [Categories]
+      summary: Get all categories
+      parameters:
+        - $ref: '#/components/parameters/PageParameter'
+        - $ref: '#/components/parameters/LimitParameter'
+      responses:
+        200:
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: All categories
+                  data:
+                    type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Category'
+                      metadata:
+                        $ref: '#/components/schemas/PaginationMetadata'
+
+    post:
+      tags: [Categories]
+      summary: Create a new category
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - restaurantId
+              properties:
+                name:
+                  type: string
+                restaurantId:
+                  type: string
+      responses:
+        201:
+          description: Category created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Category'
+
+  /categories/list:
+    get:
+      tags: [Categories]
+      summary: Get a list of categories
+      responses:
+        200:
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+
+  /categories/{categoryId}:
+    get:
+      tags: [Categories]
+      summary: Get a specific categories by ID
+      parameters:
+        - in: path
+          name: categoryId
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Category found
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Category'
+
+    patch:
+      tags: [Categories]
+      summary: Update a specific category by ID
+      security:
+        - bearerAuth: []
+      parameters:
         - in: path
           name: categoryId
           required: true
@@ -403,15 +660,14 @@ paths:
           application/json:
             schema:
               type: object
-              required: [name]
               properties:
                 name:
                   type: string
-                  format: string
-                  example: 'Burgers'
+                restaurantId:
+                  type: string
       responses:
         200:
-          description: Category updated
+          description: Category updated successfully
           content:
             application/json:
               schema:
@@ -424,15 +680,10 @@ paths:
 
     delete:
       tags: [Categories]
-      summary: Delete a category
+      summary: Delete a specific category by ID
       security:
         - bearerAuth: []
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
         - in: path
           name: categoryId
           required: true
@@ -440,7 +691,7 @@ paths:
             type: string
       responses:
         200:
-          description: Category deleted
+          description: Category deleted successfully
           content:
             application/json:
               schema:
@@ -452,21 +703,64 @@ paths:
                         type: object
                         example: { deleted: true }
 
-  /restaurants/{id}/menu:
+  /menu-items:
     get:
       tags: [Menu Items]
-      summary: Get all menu items for a restaurant
+      summary: Get all menu
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-        - $ref: '#/components/parameters/PaginationLimit'
-        - $ref: '#/components/parameters/PaginationOffset'
+        - $ref: '#/components/parameters/PageParameter'
+        - $ref: '#/components/parameters/LimitParameter'
       responses:
         200:
-          description: List of menu items
+          description: List of menu
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: All menus
+                  data:
+                    type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/MenuItem'
+                      metadata:
+                        $ref: '#/components/schemas/PaginationMetadata'
+
+    post:
+      tags: [Menu Items]
+      summary: Create a new menu
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - address
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                price:
+                  type: number
+                restaurantId:
+                  type: string
+                categoryId:
+                  type: string
+                available:
+                  type: boolean
+      responses:
+        201:
+          description: Menu created successfully
           content:
             application/json:
               schema:
@@ -475,44 +769,33 @@ paths:
                   - type: object
                     properties:
                       data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/MenuItem'
+                        $ref: '#/components/schemas/Menu'
 
-    post:
+  /menu-items/list:
+    get:
       tags: [Menu Items]
-      summary: Create a menu item for a restaurant
-      security:
-        - bearerAuth: []
+      summary: Get a list of menus
+      responses:
+        200:
+          description: List of menus
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+
+  /menu-items/{menuId}:
+    get:
+      tags: [Menu Items]
+      summary: Get a specific menu by ID
       parameters:
         - in: path
-          name: id
+          name: menuId
           required: true
           schema:
             type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [name, price]
-              properties:
-                name:
-                  type: string
-                description:
-                  type: string
-                price:
-                  type: number
-                  format: float
-                available:
-                  type: boolean
-                categoryId:
-                  type: string
-
       responses:
-        201:
-          description: Menu item created
+        200:
+          description: Menu found
           content:
             application/json:
               schema:
@@ -523,20 +806,14 @@ paths:
                       data:
                         $ref: '#/components/schemas/MenuItem'
 
-  /restaurants/{restaurantId}/menu/{menuItemId}:
     patch:
       tags: [Menu Items]
-      summary: Update a menu item
+      summary: Update a specific menu by ID
       security:
         - bearerAuth: []
       parameters:
         - in: path
-          name: restaurantId
-          required: true
-          schema:
-            type: string
-        - in: path
-          name: menuItemId
+          name: menuId
           required: true
           schema:
             type: string
@@ -549,17 +826,13 @@ paths:
               properties:
                 name:
                   type: string
-                description:
-                  type: string
                 price:
                   type: number
                 available:
                   type: boolean
-                categoryId:
-                  type: string
       responses:
         200:
-          description: Menu item updated
+          description: Menu updated successfully
           content:
             application/json:
               schema:
@@ -572,23 +845,18 @@ paths:
 
     delete:
       tags: [Menu Items]
-      summary: Delete a menu item
+      summary: Delete a specific menu by ID
       security:
         - bearerAuth: []
       parameters:
         - in: path
-          name: restaurantId
-          required: true
-          schema:
-            type: string
-        - in: path
-          name: menuItemId
+          name: menuId
           required: true
           schema:
             type: string
       responses:
         200:
-          description: Menu item deleted
+          description: Menu deleted successfully
           content:
             application/json:
               schema:
@@ -640,6 +908,45 @@ components:
           example:
             - Email is already registered
             - Password must be at least 6 characters
+
+    PaginationMetadata:
+      type: object
+      properties:
+        total:
+          type: integer
+          example: 125
+        page:
+          type: integer
+          example: 2
+        limit:
+          type: integer
+          example: 10
+        totalPages:
+          type: integer
+          example: 13
+
+    ListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          format: boolean
+          example: true
+        message:
+          type: string
+          format: string
+          example: Operation completed successfully
+        data:
+          type: array
+          items:
+            properties:
+              id:
+                type: string
+                format: uuid
+                example: 123e4567-e89b-12d3-a456-426655440000
+              name:
+                type: string
+                example: John Doe
 
     AuthResponse:
       type: object
@@ -785,21 +1092,23 @@ components:
       description: JWT token obtained from authentication endpoint
 
   parameters:
-    PaginationLimit:
+    PageParameter:
+      name: page
       in: query
-      name: limit
+      description: Page number
+      required: false
       schema:
         type: integer
+        default: 1
         minimum: 1
-        maximum: 100
-        default: 10
-      description: Max number of results to return
 
-    PaginationOffset:
+    LimitParameter:
+      name: limit
       in: query
-      name: offset
+      description: Number of items per page
+      required: false
       schema:
         type: integer
-        minimum: 0
-        default: 0
-      description: Number of results to skip
+        default: 10
+        minimum: 1
+        maximum: 500

@@ -5,19 +5,21 @@ import hpp from 'hpp';
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
 
-import { default as CONFIG, default as ennValidation } from '@/config/config';
+import CONFIG from '@/config/config';
 import apiLimiter from '@/middleware/api-rate-limit.middleware';
 import compressionMiddleware from '@/middleware/compression.middleware';
 import errorHandlerMiddleware from '@/middleware/error.middleware';
 import loggerMiddleware from '@/middleware/logger.middleware';
 import authRoutes from '@/modules/auth/auth.route';
+import categoriesRoutes from '@/modules/category/category.route';
+import menuItemsRoutes from '@/modules/menu-items/menu-items.route';
 import restaurantRoutes from '@/modules/restaurant/restaurant.route';
 import userRoutes from '@/modules/user/user.route';
 import { ForbiddenError, NotFoundError } from '@/utils/errors.utils';
 
 const app = express();
 
-if (ennValidation.NODE_ENV !== 'test') {
+if (CONFIG.NODE_ENV !== 'test') {
   app.use(loggerMiddleware);
 }
 
@@ -70,6 +72,8 @@ app.use('/api', apiLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/restaurants', restaurantRoutes);
+app.use('/api/categories', categoriesRoutes);
+app.use('/api/menu-items', menuItemsRoutes);
 
 // 404 Handler
 app.use((_req, _res, next) => {

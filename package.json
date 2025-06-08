@@ -1,6 +1,6 @@
 {
   "name": "foody",
-  "version": "1.0.32",
+  "version": "1.0.33",
   "description": "API documentation for the Foody restaurant platform",
   "main": "dist/server.js",
   "repository": {
@@ -16,6 +16,7 @@
     "lint:fix": "eslint src --ext .ts --fix",
     "lint": "eslint src --ext .ts",
     "prepare": "husky install",
+    "start": "node dist/server.js",
     "seed": "ts-node --transpile-only --require tsconfig-paths/register src/scripts/seed.ts",
     "test": "cross-env NODE_ENV=test jest && echo",
     "test:coverage": "cross-env NODE_ENV=test jest --coverage",

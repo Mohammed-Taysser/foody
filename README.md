@@ -94,3 +94,4 @@ npm run test:watch
 ## Resources
 
 - [Swagger Documentation](https://swagger.io/docs/specification/v3_0/about/)
+- [Swagger Editor](https://editor.swagger.io/)
