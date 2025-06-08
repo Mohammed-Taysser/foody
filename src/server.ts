@@ -6,7 +6,7 @@ import { promptYesNo } from './utils/prompts';
 import { logServerInfo } from './utils/system-info-logs';
 
 import app from '@/app';
-import ennValidation from '@/config/env';
+import ennValidation from '@/config/config';
 
 const startTime = Date.now();
 

@@ -1,6 +1,6 @@
 {
   "name": "foody",
-  "version": "1.0.30",
+  "version": "1.0.33",
   "description": "API documentation for the Foody restaurant platform",
   "main": "dist/server.js",
   "repository": {
@@ -16,12 +16,14 @@
     "lint:fix": "eslint src --ext .ts --fix",
     "lint": "eslint src --ext .ts",
     "prepare": "husky install",
+    "start": "node dist/server.js",
     "seed": "ts-node --transpile-only --require tsconfig-paths/register src/scripts/seed.ts",
     "test": "cross-env NODE_ENV=test jest && echo",
     "test:coverage": "cross-env NODE_ENV=test jest --coverage",
     "postinstall": "prisma generate",
     "prisma:format": "prisma format",
     "prisma:generate": "prisma generate",
+    "prisma:deploy": "prisma migrate deploy",
     "prisma:migrate": "prisma migrate dev",
     "prisma:pull": "prisma db pull",
     "prisma:reset": "prisma migrate reset",
@@ -35,7 +37,7 @@
     "url": "https://mohammed-taysser.github.io/portfolio"
   },
   "license": "ISC",
-  "packageManager": "pnpm@10.11.0",
+  "packageManager": "pnpm@10.11.1",
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
@@ -70,6 +72,7 @@
     "morgan": "^1.10.0",
     "prettier": "^3.5.3",
     "prompts": "^2.4.2",
+    "rimraf": "^6.0.1",
     "supertest": "^7.1.1",
     "ts-jest": "^29.3.4",
     "ts-node": "^10.9.2",

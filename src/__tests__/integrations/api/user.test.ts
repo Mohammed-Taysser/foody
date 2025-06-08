@@ -76,11 +76,42 @@ describe('PATCH /api/users/me', () => {
 
     expect(res.statusCode).toBe(400);
   });
+
+  it('should fail to update if email is already taken', async () => {
+    // Register a second user to create an existing email conflict
+    const secondUserRes = await request(app).post('/api/auth/register').send({
+      name: faker.person.fullName(),
+      email: faker.internet.email(),
+      password: '123456789',
+    });
+
+    const existingEmail = secondUserRes.body.data.user.email;
+
+    // Try to update the first user’s email to the second user’s email
+    const res = await request(app)
+      .patch('/api/users/me')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ email: existingEmail });
+
+    expect(res.statusCode).toBe(409);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toMatch(/email.*already/i);
+  });
 });
 
 describe('GET /users', () => {
   it('should list users', async () => {
     const res = await request(app).get('/api/users');
+
+    expect(res.statusCode).toBe(200);
+    expect(Array.isArray(res.body.data.data)).toBe(true);
+    expect(res.body.data).toHaveProperty('metadata');
+  });
+});
+
+describe('GET /users/list', () => {
+  it('should list users', async () => {
+    const res = await request(app).get('/api/users/list');
 
     expect(res.statusCode).toBe(200);
     expect(Array.isArray(res.body.data)).toBe(true);

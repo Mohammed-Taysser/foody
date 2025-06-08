@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 
-import ennValidation from '@/config/env';
+import ennValidation from '@/config/config';
 
 class TokenService {
   private readonly SECRET = ennValidation.JWT_SECRET;

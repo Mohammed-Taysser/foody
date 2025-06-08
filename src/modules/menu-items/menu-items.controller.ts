@@ -1,26 +1,22 @@
 import { Prisma } from '@prisma/client';
 import { Request, Response } from 'express';
 
-import { createMenuItemSchema } from './menu.validator';
-
 import prisma from '@/config/prisma';
 import { AuthenticatedRequest } from '@/types/import';
-import { ForbiddenError, NotFoundError } from '@/utils/errors.utils';
+import { ConflictError, ForbiddenError, NotFoundError } from '@/utils/errors.utils';
 import sendResponse from '@/utils/sendResponse';
 
 async function addMenuItem(req: Request, res: Response) {
   const request = req as AuthenticatedRequest;
 
-  const restaurantId = request.params.id;
   const user = request.user;
-  const data = createMenuItemSchema.parse(request.body);
 
   const restaurant = await prisma.restaurant.findUnique({
-    where: { id: restaurantId },
+    where: { id: request.body.restaurantId },
   });
 
   if (!restaurant) {
-    throw new NotFoundError('Restaurant not found');
+    throw new ConflictError('Restaurant not found');
   }
 
   if (user.role !== 'ADMIN' && restaurant.ownerId !== user.id) {
@@ -28,10 +24,7 @@ async function addMenuItem(req: Request, res: Response) {
   }
 
   const newItem = await prisma.menuItem.create({
-    data: {
-      ...data,
-      restaurantId,
-    },
+    data: request.body,
   });
 
   sendResponse({
@@ -42,51 +35,95 @@ async function addMenuItem(req: Request, res: Response) {
 }
 
 async function getMenuItems(req: Request, res: Response) {
-  const { id: restaurantId } = req.params;
-  const { page = '1', limit = '10', available } = req.query;
+  const request = req as AuthenticatedRequest;
 
-  const take = Number(limit);
-  const skip = (Number(page) - 1) * take;
+  const query = request.parsedQuery;
 
-  const where: Prisma.MenuItemWhereInput = { restaurantId };
+  const page = query.page as number;
+  const limit = query.limit as number;
+  const skip = (page - 1) * limit;
 
-  if (available !== undefined) {
-    where.available = available === 'true';
+  const available = query.available as string;
+
+  const where: Prisma.MenuItemWhereInput = {};
+
+  if (query.restaurantId) {
+    where.restaurantId = query.restaurantId as string;
   }
 
-  const items = await prisma.menuItem.findMany({
-    where,
-    skip,
-    take,
-    orderBy: { createdAt: 'desc' },
-  });
+  if (available !== undefined) {
+    where.available = Boolean(available);
+  }
 
-  const total = await prisma.menuItem.count({ where });
+  const [data, total] = await Promise.all([
+    prisma.menuItem.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+    }),
+    prisma.menuItem.count({ where }),
+  ]);
 
   sendResponse({
     res,
     message: 'Paginated menu items',
     data: {
-      data: items,
+      data,
       metadata: {
         total,
-        page: Number(page),
-        limit: take,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
       },
     },
   });
+}
+
+async function getMenuItemsList(req: Request, res: Response) {
+  const data = await prisma.menuItem.findMany({
+    select: {
+      id: true,
+      name: true,
+    },
+  });
+
+  sendResponse({ res, message: 'Menu items list', data });
+}
+
+async function getMenuItemById(req: Request, res: Response) {
+  const request = req as AuthenticatedRequest;
+
+  const itemId = request.params.itemId;
+
+  const item = await prisma.menuItem.findUnique({
+    where: { id: itemId },
+  });
+
+  if (!item) throw new NotFoundError('Menu item not found');
+
+  sendResponse({ res, message: 'Menu item found', data: item });
 }
 
 async function updateMenuItem(req: Request, res: Response) {
   const request = req as AuthenticatedRequest;
 
   const itemId = request.params.itemId;
-  const restaurantId = request.params.id;
   const user = request.user;
   const data = request.body;
 
+  if (request.body.restaurantId) {
+    const restaurant = await prisma.restaurant.findUnique({
+      where: { id: request.body.restaurantId },
+    });
+
+    if (!restaurant) {
+      throw new ConflictError('Restaurant not found');
+    }
+  }
+
   const item = await prisma.menuItem.findUnique({
-    where: { id: itemId, restaurantId },
+    where: { id: itemId, restaurantId: request.body.restaurantId },
     include: { restaurant: true },
   });
 
@@ -108,11 +145,10 @@ async function deleteMenuItem(req: Request, res: Response) {
   const request = req as AuthenticatedRequest;
 
   const itemId = request.params.itemId;
-  const restaurantId = request.params.id;
   const user = request.user;
 
   const item = await prisma.menuItem.findUnique({
-    where: { id: itemId, restaurantId },
+    where: { id: itemId },
     include: { restaurant: true },
   });
 
@@ -122,11 +158,18 @@ async function deleteMenuItem(req: Request, res: Response) {
     throw new ForbiddenError('You do not have permission to delete this item');
   }
 
-  await prisma.menuItem.delete({
+  const deletedMenu = await prisma.menuItem.delete({
     where: { id: itemId },
   });
 
-  sendResponse({ res, message: 'Menu item deleted' });
+  sendResponse({ res, message: 'Menu item deleted', data: deletedMenu });
 }
 
-export { addMenuItem, deleteMenuItem, getMenuItems, updateMenuItem };
+export {
+  addMenuItem,
+  deleteMenuItem,
+  getMenuItemById,
+  getMenuItems,
+  getMenuItemsList,
+  updateMenuItem,
+};

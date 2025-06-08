@@ -1,10 +1,14 @@
 import { z } from 'zod';
 
-const createRestaurantSchema = z.object({
+const baseRestaurantSchema = z.object({
   name: z.string().min(2),
-  description: z.string().optional(),
+  description: z.string().default(''),
   location: z.string().min(2),
   ownerId: z.string(),
 });
 
-export { createRestaurantSchema };
+const createRestaurantSchema = baseRestaurantSchema.extend({});
+
+const updateRestaurantSchema = baseRestaurantSchema.partial();
+
+export { createRestaurantSchema, updateRestaurantSchema };

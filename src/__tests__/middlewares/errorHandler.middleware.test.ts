@@ -4,7 +4,7 @@ import errorHandlerMiddleware from '@/middleware/error.middleware';
 import { ErrorMiddlewareDetails } from '@/types/error';
 import { NotFoundError } from '@/utils/errors.utils';
 
-jest.mock('@/config/env', () => ({
+jest.mock('@/config/config', () => ({
   __esModule: true,
   default: { NODE_ENV: 'test' }, // default to test env
 }));
@@ -60,7 +60,7 @@ describe('Error middleware', () => {
   it('should include stack trace in development mode', async () => {
     // Force development env
     jest.resetModules(); // Clear cached modules to reload env
-    jest.doMock('@/config/env', () => ({
+    jest.doMock('@/config/config', () => ({
       __esModule: true,
       default: { NODE_ENV: 'development' },
     }));

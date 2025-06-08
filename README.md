@@ -1,5 +1,9 @@
 # Foody
 
+[prettier]: https://github.com/prettier/prettier
+
+[![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat&logo=prettier)][prettier] [![codecov](https://codecov.io/gh/Mohammed-Taysser/foody/graph/badge.svg?token=H8K42DI9OZ)](https://codecov.io/gh/Mohammed-Taysser/foody) [![CI](https://github.com/Mohammed-Taysser/foody/actions/workflows/ci.yml/badge.svg)](https://github.com/Mohammed-Taysser/foody/actions/workflows/ci.yml) [![Build](https://github.com/Mohammed-Taysser/foody/actions/workflows/build.yml/badge.svg)](https://github.com/Mohammed-Taysser/foody/actions/workflows/build.yml)
+
 ## Overview
 
 ## Key Features
@@ -90,3 +94,4 @@ npm run test:watch
 ## Resources
 
 - [Swagger Documentation](https://swagger.io/docs/specification/v3_0/about/)
+- [Swagger Editor](https://editor.swagger.io/)

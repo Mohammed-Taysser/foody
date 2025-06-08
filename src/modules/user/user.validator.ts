@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 const baseUserSchema = z.object({
-  name: z.string().min(2),
+  name: z.string().min(5),
   email: z.string().email(),
 });
 
@@ -12,6 +12,6 @@ const createUserSchema = baseUserSchema.extend({
 });
 
 // updateProfileSchema makes all fields optional
-const updateProfileSchema = baseUserSchema.partial();
+const updateUserSchema = baseUserSchema.partial();
 
-export { createUserSchema, updateProfileSchema };
+export { createUserSchema, updateUserSchema };
