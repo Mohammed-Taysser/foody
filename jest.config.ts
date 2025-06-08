@@ -9,7 +9,7 @@ const config: Config = {
   },
   clearMocks: true,
   verbose: true,
-  setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
+  setupFilesAfterEnv: ['<rootDir>/src/__tests__/jest.setup.ts'],
   coverageThreshold: {
     global: {
       branches: 70,

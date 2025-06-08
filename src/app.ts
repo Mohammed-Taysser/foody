@@ -5,7 +5,7 @@ import hpp from 'hpp';
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
 
-import { default as CONFIG, default as ennValidation } from '@/config/env';
+import { default as CONFIG, default as ennValidation } from '@/config/config';
 import apiLimiter from '@/middleware/api-rate-limit.middleware';
 import compressionMiddleware from '@/middleware/compression.middleware';
 import errorHandlerMiddleware from '@/middleware/error.middleware';

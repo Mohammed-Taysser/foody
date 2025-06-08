@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response } from 'express';
 
-import CONFIG from '@/config/env';
-import { BaseError } from '@/utils/errors.utils';
+import CONFIG from '@/config/config';
 import { ErrorMiddlewareResponse } from '@/types/error';
+import { BaseError } from '@/utils/errors.utils';
 
 function errorHandlerMiddleware(
   err: Error,

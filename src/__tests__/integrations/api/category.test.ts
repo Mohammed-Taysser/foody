@@ -68,6 +68,17 @@ describe('Category API', () => {
 
       expect(res.statusCode).toBe(403);
     });
+
+    it("should't create category if restaurant does not exist", async () => {
+      const unExistingId = faker.string.uuid();
+
+      const res = await request(app)
+        .post(`/api/restaurants/${unExistingId}/categories`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({ name: 'Unauthorized' });
+
+      expect(res.statusCode).toBe(404);
+    });
   });
 
   describe('GET /api/restaurants/:id/categories', () => {
