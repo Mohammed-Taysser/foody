@@ -12,21 +12,28 @@ import { createCategorySchema, updateCategorySchema } from './category.validator
 
 import authenticate from '@/middleware/authenticate.middleware';
 import authorize from '@/middleware/authorize.middleware';
+import requirePermission from '@/middleware/require-permission.middleware';
 import ZodValidate from '@/middleware/zod-validate.middleware';
 import basePaginationSchema from '@/validations/pagination.validation';
 
 const router = Router();
 
-router.get('/', ZodValidate(basePaginationSchema, 'query'), listCategories);
+router.get(
+  '/',
+  requirePermission(['view:category'], true),
+  ZodValidate(basePaginationSchema, 'query'),
+  listCategories
+);
 
-router.get('/list', getCategoriesList);
+router.get('/list', requirePermission(['view:category'], true), getCategoriesList);
 
-router.get('/:categoryId', getCategoryById);
+router.get('/:categoryId', requirePermission(['view:category'], true), getCategoryById);
 
 router.post(
   '/',
   authenticate,
   authorize('OWNER', 'ADMIN'),
+  requirePermission(['add:category']),
   ZodValidate(createCategorySchema),
   createCategory
 );
@@ -35,10 +42,17 @@ router.patch(
   '/:categoryId',
   authenticate,
   authorize('OWNER', 'ADMIN'),
+  requirePermission(['update:category']),
   ZodValidate(updateCategorySchema),
   updateCategory
 );
 
-router.delete('/:categoryId', authenticate, authorize('OWNER', 'ADMIN'), deleteCategory);
+router.delete(
+  '/:categoryId',
+  authenticate,
+  authorize('OWNER', 'ADMIN'),
+  requirePermission(['delete:category']),
+  deleteCategory
+);
 
 export default router;

@@ -104,6 +104,9 @@ jobs:
       - name: Run database migrations
         run: pnpm run prisma:deploy
 
+      - name: Seed database
+        run: pnpm run seed
+
       - name: Run tests with coverage
         run: pnpm run test:coverage
 

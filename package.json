@@ -1,6 +1,6 @@
 {
   "name": "foody",
-  "version": "1.0.33",
+  "version": "1.0.34",
   "description": "API documentation for the Foody restaurant platform",
   "main": "dist/server.js",
   "repository": {
@@ -71,6 +71,7 @@
     "lint-staged": "^16.0.0",
     "morgan": "^1.10.0",
     "prettier": "^3.5.3",
+    "prisma": "^6.9.0",
     "prompts": "^2.4.2",
     "rimraf": "^6.0.1",
     "supertest": "^7.1.1",
@@ -83,7 +84,7 @@
     "winston": "^3.17.0"
   },
   "dependencies": {
-    "@prisma/client": "^6.8.2",
+    "@prisma/client": "^6.9.0",
     "bcrypt": "^6.0.0",
     "compression": "^1.8.0",
     "cors": "^2.8.5",
@@ -95,7 +96,6 @@
     "helmet": "^8.1.0",
     "hpp": "^0.2.3",
     "jsonwebtoken": "^9.0.2",
-    "prisma": "^6.8.2",
     "swagger-ui-express": "^5.0.1",
     "winston-daily-rotate-file": "^5.0.0",
     "yamljs": "^0.3.0",

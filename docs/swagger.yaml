@@ -23,6 +23,8 @@ servers:
 tags:
   - name: Auth
     description: Authentication related endpoints
+  - name: Permissions
+    description: Permission management
   - name: Users
     description: User-related operations
   - name: Restaurants
@@ -142,6 +144,285 @@ paths:
                             type: string
                           refreshToken:
                             type: string
+
+  /permissions:
+    get:
+      tags: [Permissions]
+      summary: Get all permissions
+      responses:
+        200:
+          description: List of permissions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: All permissions
+                  data:
+                    type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Permission'
+                      metadata:
+                        $ref: '#/components/schemas/PaginationMetadata'
+
+    post:
+      tags: [Permissions]
+      summary: Create a new permission
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+      responses:
+        201:
+          description: Permission created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Permission'
+
+  /permissions/list:
+    get:
+      tags: [Permissions]
+      summary: Get a list of permissions
+      responses:
+        200:
+          description: List of permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+
+  /permissions/{permissionId}:
+    get:
+      tags: [Permissions]
+      summary: Get a permission by ID
+      parameters:
+        - name: permissionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Permission found
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Permission'
+
+    patch:
+      tags: [Permissions]
+      summary: Update a permission by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: permissionId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        200:
+          description: Permission updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Permission'
+
+    delete:
+      tags: [Permissions]
+      summary: Delete a permission by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: permissionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Permission deleted successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Permission'
+
+  /permissions/permission-groups:
+    get:
+      tags: [Permissions]
+      summary: Get all permission groups
+      responses:
+        200:
+          description: List of permission groups
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+
+    post:
+      tags: [Permissions]
+      summary: Create a new permission group
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+      responses:
+        201:
+          description: Permission group created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/PermissionGroup'
+
+  /permissions/permission-groups/list:
+    get:
+      tags: [Permissions]
+      summary: Get a list of permission groups
+      responses:
+        200:
+          description: List of permission groups
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+
+  /permissions/permission-groups/{permissionGroupId}:
+    get:
+      tags: [Permissions]
+      summary: Get a permission group by ID
+      parameters:
+        - name: permissionGroupId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Permission group found
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/PermissionGroup'
+
+    patch:
+      tags: [Permissions]
+      summary: Update a permission group by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: permissionGroupId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        200:
+          description: Permission group updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/PermissionGroup'
+
+    delete:
+      tags: [Permissions]
+      summary: Delete a permission group by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: permissionGroupId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Permission group deleted successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/PermissionGroup'
 
   /users/me:
     get:
@@ -1081,8 +1362,54 @@ components:
           type: string
           format: date-time
           example: 2022-01-01T00:00:00.000Z
-      required:
-        - name
+
+    Permission:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426655440000
+        key:
+          type: string
+          format: string
+          example: add_item
+        description:
+          type: string
+          format: string
+          example: Add a new item
+        createdAt:
+          type: string
+          format: date-time
+          example: 2022-01-01T00:00:00.000Z
+        updatedAt:
+          type: string
+          format: date-time
+          example: 2022-01-01T00:00:00.000Z
+
+    PermissionGroup:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426655440000
+        name:
+          type: string
+          format: string
+          example: Manager
+        description:
+          type: string
+          format: string
+          example: Manager description
+        createdAt:
+          type: string
+          format: date-time
+          example: 2022-01-01T00:00:00.000Z
+        updatedAt:
+          type: string
+          format: date-time
+          example: 2022-01-01T00:00:00.000Z
 
   securitySchemes:
     bearerAuth:

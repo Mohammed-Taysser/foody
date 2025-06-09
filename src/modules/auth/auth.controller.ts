@@ -1,8 +1,11 @@
+import { Role } from '@prisma/client';
 import { Request, Response } from 'express';
+
+import { DEFAULT_ROLE_PERMISSIONS } from './auth.constant';
 
 import prisma from '@/config/prisma';
 import tokenService from '@/services/token.service';
-import { ConflictError, UnauthorizedError } from '@/utils/errors.utils';
+import { BadRequestError, ConflictError, UnauthorizedError } from '@/utils/errors.utils';
 import sendResponse from '@/utils/sendResponse';
 
 async function register(req: Request, res: Response) {
@@ -18,12 +21,20 @@ async function register(req: Request, res: Response) {
 
   const hashed = await tokenService.hash(data.password);
 
+  const config = DEFAULT_ROLE_PERMISSIONS[data.role as Role];
+
   const newUser = await prisma.user.create({
     data: {
       name: data.name,
       email: data.email,
       password: hashed,
       role: data.role,
+      permissionGroups: {
+        connect: config.groups.map((name) => ({ name })),
+      },
+      permissions: {
+        connect: config.permissions.map((id) => ({ key: id })),
+      },
     },
   });
 
@@ -51,13 +62,13 @@ async function login(req: Request, res: Response) {
   });
 
   if (!user) {
-    throw new UnauthorizedError('Invalid credentials');
+    throw new BadRequestError('Invalid credentials');
   }
 
   const valid = await tokenService.compare(data.password, user.password);
 
   if (!valid) {
-    throw new UnauthorizedError('Invalid credentials');
+    throw new BadRequestError('Invalid credentials');
   }
 
   const payload = { id: user.id, email: user.email, role: user.role };

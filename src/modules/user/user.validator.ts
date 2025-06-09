@@ -8,7 +8,7 @@ const baseUserSchema = z.object({
 // createUserSchema includes password and optional role
 const createUserSchema = baseUserSchema.extend({
   password: z.string().min(6),
-  role: z.enum(['ADMIN', 'OWNER', 'CUSTOMER']).optional(),
+  role: z.enum(['ADMIN', 'OWNER', 'CUSTOMER']).default('CUSTOMER'),
 });
 
 // updateProfileSchema makes all fields optional

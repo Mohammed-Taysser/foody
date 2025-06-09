@@ -24,18 +24,6 @@ describe('Menu Items API', () => {
     ownerToken = ownerRes.body.data.accessToken;
     ownerId = ownerRes.body.data.user.id;
 
-    // Create a restaurant
-    const restaurantRes = await request(app)
-      .post('/api/restaurants')
-      .set('Authorization', `Bearer ${ownerToken}`)
-      .send({
-        name: faker.company.name(),
-        location: faker.location.city(),
-        ownerId,
-      });
-
-    restaurantId = restaurantRes.body.data.id;
-
     // Register an ADMIN
     const adminRes = await request(app).post('/api/auth/register').send({
       name: faker.person.fullName(),
@@ -44,6 +32,18 @@ describe('Menu Items API', () => {
       role: 'ADMIN',
     });
     adminToken = adminRes.body.data.accessToken;
+
+    // Create a restaurant
+    const restaurantRes = await request(app)
+      .post('/api/restaurants')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        name: faker.company.name(),
+        location: faker.location.city(),
+        ownerId,
+      });
+
+    restaurantId = restaurantRes.body.data.id;
 
     // Create a category
     const categoryRes = await request(app)

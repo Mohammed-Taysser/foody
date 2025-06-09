@@ -8,55 +8,115 @@ datasource db {
 }
 
 model User {
-  id          String       @id @default(cuid())
-  name        String
-  email       String       @unique
-  password    String
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  role        Role         @default(CUSTOMER)
-  restaurants Restaurant[]
+  id       String @id @default(cuid())
+  name     String
+  email    String @unique
+  password String
+  role     Role   @default(CUSTOMER)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  restaurants         Restaurant[]
+  permissionGroups    PermissionGroup[]     @relation("UserGroups")
+  permissions         Permission[]          @relation("UserPermissions")
+  UserPermissionGroup UserPermissionGroup[]
 }
 
 model Restaurant {
-  id          String     @id @default(cuid())
+  id          String  @id @default(cuid())
   name        String
   description String?
   location    String
   ownerId     String
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  Category    Category[]
-  MenuItem    MenuItem[]
-  owner       User       @relation(fields: [ownerId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  Category Category[]
+  MenuItem MenuItem[]
+  owner    User       @relation(fields: [ownerId], references: [id])
 }
 
 model MenuItem {
-  id           String     @id @default(cuid())
+  id           String  @id @default(cuid())
   name         String
   description  String?
   price        Float
-  available    Boolean    @default(true)
+  available    Boolean @default(true)
   restaurantId String
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
   categoryId   String?
-  category     Category?  @relation(fields: [categoryId], references: [id])
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  category   Category?  @relation(fields: [categoryId], references: [id])
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
 }
 
 model Category {
-  id           String     @id @default(cuid())
+  id           String @id @default(cuid())
   name         String
   restaurantId String
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
-  items        MenuItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  items      MenuItem[]
 }
 
 enum Role {
   ADMIN
   OWNER
   CUSTOMER
+}
+
+model Permission {
+  id          String  @id @default(cuid())
+  key         String  @unique
+  description String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  groups            PermissionGroup[]   @relation("GroupPermissions")
+  users             User[]              @relation("UserPermissions")
+  PermissionInGroup PermissionInGroup[]
+}
+
+model PermissionGroup {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  description String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  permissions         Permission[]          @relation("GroupPermissions")
+  users               User[]                @relation("UserGroups")
+  PermissionInGroup   PermissionInGroup[]
+  UserPermissionGroup UserPermissionGroup[]
+}
+
+// Pivot table for PermissionGroup <-> Permission (many-to-many)
+model PermissionInGroup {
+  id                String          @id @default(cuid())
+  permissionGroup   PermissionGroup @relation(fields: [permissionGroupId], references: [id])
+  permissionGroupId String
+  permission        Permission      @relation(fields: [permissionId], references: [id])
+  permissionId      String
+
+  @@unique([permissionGroupId, permissionId])
+}
+
+// Pivot table for User <-> PermissionGroup (many-to-many)
+model UserPermissionGroup {
+  id                String          @id @default(cuid())
+  user              User            @relation(fields: [userId], references: [id])
+  userId            String
+  permissionGroup   PermissionGroup @relation(fields: [permissionGroupId], references: [id])
+  permissionGroupId String
+
+  @@unique([userId, permissionGroupId])
 }

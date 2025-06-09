@@ -25,9 +25,11 @@ async function authenticateMiddleware(req: Request, _res: Response, next: NextFu
     throw new UnauthorizedError('Invalid token');
   }
 
-  const user = await prisma.user.findFirst({
-    where: {
-      id: decoded.id,
+  const user = await prisma.user.findUnique({
+    where: { id: decoded.id },
+    include: {
+      permissions: true,
+      permissionGroups: { include: { permissions: true } },
     },
   });
 

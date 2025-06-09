@@ -13,6 +13,7 @@ import loggerMiddleware from '@/middleware/logger.middleware';
 import authRoutes from '@/modules/auth/auth.route';
 import categoriesRoutes from '@/modules/category/category.route';
 import menuItemsRoutes from '@/modules/menu-items/menu-items.route';
+import permissionRoutes from '@/modules/permission/permission.route';
 import restaurantRoutes from '@/modules/restaurant/restaurant.route';
 import userRoutes from '@/modules/user/user.route';
 import { ForbiddenError, NotFoundError } from '@/utils/errors.utils';
@@ -70,6 +71,7 @@ app.use('/api', apiLimiter);
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/permissions', permissionRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/restaurants', restaurantRoutes);
 app.use('/api/categories', categoriesRoutes);

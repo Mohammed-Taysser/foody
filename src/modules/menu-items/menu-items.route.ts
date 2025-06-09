@@ -16,20 +16,27 @@ import {
 
 import authenticate from '@/middleware/authenticate.middleware';
 import authorize from '@/middleware/authorize.middleware';
+import requirePermission from '@/middleware/require-permission.middleware';
 import ZodValidate from '@/middleware/zod-validate.middleware';
 
 const router = Router();
 
-router.get('/', ZodValidate(menuItemQuerySchema, 'query'), getMenuItems);
+router.get(
+  '/',
+  ZodValidate(menuItemQuerySchema, 'query'),
+  requirePermission(['view:menuItem'], true),
+  getMenuItems
+);
 
-router.get('/list', getMenuItemsList);
+router.get('/list', requirePermission(['view:menuItem'], true), getMenuItemsList);
 
-router.get('/:itemId', getMenuItemById);
+router.get('/:itemId', requirePermission(['view:menuItem'], true), getMenuItemById);
 
 router.post(
   '/',
   authenticate,
   authorize('OWNER', 'ADMIN'),
+  requirePermission(['add:menuItem']),
   ZodValidate(createMenuItemSchema),
   addMenuItem
 );
@@ -38,10 +45,17 @@ router.patch(
   '/:itemId',
   authenticate,
   authorize('OWNER', 'ADMIN'),
+  requirePermission(['update:menuItem']),
   ZodValidate(updateMenuItemSchema),
   updateMenuItem
 );
 
-router.delete('/:itemId', authenticate, authorize('OWNER', 'ADMIN'), deleteMenuItem);
+router.delete(
+  '/:itemId',
+  authenticate,
+  authorize('OWNER', 'ADMIN'),
+  requirePermission(['delete:menuItem']),
+  deleteMenuItem
+);
 
 export default router;
