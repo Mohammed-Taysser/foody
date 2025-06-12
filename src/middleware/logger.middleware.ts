@@ -1,9 +1,9 @@
 import morgan from 'morgan';
 
-import LOGGER from '@/services/log.service';
+import WINSTON_LOGGER from '@/services/winston-log.service';
 
 const stream = {
-  write: (message: string) => LOGGER.http(message.trim()),
+  write: (message: string) => WINSTON_LOGGER.http(message.trim()),
 };
 
 const loggerMiddleware = [morgan('dev'), morgan('combined', { stream })];

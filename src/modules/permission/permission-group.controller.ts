@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 
 import prisma from '@/config/prisma';
+import DATABASE_LOGGER from '@/services/database-log.service';
 import { AuthenticatedRequest } from '@/types/import';
 import { NotFoundError } from '@/utils/errors.utils';
 import sendResponse from '@/utils/sendResponse';
@@ -65,6 +66,8 @@ async function getPermissionGroupById(req: Request, res: Response) {
 }
 
 async function createPermissionGroup(req: Request, res: Response) {
+  const request = req as AuthenticatedRequest;
+
   const existingGroup = await prisma.permissionGroup.findUnique({
     where: { name: req.body.name },
   });
@@ -77,6 +80,16 @@ async function createPermissionGroup(req: Request, res: Response) {
     data: req.body,
   });
 
+  DATABASE_LOGGER.log({
+    request: request,
+    actorId: request.user.id,
+    actorType: 'USER',
+    action: 'CREATE',
+    resource: 'PERMISSION_GROUP',
+    resourceId: permission.id,
+    metadata: { data: req.body },
+  });
+
   sendResponse({
     res,
     message: 'Permission group created',
@@ -86,6 +99,8 @@ async function createPermissionGroup(req: Request, res: Response) {
 }
 
 async function updatePermissionGroup(req: Request, res: Response) {
+  const request = req as AuthenticatedRequest;
+
   const { permissionGroupId } = req.params;
   const { name, description } = req.body;
 
@@ -98,6 +113,16 @@ async function updatePermissionGroup(req: Request, res: Response) {
     throw new NotFoundError('Permission group not found');
   }
 
+  DATABASE_LOGGER.log({
+    request: request,
+    actorId: request.user.id,
+    actorType: 'USER',
+    action: 'UPDATE',
+    resource: 'PERMISSION_GROUP',
+    resourceId: permission.id,
+    metadata: { permission },
+  });
+
   sendResponse({
     res,
     message: 'Permission group updated',
@@ -106,6 +131,8 @@ async function updatePermissionGroup(req: Request, res: Response) {
 }
 
 async function deletePermissionGroup(req: Request, res: Response) {
+  const request = req as AuthenticatedRequest;
+
   const { permissionGroupId } = req.params;
 
   const permission = await prisma.permissionGroup.findUnique({
@@ -120,6 +147,16 @@ async function deletePermissionGroup(req: Request, res: Response) {
     where: { id: permissionGroupId },
   });
 
+  DATABASE_LOGGER.log({
+    request: request,
+    actorId: request.user.id,
+    actorType: 'USER',
+    action: 'DELETE',
+    resource: 'PERMISSION_GROUP',
+    resourceId: permission.id,
+    metadata: { deletedGroupPermission },
+  });
+
   sendResponse({
     res,
     message: 'Permission group deleted',
@@ -130,8 +167,8 @@ async function deletePermissionGroup(req: Request, res: Response) {
 export {
   createPermissionGroup,
   deletePermissionGroup,
+  getPermissionGroupById,
   getPermissionGroupList,
   listPermissionGroups,
   updatePermissionGroup,
-  getPermissionGroupById,
 };

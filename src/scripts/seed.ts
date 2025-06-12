@@ -4,7 +4,11 @@ import chalk from 'chalk';
 import tokenService from '../services/token.service';
 
 import prisma from '@/config/prisma';
-import { PERMISSION_GROUPS, PERMISSION_IDS } from '@/modules/auth/auth.constant';
+import {
+  DEFAULT_ROLE_PERMISSIONS,
+  PERMISSION_GROUPS,
+  PERMISSION_IDS,
+} from '@/modules/auth/auth.constant';
 
 async function seedDummyData() {
   console.log(chalk.blue('\n🌱 Seeding data...\n'));
@@ -49,28 +53,43 @@ async function seedDummyData() {
   });
 
   // Seed users
+  const adminConfig = DEFAULT_ROLE_PERMISSIONS['ADMIN'];
   const admin = await prisma.user.create({
     data: {
       name: 'Admin User',
       email: 'admin@demo.com',
       password: hashedPassword,
       role: 'ADMIN',
+      permissionGroups: {
+        connect: adminConfig.groups.map((name) => ({ name })),
+      },
+      permissions: {
+        connect: adminConfig.permissions.map((id) => ({ key: id })),
+      },
     },
   });
 
   console.log(chalk.green(`Admin user created:`), chalk.whiteBright(admin.email));
 
   const owners = await Promise.all(
-    Array.from({ length: 3 }).map(() =>
-      prisma.user.create({
+    Array.from({ length: 3 }).map(() => {
+      const ownerConfig = DEFAULT_ROLE_PERMISSIONS['OWNER'];
+
+      return prisma.user.create({
         data: {
           name: faker.person.fullName(),
           email: faker.internet.email(),
           password: hashedPassword,
           role: 'OWNER',
+          permissionGroups: {
+            connect: ownerConfig.groups.map((name) => ({ name })),
+          },
+          permissions: {
+            connect: ownerConfig.permissions.map((id) => ({ key: id })),
+          },
         },
-      })
-    )
+      });
+    })
   );
 
   console.log(`\n${owners.length} owners created`);

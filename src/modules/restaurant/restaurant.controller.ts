@@ -4,6 +4,7 @@ import prisma from '@/config/prisma';
 import { AuthenticatedRequest } from '@/types/import';
 import { BadRequestError, NotFoundError } from '@/utils/errors.utils';
 import sendResponse from '@/utils/sendResponse';
+import DATABASE_LOGGER from '@/services/database-log.service';
 
 async function createRestaurant(req: Request, res: Response) {
   const data = req.body;
@@ -40,6 +41,15 @@ async function createRestaurant(req: Request, res: Response) {
         },
       },
     },
+  });
+
+  DATABASE_LOGGER.log({
+    request: req,
+    actorId: owner.id,
+    actorType: 'USER',
+    action: 'CREATE',
+    resource: 'RESTAURANT',
+    resourceId: newRestaurant.id,
   });
 
   sendResponse({
@@ -123,6 +133,16 @@ const updateRestaurant = async (req: Request, res: Response) => {
     data,
   });
 
+  DATABASE_LOGGER.log({
+    request: req,
+    actorId: restaurant.ownerId,
+    actorType: 'USER',
+    action: 'UPDATE',
+    resource: 'RESTAURANT',
+    resourceId: restaurant.id,
+    metadata: { data },
+  });
+
   sendResponse({
     res,
     message: 'Restaurant updated',
@@ -131,6 +151,7 @@ const updateRestaurant = async (req: Request, res: Response) => {
 };
 
 const deleteRestaurant = async (req: Request, res: Response) => {
+  const request = req as AuthenticatedRequest;
   const restaurantId = req.params.restaurantId;
 
   const restaurant = await prisma.restaurant.findUnique({
@@ -143,6 +164,16 @@ const deleteRestaurant = async (req: Request, res: Response) => {
 
   const deletedRestaurant = await prisma.restaurant.delete({
     where: { id: restaurantId },
+  });
+
+  DATABASE_LOGGER.log({
+    request: req,
+    actorId: request.user.id,
+    actorType: 'USER',
+    action: 'DELETE',
+    resource: 'RESTAURANT',
+    resourceId: restaurant.id,
+    metadata: { deletedRestaurant },
   });
 
   sendResponse({ res, message: 'Restaurant deleted', data: deletedRestaurant });

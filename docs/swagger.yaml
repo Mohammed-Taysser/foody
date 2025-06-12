@@ -477,6 +477,32 @@ paths:
                       data:
                         $ref: '#/components/schemas/User'
 
+  /users/me/permissions:
+    get:
+      tags: [Users]
+      summary: Get current user permissions
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Current user permissions
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          properties:
+                            action:
+                              type: enum
+                              enum: [add, view, update, delete]
+                            module:
+                              type: string
+
   /users:
     get:
       summary: Get all users

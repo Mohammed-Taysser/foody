@@ -1,4 +1,4 @@
-import { User } from '@prisma/client';
+import { ActionType, ActorType, Prisma, ResourceType, User } from '@prisma/client';
 import { Request } from 'express';
 
 interface AuthenticatedRequest extends Request {
@@ -17,4 +17,24 @@ interface AuthenticatedRequest extends Request {
   parsedQuery: Record<string, string | number>;
 }
 
-export { AuthenticatedRequest };
+interface BaseLogParams {
+  request: Request;
+  actorId: string;
+  actorType: ActorType;
+  resource: ResourceType;
+  resourceId: string;
+  metadata?: Prisma.InputJsonObject;
+}
+
+interface AuditLogParams extends BaseLogParams {
+  action: ActionType;
+  actorType: ActorType;
+  oldData?: Prisma.InputJsonObject;
+  newData?: Prisma.InputJsonObject;
+}
+
+interface ErrorLogParams extends BaseLogParams {
+  metadata: Prisma.InputJsonObject;
+}
+
+export { AuthenticatedRequest, AuditLogParams, ErrorLogParams };

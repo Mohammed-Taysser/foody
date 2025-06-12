@@ -4,6 +4,7 @@ import { Request, Response } from 'express';
 import { DEFAULT_ROLE_PERMISSIONS } from '../auth/auth.constant';
 
 import prisma from '@/config/prisma';
+import DATABASE_LOGGER from '@/services/database-log.service';
 import tokenService from '@/services/token.service';
 import { AuthenticatedRequest } from '@/types/import';
 import { ConflictError, NotFoundError } from '@/utils/errors.utils';
@@ -28,6 +29,23 @@ async function updateMe(req: Request, res: Response) {
     data: request.body,
   });
 
+  const oldUserData = {
+    name: user.name,
+    email: user.email,
+    role: user.role,
+  };
+
+  DATABASE_LOGGER.log({
+    actorId: user.id,
+    action: 'UPDATE',
+    actorType: 'USER',
+    resource: 'USER',
+    resourceId: user.id,
+    oldData: oldUserData,
+    newData: updatedUser,
+    request,
+  });
+
   sendResponse({
     res,
     message: 'User profile updated',
@@ -44,6 +62,27 @@ function getProfile(req: Request, res: Response) {
     res,
     message: 'Current user',
     data: user,
+  });
+}
+
+async function getUserPermission(req: Request, res: Response) {
+  const request = req as AuthenticatedRequest;
+
+  const user = request.user;
+
+  const effectivePermissions = new Set([
+    ...user.permissions.map((p) => p.key),
+    ...user.permissionGroups.flatMap((g) => g.permissions.map((p) => p.key)),
+  ]);
+
+  const serializedPermissions = Array.from(effectivePermissions)
+    .map((permission) => permission.split(':'))
+    .map(([action, module]) => ({ action, module }));
+
+  sendResponse({
+    res,
+    message: 'User permissions',
+    data: serializedPermissions,
   });
 }
 
@@ -127,6 +166,16 @@ async function createUser(req: Request, res: Response) {
     },
   });
 
+  DATABASE_LOGGER.log({
+    request: req,
+    actorId: newUser.id,
+    actorType: 'USER',
+    action: 'CREATE',
+    resource: 'USER',
+    resourceId: newUser.id,
+    metadata: { data },
+  });
+
   sendResponse({
     res,
     message: 'User created',
@@ -152,6 +201,16 @@ async function updateUser(req: Request, res: Response) {
     data,
   });
 
+  DATABASE_LOGGER.log({
+    request: req,
+    actorId: user.id,
+    actorType: 'USER',
+    action: 'UPDATE',
+    resource: 'USER',
+    resourceId: user.id,
+    metadata: { data },
+  });
+
   sendResponse({
     res,
     message: 'User updated',
@@ -160,7 +219,8 @@ async function updateUser(req: Request, res: Response) {
 }
 
 async function deleteUser(req: Request, res: Response) {
-  const userId = req.params.userId;
+  const request = req as AuthenticatedRequest;
+  const userId = request.params.userId;
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -172,6 +232,15 @@ async function deleteUser(req: Request, res: Response) {
 
   const deletedUser = await prisma.user.delete({
     where: { id: userId },
+  });
+
+  DATABASE_LOGGER.log({
+    request: request,
+    actorId: request.user.id,
+    actorType: 'USER',
+    action: 'DELETE',
+    resource: 'USER',
+    resourceId: user.id,
   });
 
   sendResponse({
@@ -196,6 +265,7 @@ export {
   deleteUser,
   getProfile,
   getUser,
+  getUserPermission,
   getUsers,
   getUsersList,
   updateMe,

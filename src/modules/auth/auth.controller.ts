@@ -7,6 +7,7 @@ import prisma from '@/config/prisma';
 import tokenService from '@/services/token.service';
 import { BadRequestError, ConflictError, UnauthorizedError } from '@/utils/errors.utils';
 import sendResponse from '@/utils/sendResponse';
+import DATABASE_LOGGER from '@/services/database-log.service';
 
 async function register(req: Request, res: Response) {
   const data = req.body;
@@ -46,6 +47,16 @@ async function register(req: Request, res: Response) {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { password, ...restUser } = newUser;
 
+  DATABASE_LOGGER.log({
+    request: req,
+    actorId: newUser.id,
+    actorType: 'USER',
+    action: 'REGISTER',
+    resource: 'USER',
+    resourceId: newUser.id,
+    metadata: { data: req.body },
+  });
+
   sendResponse({
     res,
     message: 'User registered',
@@ -79,6 +90,16 @@ async function login(req: Request, res: Response) {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { password, ...restUser } = user;
 
+  DATABASE_LOGGER.log({
+    request: req,
+    actorId: user.id,
+    actorType: 'USER',
+    action: 'LOGIN',
+    resource: 'USER',
+    resourceId: user.id,
+    metadata: { data: req.body },
+  });
+
   sendResponse({
     res,
     message: 'Login successful',
@@ -98,6 +119,16 @@ function refreshToken(req: Request, res: Response) {
 
     const newAccessToken = tokenService.signAccessToken(payload);
     const newRefreshToken = tokenService.signRefreshToken(payload);
+
+    DATABASE_LOGGER.log({
+      request: req,
+      actorId: payload.id,
+      actorType: 'USER',
+      action: 'REFRESH_TOKEN',
+      resource: 'USER',
+      resourceId: payload.id,
+      metadata: { data: req.body },
+    });
 
     sendResponse({
       res,

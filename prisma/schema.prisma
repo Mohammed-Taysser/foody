@@ -21,6 +21,8 @@ model User {
   permissionGroups    PermissionGroup[]     @relation("UserGroups")
   permissions         Permission[]          @relation("UserPermissions")
   UserPermissionGroup UserPermissionGroup[]
+  AuditLog            AuditLog[]
+  ErrorLog            ErrorLog[]
 }
 
 model Restaurant {
@@ -119,4 +121,74 @@ model UserPermissionGroup {
   permissionGroupId String
 
   @@unique([userId, permissionGroupId])
+}
+
+model AuditLog {
+  id         String       @id @default(uuid())
+  actorId    String?
+  actorType  ActorType
+  action     ActionType
+  resource   ResourceType
+  resourceId String
+  diff       Json?
+  metadata   Json?
+  createdAt  DateTime     @default(now())
+  User       User?        @relation(fields: [actorId], references: [id])
+
+  @@index([action])
+  @@index([resource])
+  @@index([createdAt])
+  @@index([actorType])
+}
+
+model ErrorLog {
+  id         String       @id @default(uuid())
+  actorId    String?
+  actorType  ActorType
+  resource   ResourceType
+  resourceId String
+  metadata   Json?
+  createdAt  DateTime     @default(now())
+  User       User?        @relation(fields: [actorId], references: [id])
+
+  @@index([resource])
+  @@index([createdAt])
+  @@index([actorType])
+}
+
+enum ActorType {
+  ADMIN
+  USER
+  CRON_JOB
+  WEBHOOK
+  BOT
+}
+
+enum ActionType {
+  CREATE
+  UPDATE
+  DELETE
+
+  PASSWORD_RESET
+  LOGIN
+  REGISTER
+
+  EXPORT
+  IMPORT
+  DOWNLOAD
+  UPLOAD
+
+  REFRESH_TOKEN
+
+  SYNC
+  NOTIFY
+}
+
+enum ResourceType {
+  PERMISSION
+  PERMISSION_GROUP
+  CATEGORY
+  MENU_ITEM
+  USER
+  RESTAURANT
 }

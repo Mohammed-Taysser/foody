@@ -4,6 +4,7 @@ import prisma from '@/config/prisma';
 import { AuthenticatedRequest } from '@/types/import';
 import { ConflictError, ForbiddenError, NotFoundError } from '@/utils/errors.utils';
 import sendResponse from '@/utils/sendResponse';
+import DATABASE_LOGGER from '@/services/database-log.service';
 
 async function createCategory(req: Request, res: Response) {
   const request = req as AuthenticatedRequest;
@@ -24,6 +25,16 @@ async function createCategory(req: Request, res: Response) {
 
   const category = await prisma.category.create({
     data: request.body,
+  });
+
+  DATABASE_LOGGER.log({
+    request: request,
+    actorId: user.id,
+    actorType: 'USER',
+    action: 'CREATE',
+    resource: 'CATEGORY',
+    resourceId: category.id,
+    metadata: { data: request.body },
   });
 
   sendResponse({ res, message: 'Category created', data: category });
@@ -58,6 +69,16 @@ async function updateCategory(req: Request, res: Response) {
   const updated = await prisma.category.update({
     where: { id: categoryId },
     data: { ...request.body },
+  });
+
+  DATABASE_LOGGER.log({
+    request: request,
+    actorId: user.id,
+    actorType: 'USER',
+    action: 'UPDATE',
+    resource: 'CATEGORY',
+    resourceId: updated.id,
+    metadata: { data: request.body },
   });
 
   sendResponse({ res, message: 'Category updated', data: updated });
@@ -145,6 +166,16 @@ async function deleteCategory(req: Request, res: Response) {
 
   const deletedCategory = await prisma.category.delete({
     where: { id: categoryId },
+  });
+
+  DATABASE_LOGGER.log({
+    request: request,
+    actorId: user.id,
+    actorType: 'USER',
+    action: 'DELETE',
+    resource: 'CATEGORY',
+    resourceId: deletedCategory.id,
+    metadata: { data: request.body },
   });
 
   sendResponse({ res, message: 'Category deleted', data: deletedCategory });

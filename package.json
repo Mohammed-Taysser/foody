@@ -1,6 +1,6 @@
 {
   "name": "foody",
-  "version": "1.0.34",
+  "version": "1.0.35",
   "description": "API documentation for the Foody restaurant platform",
   "main": "dist/server.js",
   "repository": {
@@ -37,7 +37,7 @@
     "url": "https://mohammed-taysser.github.io/portfolio"
   },
   "license": "ISC",
-  "packageManager": "pnpm@10.11.1",
+  "packageManager": "pnpm@10.12.1",
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
@@ -47,6 +47,7 @@
     "@types/bcrypt": "^5.0.2",
     "@types/compression": "^1.8.0",
     "@types/cors": "^2.8.18",
+    "@types/deep-diff": "^1.0.5",
     "@types/dotenv-safe": "^8.1.6",
     "@types/express": "^5.0.2",
     "@types/hpp": "^0.2.6",
@@ -88,6 +89,7 @@
     "bcrypt": "^6.0.0",
     "compression": "^1.8.0",
     "cors": "^2.8.5",
+    "deep-diff": "^1.0.2",
     "dotenv": "^16.5.0",
     "dotenv-safe": "^9.1.0",
     "eslint-plugin-prettier": "^5.4.0",

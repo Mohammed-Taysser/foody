@@ -5,6 +5,7 @@ import prisma from '@/config/prisma';
 import { AuthenticatedRequest } from '@/types/import';
 import { ConflictError, ForbiddenError, NotFoundError } from '@/utils/errors.utils';
 import sendResponse from '@/utils/sendResponse';
+import DATABASE_LOGGER from '@/services/database-log.service';
 
 async function addMenuItem(req: Request, res: Response) {
   const request = req as AuthenticatedRequest;
@@ -25,6 +26,16 @@ async function addMenuItem(req: Request, res: Response) {
 
   const newItem = await prisma.menuItem.create({
     data: request.body,
+  });
+
+  DATABASE_LOGGER.log({
+    request: request,
+    actorId: user.id,
+    actorType: 'USER',
+    action: 'CREATE',
+    resource: 'MENU_ITEM',
+    resourceId: newItem.id,
+    metadata: { data: request.body },
   });
 
   sendResponse({
@@ -138,6 +149,16 @@ async function updateMenuItem(req: Request, res: Response) {
     data,
   });
 
+  DATABASE_LOGGER.log({
+    request: request,
+    actorId: user.id,
+    actorType: 'USER',
+    action: 'UPDATE',
+    resource: 'MENU_ITEM',
+    resourceId: updatedItem.id,
+    metadata: { data },
+  });
+
   sendResponse({ res, message: 'Menu item updated', data: updatedItem });
 }
 
@@ -160,6 +181,16 @@ async function deleteMenuItem(req: Request, res: Response) {
 
   const deletedMenu = await prisma.menuItem.delete({
     where: { id: itemId },
+  });
+
+  DATABASE_LOGGER.log({
+    request: request,
+    actorId: user.id,
+    actorType: 'USER',
+    action: 'DELETE',
+    resource: 'MENU_ITEM',
+    resourceId: deletedMenu.id,
+    metadata: { data: request.body },
   });
 
   sendResponse({ res, message: 'Menu item deleted', data: deletedMenu });

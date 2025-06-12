@@ -4,6 +4,7 @@ import prisma from '@/config/prisma';
 import { AuthenticatedRequest } from '@/types/import';
 import { ConflictError, NotFoundError } from '@/utils/errors.utils';
 import sendResponse from '@/utils/sendResponse';
+import DATABASE_LOGGER from '@/services/database-log.service';
 
 async function listPermissions(req: Request, res: Response) {
   const request = req as AuthenticatedRequest;
@@ -65,6 +66,8 @@ async function getPermissionById(req: Request, res: Response) {
 }
 
 async function createPermission(req: Request, res: Response) {
+  const request = req as AuthenticatedRequest;
+
   const existingPermission = await prisma.permission.findUnique({
     where: { key: req.body.key },
   });
@@ -77,6 +80,16 @@ async function createPermission(req: Request, res: Response) {
     data: req.body,
   });
 
+  DATABASE_LOGGER.log({
+    request: request,
+    actorId: request.user.id,
+    actorType: 'USER',
+    action: 'CREATE',
+    resource: 'PERMISSION',
+    resourceId: permission.id,
+    metadata: { data: req.body },
+  });
+
   sendResponse({
     res,
     message: 'Permission created',
@@ -86,8 +99,10 @@ async function createPermission(req: Request, res: Response) {
 }
 
 async function updatePermission(req: Request, res: Response) {
-  const { permissionId } = req.params;
-  const { key, description } = req.body;
+  const request = req as AuthenticatedRequest;
+
+  const { permissionId } = request.params;
+  const { key, description } = request.body;
 
   const permission = await prisma.permission.update({
     where: { id: permissionId },
@@ -98,6 +113,16 @@ async function updatePermission(req: Request, res: Response) {
     throw new NotFoundError('Permission not found');
   }
 
+  DATABASE_LOGGER.log({
+    request: request,
+    actorId: request.user.id,
+    actorType: 'USER',
+    action: 'UPDATE',
+    resource: 'PERMISSION',
+    resourceId: permission.id,
+    metadata: { permission },
+  });
+
   sendResponse({
     res,
     message: 'Permission updated',
@@ -106,6 +131,8 @@ async function updatePermission(req: Request, res: Response) {
 }
 
 async function deletePermission(req: Request, res: Response) {
+  const request = req as AuthenticatedRequest;
+
   const { permissionId } = req.params;
 
   const permission = await prisma.permission.findUnique({
@@ -118,6 +145,16 @@ async function deletePermission(req: Request, res: Response) {
 
   const deletedPermission = await prisma.permission.delete({
     where: { id: permissionId },
+  });
+
+  DATABASE_LOGGER.log({
+    request: request,
+    actorId: request.user.id,
+    actorType: 'USER',
+    action: 'DELETE',
+    resource: 'PERMISSION',
+    resourceId: permission.id,
+    metadata: { deletedPermission },
   });
 
   sendResponse({

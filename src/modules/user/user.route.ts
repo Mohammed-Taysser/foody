@@ -5,6 +5,7 @@ import {
   deleteUser,
   getProfile,
   getUser,
+  getUserPermission,
   getUsers,
   getUsersList,
   updateMe,
@@ -22,6 +23,7 @@ const router = Router();
 
 router.patch('/me', authenticateMiddleware, zodValidate(updateUserSchema), updateMe);
 router.get('/me', authenticateMiddleware, getProfile);
+router.get('/me/permissions', authenticateMiddleware, getUserPermission);
 
 router.get('/list', requirePermission(['view:user'], true), getUsersList);
 router.get(
