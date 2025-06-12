@@ -89,6 +89,7 @@
     "bcrypt": "^6.0.0",
     "compression": "^1.8.0",
     "cors": "^2.8.5",
+    "dayjs": "^1.11.13",
     "deep-diff": "^1.0.2",
     "dotenv": "^16.5.0",
     "dotenv-safe": "^9.1.0",

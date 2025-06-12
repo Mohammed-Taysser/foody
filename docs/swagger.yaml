@@ -33,6 +33,8 @@ tags:
     description: Menu category management per restaurant
   - name: Menu Items
     description: Menu items within restaurant
+  - name: Analytics
+    description: Metrics and chart data
 
 security:
   - bearerAuth: []
@@ -1174,6 +1176,90 @@ paths:
                       data:
                         type: object
                         example: { deleted: true }
+
+  /analytics:
+    get:
+      tags: [Analytics]
+      summary: Get platform analytics
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Metrics and chart data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Dashboard analytics
+                  data:
+                    type: object
+                    properties:
+                      totals:
+                        type: object
+                        properties:
+                          users:
+                            type: integer
+                            example: 95
+                          restaurants:
+                            type: integer
+                            example: 21
+                          categories:
+                            type: integer
+                            example: 45
+                          menuItem:
+                            type: integer
+                            example: 123
+                      thisWeek:
+                        type: object
+                        properties:
+                          users:
+                            type: integer
+                            example: 95
+                          restaurants:
+                            type: integer
+                            example: 21
+                          categories:
+                            type: integer
+                            example: 45
+                          menuItem:
+                            type: integer
+                            example: 123
+                      lastWeek:
+                        type: object
+                        properties:
+                          users:
+                            type: integer
+                            example: 0
+                          restaurants:
+                            type: integer
+                            example: 0
+                          categories:
+                            type: integer
+                            example: 0
+                          menuItem:
+                            type: integer
+                            example: 0
+                      growth:
+                        type: object
+                        properties:
+                          users:
+                            type: integer
+                            example: 100
+                          restaurants:
+                            type: integer
+                            example: 100
+                          categories:
+                            type: integer
+                            example: 100
+                          menuItem:
+                            type: integer
+                            example: 100
 
 components:
   schemas:

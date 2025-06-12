@@ -16,6 +16,7 @@ import menuItemsRoutes from '@/modules/menu-items/menu-items.route';
 import permissionRoutes from '@/modules/permission/permission.route';
 import restaurantRoutes from '@/modules/restaurant/restaurant.route';
 import userRoutes from '@/modules/user/user.route';
+import analyticsRoutes from '@/modules/analytics/analytics.route';
 import { ForbiddenError, NotFoundError } from '@/utils/errors.utils';
 
 const app = express();
@@ -71,6 +72,7 @@ app.use('/api', apiLimiter);
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/analytics', analyticsRoutes);
 app.use('/api/permissions', permissionRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/restaurants', restaurantRoutes);
