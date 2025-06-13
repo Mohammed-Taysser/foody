@@ -14,4 +14,13 @@ const createUserSchema = baseUserSchema.extend({
 // updateProfileSchema makes all fields optional
 const updateUserSchema = baseUserSchema.partial();
 
+type CreateUserInput = z.infer<typeof createUserSchema>;
+type UpdateUserInput = z.infer<typeof updateUserSchema>;
+
+interface GetByIdUserParams {
+  userId: string;
+}
+
 export { createUserSchema, updateUserSchema };
+
+export type { CreateUserInput, UpdateUserInput, GetByIdUserParams };

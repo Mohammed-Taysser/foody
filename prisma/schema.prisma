@@ -24,6 +24,7 @@ model User {
   UserPermissionGroup UserPermissionGroup[]
   AuditLog            AuditLog[]
   ErrorLog            ErrorLog[]
+  Orders              Order[]
 }
 
 model Restaurant {
@@ -40,6 +41,7 @@ model Restaurant {
   Category Category[]
   MenuItem MenuItem[]
   owner    User       @relation(fields: [ownerId], references: [id])
+  orders   Order[]
 }
 
 model MenuItem {
@@ -55,8 +57,9 @@ model MenuItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  category   Category?  @relation(fields: [categoryId], references: [id])
-  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  category   Category?   @relation(fields: [categoryId], references: [id])
+  restaurant Restaurant  @relation(fields: [restaurantId], references: [id])
+  orders     OrderItem[]
 }
 
 model Category {
@@ -177,6 +180,9 @@ enum ActionType {
   LOGIN
   REGISTER
 
+  PLACE_ORDER
+  CANCEL_ORDER
+
   EXPORT
   IMPORT
   DOWNLOAD
@@ -195,4 +201,62 @@ enum ResourceType {
   MENU_ITEM
   USER
   RESTAURANT
+  ORDER
+}
+
+model Order {
+  id           String      @id @default(cuid())
+  userId       String
+  restaurantId String
+  items        OrderItem[]
+  status       OrderStatus @default(PENDING)
+  total        Float
+  subtotal     Float
+  discount     Float?      @default(0)
+  notes        String?     @default("")
+
+  paymentStatus PaymentStatus  @default(UNPAID)
+  paymentMethod PaymentMethod?
+
+  tableNumber   Int?
+  invoiceNumber String? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user       User       @relation(fields: [userId], references: [id])
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+}
+
+model OrderItem {
+  id         String  @id @default(cuid())
+  orderId    String
+  menuItemId String
+  quantity   Int
+  notes      String? @default("")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  order    Order    @relation(fields: [orderId], references: [id])
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+}
+
+enum OrderStatus {
+  PENDING
+  PREPARING
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  REFUNDED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  ONLINE
 }

@@ -5,19 +5,23 @@ import DATABASE_LOGGER from '@/services/database-log.service';
 import { AuthenticatedRequest } from '@/types/import';
 import { NotFoundError } from '@/utils/errors.utils';
 import sendResponse from '@/utils/sendResponse';
+import { BasePaginationInput } from '@/validations/pagination.validation';
 
 async function listPermissionGroups(req: Request, res: Response) {
-  const request = req as AuthenticatedRequest;
+  const request = req as unknown as AuthenticatedRequest<
+    unknown,
+    unknown,
+    unknown,
+    BasePaginationInput
+  >;
   const query = request.parsedQuery;
 
-  const page = query.page as number;
-  const limit = query.limit as number;
-  const skip = (page - 1) * limit;
+  const skip = (query.page - 1) * query.limit;
 
   const [data, total] = await Promise.all([
     prisma.permissionGroup.findMany({
       skip,
-      take: limit,
+      take: query.limit,
       orderBy: { createdAt: 'desc' },
     }),
     prisma.permissionGroup.count(),
@@ -30,9 +34,9 @@ async function listPermissionGroups(req: Request, res: Response) {
       data,
       metadata: {
         total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
+        page: query.page,
+        limit: query.limit,
+        totalPages: Math.ceil(total / query.limit),
       },
     },
   });

@@ -16,4 +16,9 @@ const refreshTokenSchema = z.object({
   refreshToken: z.string(),
 });
 
-export { registerSchema, loginSchema, refreshTokenSchema };
+type RegisterInput = z.infer<typeof registerSchema>;
+type LoginInput = z.infer<typeof loginSchema>;
+type RefreshTokenInput = z.infer<typeof refreshTokenSchema>;
+
+export { loginSchema, refreshTokenSchema, registerSchema };
+export type { LoginInput, RefreshTokenInput, RegisterInput };

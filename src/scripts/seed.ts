@@ -8,6 +8,7 @@ import {
   DEFAULT_ROLE_PERMISSIONS,
   PERMISSION_GROUPS,
   PERMISSION_IDS,
+  PERMISSION_MODULES,
 } from '@/modules/auth/auth.constant';
 
 async function seedDummyData() {
@@ -33,6 +34,10 @@ async function seedDummyData() {
   });
 
   console.log(chalk.green(`\n🔐 Permissions created (${PERMISSION_IDS.length})`));
+
+  PERMISSION_MODULES.forEach((module) => {
+    console.log(`  - ${module}`);
+  });
 
   // Groups
   for (const [groupName, permissionKeys] of Object.entries(PERMISSION_GROUPS)) {

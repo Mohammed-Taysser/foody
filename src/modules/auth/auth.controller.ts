@@ -2,14 +2,15 @@ import { Role } from '@prisma/client';
 import { Request, Response } from 'express';
 
 import { DEFAULT_ROLE_PERMISSIONS } from './auth.constant';
+import { LoginInput, RefreshTokenInput, RegisterInput } from './auth.validator';
 
 import prisma from '@/config/prisma';
+import DATABASE_LOGGER from '@/services/database-log.service';
 import tokenService from '@/services/token.service';
 import { BadRequestError, ConflictError, UnauthorizedError } from '@/utils/errors.utils';
 import sendResponse from '@/utils/sendResponse';
-import DATABASE_LOGGER from '@/services/database-log.service';
 
-async function register(req: Request, res: Response) {
+async function register(req: Request<unknown, unknown, RegisterInput>, res: Response) {
   const data = req.body;
 
   const user = await prisma.user.findUnique({
@@ -65,7 +66,7 @@ async function register(req: Request, res: Response) {
   });
 }
 
-async function login(req: Request, res: Response) {
+async function login(req: Request<unknown, unknown, LoginInput>, res: Response) {
   const data = req.body;
 
   const user = await prisma.user.findUnique({
@@ -107,7 +108,7 @@ async function login(req: Request, res: Response) {
   });
 }
 
-function refreshToken(req: Request, res: Response) {
+function refreshToken(req: Request<unknown, unknown, RefreshTokenInput>, res: Response) {
   const { refreshToken } = req.body;
 
   try {

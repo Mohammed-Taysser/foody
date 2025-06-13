@@ -6,6 +6,7 @@ import { AuthenticatedRequest } from '@/types/import';
 import { BadRequestError, NotFoundError } from '@/utils/errors.utils';
 import { deleteImage, uploadImage } from '@/utils/multer.utils';
 import sendResponse from '@/utils/sendResponse';
+import { BasePaginationInput } from '@/validations/pagination.validation';
 
 async function createRestaurant(req: Request, res: Response) {
   const data = req.body;
@@ -66,17 +67,21 @@ async function createRestaurant(req: Request, res: Response) {
 }
 
 async function getRestaurants(req: Request, res: Response) {
-  const request = req as AuthenticatedRequest;
+  const request = req as unknown as AuthenticatedRequest<
+    unknown,
+    unknown,
+    unknown,
+    BasePaginationInput
+  >;
+
   const query = request.parsedQuery;
 
-  const page = query.page as number;
-  const limit = query.limit as number;
-  const skip = (page - 1) * limit;
+  const skip = (query.page - 1) * query.limit;
 
   const [data, total] = await Promise.all([
     prisma.restaurant.findMany({
       skip,
-      take: limit,
+      take: query.limit,
       orderBy: { createdAt: 'desc' },
     }),
     prisma.restaurant.count(),
@@ -89,9 +94,9 @@ async function getRestaurants(req: Request, res: Response) {
       data,
       metadata: {
         total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
+        page: query.page,
+        limit: query.limit,
+        totalPages: Math.ceil(total / query.limit),
       },
     },
   });

@@ -1,7 +1,12 @@
 import { ActionType, ActorType, Prisma, ResourceType, User } from '@prisma/client';
 import { Request } from 'express';
 
-interface AuthenticatedRequest extends Request {
+interface AuthenticatedRequest<
+  Params = unknown,
+  ResBody = unknown,
+  ReqBody = unknown,
+  ReqQuery = unknown,
+> extends Request<Params, ResBody, ReqBody, ReqQuery> {
   user: User & {
     permissions: {
       id: string;
@@ -14,11 +19,11 @@ interface AuthenticatedRequest extends Request {
       }[];
     }[];
   };
-  parsedQuery: Record<string, string | number>;
+  parsedQuery: ReqQuery;
 }
 
 interface BaseLogParams {
-  request: Request;
+  request: Request<unknown, unknown, unknown, unknown>;
   actorId: string;
   actorType: ActorType;
   resource: ResourceType;
@@ -37,4 +42,4 @@ interface ErrorLogParams extends BaseLogParams {
   metadata: Prisma.InputJsonObject;
 }
 
-export { AuthenticatedRequest, AuditLogParams, ErrorLogParams };
+export { AuditLogParams, AuthenticatedRequest, ErrorLogParams };

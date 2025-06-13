@@ -3,15 +3,19 @@ import { Request, Response } from 'express';
 
 import { DEFAULT_ROLE_PERMISSIONS } from '../auth/auth.constant';
 
+import { GetByIdUserParams, UpdateUserInput } from './user.validator';
+
 import prisma from '@/config/prisma';
 import DATABASE_LOGGER from '@/services/database-log.service';
 import tokenService from '@/services/token.service';
 import { AuthenticatedRequest } from '@/types/import';
 import { ConflictError, NotFoundError } from '@/utils/errors.utils';
+import { deleteImage, uploadImage } from '@/utils/multer.utils';
 import sendResponse from '@/utils/sendResponse';
+import { BasePaginationInput } from '@/validations/pagination.validation';
 
 async function updateMe(req: Request, res: Response) {
-  const request = req as AuthenticatedRequest;
+  const request = req as unknown as AuthenticatedRequest<unknown, unknown, UpdateUserInput>;
   const user = request.user;
 
   if (request.body.email) {
@@ -24,9 +28,22 @@ async function updateMe(req: Request, res: Response) {
     }
   }
 
+  let imageUrl = undefined;
+
+  if (user.image && req.file) {
+    deleteImage(user.image);
+  }
+
+  if (request.file) {
+    imageUrl = await uploadImage(request.file, 'user');
+  }
+
   const updatedUser = await prisma.user.update({
     where: { id: user.id },
-    data: request.body,
+    data: {
+      ...request.body,
+      image: imageUrl,
+    },
   });
 
   const oldUserData = {
@@ -87,17 +104,21 @@ async function getUserPermission(req: Request, res: Response) {
 }
 
 async function getUsers(req: Request, res: Response) {
-  const request = req as AuthenticatedRequest;
+  const request = req as unknown as AuthenticatedRequest<
+    unknown,
+    unknown,
+    unknown,
+    BasePaginationInput
+  >;
+
   const query = request.parsedQuery;
 
-  const page = query.page as number;
-  const limit = query.limit as number;
-  const skip = (page - 1) * limit;
+  const skip = (query.page - 1) * query.limit;
 
   const [data, total] = await Promise.all([
     prisma.user.findMany({
       skip,
-      take: limit,
+      take: query.limit,
       orderBy: { createdAt: 'desc' },
     }),
     prisma.user.count(),
@@ -110,9 +131,9 @@ async function getUsers(req: Request, res: Response) {
       data,
       metadata: {
         total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
+        page: query.page,
+        limit: query.limit,
+        totalPages: Math.ceil(total / query.limit),
       },
     },
   });
@@ -151,6 +172,12 @@ async function createUser(req: Request, res: Response) {
 
   const config = DEFAULT_ROLE_PERMISSIONS[data.role as Role];
 
+  let imageUrl = undefined;
+
+  if (data.image) {
+    imageUrl = await uploadImage(data.image, 'user');
+  }
+
   const newUser = await prisma.user.create({
     data: {
       name: data.name,
@@ -163,6 +190,7 @@ async function createUser(req: Request, res: Response) {
       permissions: {
         connect: config.permissions.map((id) => ({ key: id })),
       },
+      image: imageUrl,
     },
   });
 
@@ -196,9 +224,18 @@ async function updateUser(req: Request, res: Response) {
     throw new NotFoundError('User not found');
   }
 
+  let imageUrl = undefined;
+
+  if (data.image) {
+    imageUrl = await uploadImage(data.image, 'user');
+  }
+
   const updatedUser = await prisma.user.update({
     where: { id: userId },
-    data,
+    data: {
+      ...data,
+      image: imageUrl,
+    },
   });
 
   DATABASE_LOGGER.log({
@@ -219,7 +256,13 @@ async function updateUser(req: Request, res: Response) {
 }
 
 async function deleteUser(req: Request, res: Response) {
-  const request = req as AuthenticatedRequest;
+  const request = req as unknown as AuthenticatedRequest<
+    GetByIdUserParams,
+    unknown,
+    unknown,
+    unknown
+  >;
+
   const userId = request.params.userId;
 
   const user = await prisma.user.findUnique({
@@ -233,6 +276,10 @@ async function deleteUser(req: Request, res: Response) {
   const deletedUser = await prisma.user.delete({
     where: { id: userId },
   });
+
+  if (deletedUser.image) {
+    deleteImage(deletedUser.image);
+  }
 
   DATABASE_LOGGER.log({
     request: request,

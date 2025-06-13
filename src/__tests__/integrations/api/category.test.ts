@@ -1,7 +1,11 @@
+import path from 'path';
+
 import { faker } from '@faker-js/faker';
 import request from 'supertest';
 
 import app from '@/app';
+
+const mockImagePath = path.join(__dirname, '../../../../public/avatar.jpg');
 
 describe('Category API', () => {
   let ownerToken: string;
@@ -103,6 +107,18 @@ describe('Category API', () => {
       expect(res.body.data.metadata.page).toBe(2);
       expect(res.body.data.metadata.limit).toBe(5);
     });
+
+    it('should allow uploading image when adding a category', async () => {
+      const res = await request(app)
+        .post(`/api/categories`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .field('name', 'Pizza Upload')
+        .field('restaurantId', restaurantId)
+        .attach('image', mockImagePath);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data.image).toMatch(/\/uploads\/category\//);
+    });
   });
 
   describe('GET /api/categories/:categoryId', () => {
@@ -190,6 +206,28 @@ describe('Category API', () => {
         .send({ name: 'Bad Update', restaurantId: faker.string.uuid() });
 
       expect(res.statusCode).toBe(409);
+    });
+
+    it('should replace image when updating a category', async () => {
+      // First, create item with initial image
+      const createRes = await request(app)
+        .post(`/api/categories`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .field('name', 'Image Replace')
+        .field('restaurantId', restaurantId)
+        .attach('image', mockImagePath);
+
+      const categoryId = createRes.body.data.id;
+
+      // Then, update with a new image
+      const updateRes = await request(app)
+        .patch(`/api/categories/${categoryId}`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .field('restaurantId', restaurantId)
+        .attach('image', mockImagePath);
+
+      expect(updateRes.statusCode).toBe(200);
+      expect(updateRes.body.data.image).toMatch(/\/uploads\/category\//);
     });
   });
 

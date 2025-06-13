@@ -13,7 +13,7 @@ describe('Dashboard Analytics', () => {
     expect(res.body.data).toHaveProperty('lastWeek');
     expect(res.body.data).toHaveProperty('growth');
 
-    const sections = ['users', 'restaurants', 'categories', 'menuItem'];
+    const sections = ['users', 'restaurants', 'categories', 'menuItems', 'orders'];
 
     sections.forEach((section) => {
       expect(res.body.data.totals).toHaveProperty(section);

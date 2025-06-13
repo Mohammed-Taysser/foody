@@ -1,6 +1,6 @@
 {
   "name": "foody",
-  "version": "1.0.37",
+  "version": "1.0.38",
   "description": "API documentation for the Foody restaurant platform",
   "main": "dist/server.js",
   "repository": {
@@ -11,8 +11,8 @@
     "build": "rimraf ./dist && tsc",
     "commit": "cz",
     "dev": "ts-node-dev --respawn --transpile-only --require tsconfig-paths/register --watch .env,docs/swagger.yaml src/server.ts",
-    "format:fix": "prettier --write .",
-    "format": "prettier --check .",
+    "format:fix": "prettier --write src",
+    "format": "prettier --check src",
     "lint:fix": "eslint src --ext .ts --fix",
     "lint": "eslint src --ext .ts",
     "prepare": "husky install",

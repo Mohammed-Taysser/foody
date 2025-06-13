@@ -8,6 +8,7 @@ const PERMISSION_MODULES: PermittedModule[] = [
   'user',
   'permission',
   'permissionGroup',
+  'order',
 ];
 
 const PERMISSION_IDS: PermittedId[] = PERMISSION_ACTIONS.flatMap((action) =>
@@ -40,6 +41,10 @@ const PERMISSION_GROUPS: Record<string, PermittedId[]> = {
     'add:permissionGroup',
     'update:permissionGroup',
     'delete:permissionGroup',
+    'view:order',
+    'add:order',
+    'update:order',
+    'delete:order',
   ],
 
   'Category Manager': ['view:category', 'add:category', 'update:category', 'delete:category'],
@@ -50,6 +55,8 @@ const PERMISSION_GROUPS: Record<string, PermittedId[]> = {
     'delete:restaurant',
   ],
   'Menu Manager': ['view:menuItem', 'add:menuItem', 'update:menuItem', 'delete:menuItem'],
+
+  'Order Manager': ['view:order', 'add:order', 'update:order', 'delete:order'],
 };
 
 const DEFAULT_ROLE_PERMISSIONS: {
@@ -67,7 +74,7 @@ const DEFAULT_ROLE_PERMISSIONS: {
     permissions: [], // Permissions are inherited from groups
   },
   CUSTOMER: {
-    groups: [],
+    groups: ['Order Manager'],
     permissions: ['view:menuItem'], // Standalone permission
   },
 };

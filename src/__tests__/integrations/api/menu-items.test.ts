@@ -333,7 +333,7 @@ describe('Menu Items API', () => {
         .attach('image', mockImagePath);
 
       expect(updateRes.statusCode).toBe(200);
-      expect(updateRes.body.data.image).toMatch(/\/uploads\/restaurant\//); // note: uses "restaurant" for update
+      expect(updateRes.body.data.image).toMatch(/\/uploads\/menu\//);
     });
 
     it('should return 401 if unauthenticated user tries to update a menu item', async () => {

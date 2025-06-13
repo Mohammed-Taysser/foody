@@ -83,6 +83,7 @@ jobs:
       JWT_SECRET: super_secret_key
       JWT_ACCESS_EXPIRES_IN: 1d
       JWT_REFRESH_EXPIRES_IN: 7d
+      DEFAULT_TIMEZONE: Africa/Cairo
 
     needs: setup
 

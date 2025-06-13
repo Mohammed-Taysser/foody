@@ -20,4 +20,13 @@ const menuItemQuerySchema = basePaginationSchema.extend({
   restaurantId: z.string().optional(),
 });
 
+type CreateMenuItemInput = z.infer<typeof createMenuItemSchema>;
+type UpdateMenuItemInput = z.infer<typeof updateMenuItemSchema>;
+type MenuItemQueryInput = z.infer<typeof menuItemQuerySchema>;
+
+interface GetByIdMenuItemParams {
+  itemId: string;
+}
+
 export { createMenuItemSchema, menuItemQuerySchema, updateMenuItemSchema };
+export type { CreateMenuItemInput, UpdateMenuItemInput, MenuItemQueryInput, GetByIdMenuItemParams };

@@ -1,23 +1,29 @@
 import { Request, Response } from 'express';
 
+import { GetByIdPermissionParams, UpdatePermissionInput } from './permission.validator';
+
 import prisma from '@/config/prisma';
 import DATABASE_LOGGER from '@/services/database-log.service';
 import { AuthenticatedRequest } from '@/types/import';
 import { ConflictError, NotFoundError } from '@/utils/errors.utils';
 import sendResponse from '@/utils/sendResponse';
+import { BasePaginationInput } from '@/validations/pagination.validation';
 
 async function listPermissions(req: Request, res: Response) {
-  const request = req as AuthenticatedRequest;
+  const request = req as unknown as AuthenticatedRequest<
+    unknown,
+    unknown,
+    unknown,
+    BasePaginationInput
+  >;
   const query = request.parsedQuery;
 
-  const page = query.page as number;
-  const limit = query.limit as number;
-  const skip = (page - 1) * limit;
+  const skip = (query.page - 1) * query.limit;
 
   const [data, total] = await Promise.all([
     prisma.permission.findMany({
       skip,
-      take: limit,
+      take: query.limit,
       orderBy: { createdAt: 'desc' },
     }),
     prisma.permission.count(),
@@ -30,9 +36,9 @@ async function listPermissions(req: Request, res: Response) {
       data,
       metadata: {
         total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
+        page: query.page,
+        limit: query.limit,
+        totalPages: Math.ceil(total / query.limit),
       },
     },
   });
@@ -99,7 +105,12 @@ async function createPermission(req: Request, res: Response) {
 }
 
 async function updatePermission(req: Request, res: Response) {
-  const request = req as AuthenticatedRequest;
+  const request = req as unknown as AuthenticatedRequest<
+    GetByIdPermissionParams,
+    unknown,
+    UpdatePermissionInput,
+    unknown
+  >;
 
   const { permissionId } = request.params;
   const { key, description } = request.body;

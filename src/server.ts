@@ -30,6 +30,7 @@ async function startServer() {
 
 startServer()
   .then((port) => {
+    console.clear();
     logServerInfo(startTime, port);
   })
   .catch((error) => {

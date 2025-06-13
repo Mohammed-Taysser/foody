@@ -1,6 +1,13 @@
 import { Prisma } from '@prisma/client';
 import { Request, Response } from 'express';
 
+import {
+  CreateMenuItemInput,
+  GetByIdMenuItemParams,
+  MenuItemQueryInput,
+  UpdateMenuItemInput,
+} from './menu-items.validator';
+
 import prisma from '@/config/prisma';
 import DATABASE_LOGGER from '@/services/database-log.service';
 import { AuthenticatedRequest } from '@/types/import';
@@ -8,8 +15,11 @@ import { ConflictError, ForbiddenError, NotFoundError } from '@/utils/errors.uti
 import { deleteImage, uploadImage } from '@/utils/multer.utils';
 import sendResponse from '@/utils/sendResponse';
 
-async function addMenuItem(req: Request, res: Response) {
-  const request = req as AuthenticatedRequest;
+async function addMenuItem(
+  req: Request<unknown, unknown, CreateMenuItemInput, unknown>,
+  res: Response
+) {
+  const request = req as AuthenticatedRequest<unknown, unknown, CreateMenuItemInput, unknown>;
 
   const user = request.user;
   const image = request.file;
@@ -58,15 +68,16 @@ async function addMenuItem(req: Request, res: Response) {
 }
 
 async function getMenuItems(req: Request, res: Response) {
-  const request = req as AuthenticatedRequest;
+  const request = req as unknown as AuthenticatedRequest<
+    unknown,
+    unknown,
+    unknown,
+    MenuItemQueryInput
+  >;
 
   const query = request.parsedQuery;
 
-  const page = query.page as number;
-  const limit = query.limit as number;
-  const skip = (page - 1) * limit;
-
-  const available = query.available as string;
+  const skip = (query.page - 1) * query.limit;
 
   const where: Prisma.MenuItemWhereInput = {};
 
@@ -74,15 +85,15 @@ async function getMenuItems(req: Request, res: Response) {
     where.restaurantId = query.restaurantId as string;
   }
 
-  if (available !== undefined) {
-    where.available = Boolean(available);
+  if (query.available !== undefined) {
+    where.available = query.available;
   }
 
   const [data, total] = await Promise.all([
     prisma.menuItem.findMany({
       where,
       skip,
-      take: limit,
+      take: query.limit,
       orderBy: { createdAt: 'desc' },
     }),
     prisma.menuItem.count({ where }),
@@ -95,9 +106,9 @@ async function getMenuItems(req: Request, res: Response) {
       data,
       metadata: {
         total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
+        page: query.page,
+        limit: query.limit,
+        totalPages: Math.ceil(total / query.limit),
       },
     },
   });
@@ -115,7 +126,12 @@ async function getMenuItemsList(req: Request, res: Response) {
 }
 
 async function getMenuItemById(req: Request, res: Response) {
-  const request = req as AuthenticatedRequest;
+  const request = req as unknown as AuthenticatedRequest<
+    GetByIdMenuItemParams,
+    unknown,
+    unknown,
+    unknown
+  >;
 
   const itemId = request.params.itemId;
 
@@ -129,7 +145,12 @@ async function getMenuItemById(req: Request, res: Response) {
 }
 
 async function updateMenuItem(req: Request, res: Response) {
-  const request = req as AuthenticatedRequest;
+  const request = req as unknown as AuthenticatedRequest<
+    GetByIdMenuItemParams,
+    unknown,
+    UpdateMenuItemInput,
+    unknown
+  >;
 
   const itemId = request.params.itemId;
   const user = request.user;
@@ -163,7 +184,7 @@ async function updateMenuItem(req: Request, res: Response) {
   }
 
   if (req.file) {
-    imageUrl = await uploadImage(req.file, 'restaurant');
+    imageUrl = await uploadImage(req.file, 'menu');
   }
 
   const updatedItem = await prisma.menuItem.update({
@@ -190,7 +211,12 @@ async function updateMenuItem(req: Request, res: Response) {
 }
 
 async function deleteMenuItem(req: Request, res: Response) {
-  const request = req as AuthenticatedRequest;
+  const request = req as unknown as AuthenticatedRequest<
+    GetByIdMenuItemParams,
+    unknown,
+    unknown,
+    unknown
+  >;
 
   const itemId = request.params.itemId;
   const user = request.user;
@@ -221,7 +247,6 @@ async function deleteMenuItem(req: Request, res: Response) {
     action: 'DELETE',
     resource: 'MENU_ITEM',
     resourceId: deletedMenu.id,
-    metadata: { data: request.body },
   });
 
   sendResponse({ res, message: 'Menu item deleted', data: deletedMenu });

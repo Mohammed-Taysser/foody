@@ -8,7 +8,7 @@ import prisma from '@/config/prisma';
 import { AuditLogParams, ErrorLogParams } from '@/types/import';
 import { formatDeepDiff } from '@/utils/deep-diff.utils';
 
-const getRequestInfo = (request: Request) => {
+const getRequestInfo = (request: Request<unknown, unknown, unknown, unknown>) => {
   return {
     ip: request.ip,
     userAgent: request.headers['user-agent'],

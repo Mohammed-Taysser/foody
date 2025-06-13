@@ -92,7 +92,7 @@ describe('Authenticate middleware', () => {
 
     const requestWithUser = req as AuthenticatedRequest;
 
-    await authenticateMiddleware(requestWithUser, mockRes, mockNext);
+    await authenticateMiddleware(req, mockRes, mockNext);
 
     expect(requestWithUser.user).toEqual(user);
     expect(mockNext).toHaveBeenCalled();

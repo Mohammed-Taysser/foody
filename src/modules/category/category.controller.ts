@@ -1,14 +1,21 @@
 import { Request, Response } from 'express';
 
+import type {
+  CreateCategoryInput,
+  GetByIdCategoryParams,
+  UpdateCategoryInput,
+} from './category.validator';
+
 import prisma from '@/config/prisma';
 import DATABASE_LOGGER from '@/services/database-log.service';
 import { AuthenticatedRequest } from '@/types/import';
 import { ConflictError, ForbiddenError, NotFoundError } from '@/utils/errors.utils';
 import { deleteImage, uploadImage } from '@/utils/multer.utils';
 import sendResponse from '@/utils/sendResponse';
+import { BasePaginationInput } from '@/validations/pagination.validation';
 
 async function createCategory(req: Request, res: Response) {
-  const request = req as AuthenticatedRequest;
+  const request = req as AuthenticatedRequest<unknown, unknown, CreateCategoryInput>;
 
   const user = request.user;
 
@@ -27,7 +34,7 @@ async function createCategory(req: Request, res: Response) {
   let imageUrl = undefined;
 
   if (request.file) {
-    imageUrl = await uploadImage(request.file, 'menu');
+    imageUrl = await uploadImage(request.file, 'category');
   }
 
   const category = await prisma.category.create({
@@ -51,7 +58,11 @@ async function createCategory(req: Request, res: Response) {
 }
 
 async function updateCategory(req: Request, res: Response) {
-  const request = req as AuthenticatedRequest;
+  const request = req as unknown as AuthenticatedRequest<
+    GetByIdCategoryParams,
+    unknown,
+    UpdateCategoryInput
+  >;
 
   const categoryId = request.params.categoryId;
 
@@ -78,12 +89,12 @@ async function updateCategory(req: Request, res: Response) {
 
   let imageUrl = category.image;
 
-  if (category.image && req.file) {
+  if (category.image && request.file) {
     deleteImage(category.image);
   }
 
-  if (req.file) {
-    imageUrl = await uploadImage(req.file, 'restaurant');
+  if (request.file) {
+    imageUrl = await uploadImage(request.file, 'category');
   }
 
   const updated = await prisma.category.update({
@@ -107,18 +118,21 @@ async function updateCategory(req: Request, res: Response) {
 }
 
 async function listCategories(req: Request, res: Response) {
-  const request = req as AuthenticatedRequest;
+  const request = req as unknown as AuthenticatedRequest<
+    unknown,
+    unknown,
+    unknown,
+    BasePaginationInput
+  >;
 
   const query = request.parsedQuery;
 
-  const page = query.page as number;
-  const limit = query.limit as number;
-  const skip = (page - 1) * limit;
+  const skip = (query.page - 1) * query.limit;
 
   const [data, total] = await Promise.all([
     prisma.category.findMany({
       skip,
-      take: limit,
+      take: query.limit,
       orderBy: { createdAt: 'desc' },
     }),
     prisma.category.count(),
@@ -131,9 +145,9 @@ async function listCategories(req: Request, res: Response) {
       data,
       metadata: {
         total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
+        page: query.page,
+        limit: query.limit,
+        totalPages: Math.ceil(total / query.limit),
       },
     },
   });
@@ -151,7 +165,12 @@ async function getCategoriesList(req: Request, res: Response) {
 }
 
 async function getCategoryById(req: Request, res: Response) {
-  const request = req as AuthenticatedRequest;
+  const request = req as unknown as AuthenticatedRequest<
+    GetByIdCategoryParams,
+    unknown,
+    unknown,
+    unknown
+  >;
 
   const categoryId = request.params.categoryId;
 
@@ -167,7 +186,12 @@ async function getCategoryById(req: Request, res: Response) {
 }
 
 async function deleteCategory(req: Request, res: Response) {
-  const request = req as AuthenticatedRequest;
+  const request = req as unknown as AuthenticatedRequest<
+    GetByIdCategoryParams,
+    unknown,
+    unknown,
+    unknown
+  >;
 
   const categoryId = request.params.categoryId;
 
@@ -201,7 +225,6 @@ async function deleteCategory(req: Request, res: Response) {
     action: 'DELETE',
     resource: 'CATEGORY',
     resourceId: deletedCategory.id,
-    metadata: { data: request.body },
   });
 
   sendResponse({ res, message: 'Category deleted', data: deletedCategory });

@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: Foody API
-  version: 1.0.22
+  version: 1.0.38
   description: API documentation for the Foody restaurant platform
   contact:
     name: Mohammed Taysser
@@ -33,6 +33,8 @@ tags:
     description: Menu category management per restaurant
   - name: Menu Items
     description: Menu items within restaurant
+  - name: Orders
+    description: Order management
   - name: Analytics
     description: Metrics and chart data
 
@@ -466,6 +468,23 @@ paths:
                 role:
                   type: string
                   enum: [CUSTOMER, OWNER, ADMIN]
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+                role:
+                  type: string
+                  enum: [CUSTOMER, OWNER, ADMIN]
+                image:
+                  type: file
+                  format: binary
+
       responses:
         200:
           description: User updated successfully
@@ -1020,6 +1039,15 @@ paths:
                   type: string
                 restaurantId:
                   type: string
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                image:
+                  type: string
+                  format: binary
       responses:
         200:
           description: Category updated successfully
@@ -1185,6 +1213,17 @@ paths:
                   type: number
                 available:
                   type: boolean
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                price:
+                  type: number
+                image:
+                  type: string
+                  format: binary
       responses:
         200:
           description: Menu updated successfully
@@ -1222,6 +1261,203 @@ paths:
                       data:
                         type: object
                         example: { deleted: true }
+
+  /orders:
+    get:
+      tags: [Orders]
+      summary: Get all orders
+      parameters:
+        - $ref: '#/components/parameters/PageParameter'
+        - $ref: '#/components/parameters/LimitParameter'
+      responses:
+        200:
+          description: List of orders
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Order'
+
+    post:
+      tags: [Orders]
+      summary: Create a new order
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Order'
+      responses:
+        201:
+          description: Order created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Order'
+
+  /orders/list:
+    get:
+      tags: [Orders]
+      summary: Get a list of orders
+      responses:
+        200:
+          description: List of orders
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+
+  /orders/{orderId}:
+    get:
+      tags: [Orders]
+      summary: Get a specific order by ID
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Order found
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Order'
+
+    delete:
+      tags: [Orders]
+      summary: Delete a specific order by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Order deleted successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Order'
+
+    patch:
+      tags: [Orders]
+      summary: Update a specific order by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                total:
+                  type: number
+                  format: float
+      responses:
+        200:
+          description: Order updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Order'
+
+  /orders/{orderId}/pay-order:
+    patch:
+      tags: [Orders]
+      summary: Pay for an order
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Order paid successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Order'
+
+  /orders/{orderId}/update-order-status:
+    patch:
+      tags: [Orders]
+      summary: Update the status of an order
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: enum
+                  enum: [PENDING, PREPARING, DELIVERED, CANCELLED]
+      responses:
+        200:
+          description: Order status updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Order'
 
   /analytics:
     get:
@@ -1512,6 +1748,105 @@ components:
           type: string
           format: uuid
           nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          example: 2022-01-01T00:00:00.000Z
+        updatedAt:
+          type: string
+          format: date-time
+          example: 2022-01-01T00:00:00.000Z
+
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426655440000
+        status:
+          type: string
+          format: enum
+          enum: [PENDING, IN_PROGRESS, DELIVERED]
+          example: PENDING
+        restaurantId:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426655440000
+        userId:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426655440000
+        total:
+          type: number
+          format: float
+          example: 19.99
+        subtotal:
+          type: number
+          format: float
+          example: 15.99
+        discount:
+          type: number
+          format: float
+          example: 4.00
+        notes:
+          type: string
+          format: string
+          example: 'No onions, no ketchup'
+        paymentStatus:
+          type: string
+          format: enum
+          enum: [PENDING, PAID, REFUNDED]
+          example: PENDING
+        paymentMethod:
+          type: string
+          format: enum
+          enum: [CASH, CARD, ONLINE]
+          example: CASH
+        tableNumber:
+          type: number
+          format: integer
+          example: 5
+        invoiceNumber:
+          type: string
+          format: string
+          example: INV123
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        createdAt:
+          type: string
+          format: date-time
+          example: 2022-01-01T00:00:00.000Z
+        updatedAt:
+          type: string
+          format: date-time
+          example: 2022-01-01T00:00:00.000Z
+
+    OrderItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426655440000
+        orderId:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426655440000
+        menuItemId:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426655440000
+        quantity:
+          type: number
+          format: integer
+          example: 2
+        notes:
+          type: string
+          format: string
+          example: 'No onions, no ketchup'
         createdAt:
           type: string
           format: date-time
