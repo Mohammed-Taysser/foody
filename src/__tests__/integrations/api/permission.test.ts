@@ -82,6 +82,17 @@ describe('Permission API', () => {
       expect(res.status).toBe(200);
       expect(res.body.data.key).toBe('update:test');
     });
+
+    it('should return 404 for non-existing permission', async () => {
+      const res = await request(app)
+        .patch('/api/permissions/non-existent-id')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          key: 'update:test',
+          description: 'Update a test',
+        });
+      expect(res.status).toBe(404);
+    });
   });
 
   describe('GET /api/permissions/', () => {

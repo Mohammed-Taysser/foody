@@ -61,6 +61,7 @@ app.use(compressionMiddleware);
 
 // Serve static Files
 app.use(express.static('public'));
+app.use('/uploads', express.static('uploads'));
 
 // Health check route
 app.get('/health', (_req, res) => {

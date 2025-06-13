@@ -110,10 +110,6 @@ async function login(req: Request, res: Response) {
 function refreshToken(req: Request, res: Response) {
   const { refreshToken } = req.body;
 
-  if (!refreshToken) {
-    throw new UnauthorizedError('Refresh token is required');
-  }
-
   try {
     const payload = tokenService.verifyToken<UserTokenPayload>(refreshToken);
 

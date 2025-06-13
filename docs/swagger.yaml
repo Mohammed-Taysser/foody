@@ -97,11 +97,11 @@ paths:
                 email:
                   type: string
                   format: email
-                  example: 1B3yK@example.com
+                  example: admin@demo.com
                 password:
                   type: string
                   format: password
-                  example: 'StrongPassword123'
+                  example: '123456789'
       responses:
         200:
           description: Successful login
@@ -743,12 +743,35 @@ paths:
               type: object
               required:
                 - name
-                - address
+                - location
               properties:
                 name:
                   type: string
-                address:
+                location:
                   type: string
+                description:
+                  type: string
+                ownerId:
+                  type: string
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - name
+                - location
+              properties:
+                name:
+                  type: string
+                location:
+                  type: string
+                description:
+                  type: string
+                image:
+                  type: string
+                  format: binary
+                ownerId:
+                  type: string
+
       responses:
         201:
           description: Restaurant created successfully
@@ -817,8 +840,31 @@ paths:
               properties:
                 name:
                   type: string
-                address:
+                location:
                   type: string
+                description:
+                  type: string
+                ownerId:
+                  type: string
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - name
+                - location
+              properties:
+                name:
+                  type: string
+                location:
+                  type: string
+                description:
+                  type: string
+                image:
+                  type: string
+                  format: binary
+                ownerId:
+                  type: string
+
       responses:
         200:
           description: Restaurant updated successfully

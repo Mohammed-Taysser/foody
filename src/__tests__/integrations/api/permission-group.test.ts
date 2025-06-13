@@ -96,6 +96,17 @@ describe('Permission Group API', () => {
       expect(res.status).toBe(200);
       expect(res.body.data.name).toBe('Updated Group');
     });
+
+    it('should return 404 if group does not exist', async () => {
+      const res = await request(app)
+        .patch('/api/permissions/permission-groups/non-existing-id')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Updated Group',
+          description: 'Updated description',
+        });
+      expect(res.status).toBe(404);
+    });
   });
 
   describe('DELETE /api/permissions/permission-groups/:id', () => {

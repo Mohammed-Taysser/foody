@@ -1,8 +1,12 @@
+import path from 'path';
+
 import { faker } from '@faker-js/faker';
 import { MenuItem } from '@prisma/client';
 import request from 'supertest';
 
 import app from '@/app';
+
+const mockImagePath = path.join(__dirname, '../../../../public/avatar.jpg');
 
 describe('Menu Items API', () => {
   let ownerToken: string;
@@ -144,6 +148,32 @@ describe('Menu Items API', () => {
 
       expect(res.statusCode).toBe(409);
     });
+
+    it('should allow uploading image when adding a menu item', async () => {
+      const res = await request(app)
+        .post(`/api/menu-items`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .field('name', 'Pizza Upload')
+        .field('price', 15.99)
+        .field('available', true)
+        .field('restaurantId', restaurantId)
+        .field('categoryId', categoryId)
+        .attach('image', mockImagePath);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data.image).toMatch(/\/uploads\/menu\//);
+    });
+
+    it('should return 401 if unauthenticated user tries to create a menu item', async () => {
+      const res = await request(app).post(`/api/menu-items`).send({
+        name: 'Unauthorized Dish',
+        price: 10,
+        restaurantId,
+        categoryId,
+      });
+
+      expect(res.statusCode).toBe(401);
+    });
   });
 
   describe('GET /api/menu-items', () => {
@@ -281,6 +311,36 @@ describe('Menu Items API', () => {
 
       expect(res.statusCode).toBe(403);
     });
+
+    it('should replace image when updating a menu item', async () => {
+      // First, create item with initial image
+      const createRes = await request(app)
+        .post(`/api/menu-items`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .field('name', 'Image Replace')
+        .field('price', 18.99)
+        .field('available', true)
+        .field('restaurantId', restaurantId)
+        .field('categoryId', categoryId)
+        .attach('image', mockImagePath);
+
+      const itemId = createRes.body.data.id;
+
+      // Then, update with a new image
+      const updateRes = await request(app)
+        .patch(`/api/menu-items/${itemId}`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .attach('image', mockImagePath);
+
+      expect(updateRes.statusCode).toBe(200);
+      expect(updateRes.body.data.image).toMatch(/\/uploads\/restaurant\//); // note: uses "restaurant" for update
+    });
+
+    it('should return 401 if unauthenticated user tries to update a menu item', async () => {
+      const res = await request(app).patch(`/api/menu-items/${menuItemId}`).send({ price: 999 });
+
+      expect(res.statusCode).toBe(401);
+    });
   });
 
   describe('DELETE /api/menu-items/:itemId', () => {
@@ -327,6 +387,11 @@ describe('Menu Items API', () => {
         .set('Authorization', `Bearer ${token}`);
 
       expect(res.statusCode).toBe(403);
+    });
+
+    it('should return 401 if unauthenticated user tries to delete a menu item', async () => {
+      const res = await request(app).delete(`/api/menu-items/${menuItemId}`);
+      expect(res.statusCode).toBe(401);
     });
   });
 });

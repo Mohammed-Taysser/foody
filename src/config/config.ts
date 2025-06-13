@@ -50,7 +50,7 @@ const envSchema = z.object({
       return origins;
     }),
 
-  DEFAULT_TIMEZONE: z.enum(validTimezones as [string, ...string[]]),
+  DEFAULT_TIMEZONE: z.enum(validTimezones as [string, ...string[]]).default('UTC'),
 
   JWT_SECRET: z.string().min(10),
   JWT_ACCESS_EXPIRES_IN: z.string().regex(/^\d+[smhd]$/, {

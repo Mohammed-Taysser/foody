@@ -2,15 +2,18 @@ import { Prisma } from '@prisma/client';
 import { Request, Response } from 'express';
 
 import prisma from '@/config/prisma';
+import DATABASE_LOGGER from '@/services/database-log.service';
 import { AuthenticatedRequest } from '@/types/import';
 import { ConflictError, ForbiddenError, NotFoundError } from '@/utils/errors.utils';
+import { deleteImage, uploadImage } from '@/utils/multer.utils';
 import sendResponse from '@/utils/sendResponse';
-import DATABASE_LOGGER from '@/services/database-log.service';
 
 async function addMenuItem(req: Request, res: Response) {
   const request = req as AuthenticatedRequest;
 
   const user = request.user;
+  const image = request.file;
+  const data = req.body;
 
   const restaurant = await prisma.restaurant.findUnique({
     where: { id: request.body.restaurantId },
@@ -24,8 +27,17 @@ async function addMenuItem(req: Request, res: Response) {
     throw new ForbiddenError('You do not own this restaurant');
   }
 
+  let imageUrl = undefined;
+
+  if (image) {
+    imageUrl = await uploadImage(image, 'menu');
+  }
+
   const newItem = await prisma.menuItem.create({
-    data: request.body,
+    data: {
+      ...data,
+      image: imageUrl,
+    },
   });
 
   DATABASE_LOGGER.log({
@@ -144,9 +156,22 @@ async function updateMenuItem(req: Request, res: Response) {
     throw new ForbiddenError('You do not have permission to update this item');
   }
 
+  let imageUrl = item.image;
+
+  if (item.image && req.file) {
+    deleteImage(item.image);
+  }
+
+  if (req.file) {
+    imageUrl = await uploadImage(req.file, 'restaurant');
+  }
+
   const updatedItem = await prisma.menuItem.update({
     where: { id: itemId },
-    data,
+    data: {
+      ...data,
+      image: imageUrl,
+    },
   });
 
   DATABASE_LOGGER.log({
@@ -156,6 +181,8 @@ async function updateMenuItem(req: Request, res: Response) {
     action: 'UPDATE',
     resource: 'MENU_ITEM',
     resourceId: updatedItem.id,
+    oldData: item,
+    newData: updatedItem,
     metadata: { data },
   });
 
@@ -182,6 +209,10 @@ async function deleteMenuItem(req: Request, res: Response) {
   const deletedMenu = await prisma.menuItem.delete({
     where: { id: itemId },
   });
+
+  if (item.image && req.file) {
+    deleteImage(item.image);
+  }
 
   DATABASE_LOGGER.log({
     request: request,

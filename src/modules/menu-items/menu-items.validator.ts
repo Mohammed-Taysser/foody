@@ -5,8 +5,8 @@ import basePaginationSchema from '@/validations/pagination.validation';
 const baseMenuItemSchema = z.object({
   name: z.string().min(5),
   description: z.string().default(''),
-  price: z.number().min(0.01),
-  available: z.boolean().optional(),
+  price: z.coerce.number().min(0.01),
+  available: z.coerce.boolean().optional(),
   categoryId: z.string(),
   restaurantId: z.string(),
 });

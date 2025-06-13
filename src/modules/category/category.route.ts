@@ -15,6 +15,7 @@ import authorize from '@/middleware/authorize.middleware';
 import requirePermission from '@/middleware/require-permission.middleware';
 import ZodValidate from '@/middleware/zod-validate.middleware';
 import basePaginationSchema from '@/validations/pagination.validation';
+import { upload } from '@/utils/multer.utils';
 
 const router = Router();
 
@@ -34,6 +35,7 @@ router.post(
   authenticate,
   authorize('OWNER', 'ADMIN'),
   requirePermission(['add:category']),
+  upload.single('image'),
   ZodValidate(createCategorySchema),
   createCategory
 );
@@ -43,6 +45,7 @@ router.patch(
   authenticate,
   authorize('OWNER', 'ADMIN'),
   requirePermission(['update:category']),
+  upload.single('image'),
   ZodValidate(updateCategorySchema),
   updateCategory
 );

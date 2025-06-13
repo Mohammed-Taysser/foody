@@ -104,14 +104,18 @@ async function updatePermissionGroup(req: Request, res: Response) {
   const { permissionGroupId } = req.params;
   const { name, description } = req.body;
 
-  const permission = await prisma.permissionGroup.update({
+  const permission = await prisma.permissionGroup.findUnique({
     where: { id: permissionGroupId },
-    data: { name, description },
   });
 
   if (!permission) {
     throw new NotFoundError('Permission group not found');
   }
+
+  const updatedPermission = await prisma.permissionGroup.update({
+    where: { id: permissionGroupId },
+    data: { name, description },
+  });
 
   DATABASE_LOGGER.log({
     request: request,
@@ -119,14 +123,16 @@ async function updatePermissionGroup(req: Request, res: Response) {
     actorType: 'USER',
     action: 'UPDATE',
     resource: 'PERMISSION_GROUP',
-    resourceId: permission.id,
-    metadata: { permission },
+    oldData: { name: updatedPermission.name, description: updatedPermission.description },
+    newData: { name, description },
+    resourceId: updatedPermission.id,
+    metadata: { permission: updatedPermission },
   });
 
   sendResponse({
     res,
     message: 'Permission group updated',
-    data: permission,
+    data: updatedPermission,
   });
 }
 

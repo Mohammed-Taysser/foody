@@ -1,13 +1,15 @@
 import { Request, Response } from 'express';
 
 import prisma from '@/config/prisma';
+import DATABASE_LOGGER from '@/services/database-log.service';
 import { AuthenticatedRequest } from '@/types/import';
 import { BadRequestError, NotFoundError } from '@/utils/errors.utils';
+import { deleteImage, uploadImage } from '@/utils/multer.utils';
 import sendResponse from '@/utils/sendResponse';
-import DATABASE_LOGGER from '@/services/database-log.service';
 
 async function createRestaurant(req: Request, res: Response) {
   const data = req.body;
+  const image = req.file;
 
   if (!data.ownerId) {
     throw new BadRequestError('Owner id is required');
@@ -21,8 +23,10 @@ async function createRestaurant(req: Request, res: Response) {
     throw new NotFoundError('Owner not found');
   }
 
-  if (owner.role !== 'OWNER') {
-    throw new BadRequestError('User is not an owner');
+  let imageUrl = undefined;
+
+  if (image) {
+    imageUrl = await uploadImage(image, 'restaurant');
   }
 
   const newRestaurant = await prisma.restaurant.create({
@@ -31,6 +35,7 @@ async function createRestaurant(req: Request, res: Response) {
       description: data.description,
       location: data.location,
       ownerId: owner.id,
+      image: imageUrl,
     },
     include: {
       owner: {
@@ -128,9 +133,22 @@ const updateRestaurant = async (req: Request, res: Response) => {
     throw new NotFoundError('Restaurant not found');
   }
 
+  let imageUrl = restaurant.image;
+
+  if (restaurant.image && req.file) {
+    deleteImage(restaurant.image);
+  }
+
+  if (req.file) {
+    imageUrl = await uploadImage(req.file, 'restaurant');
+  }
+
   const updatedRestaurant = await prisma.restaurant.update({
     where: { id: restaurantId },
-    data,
+    data: {
+      ...data,
+      image: imageUrl,
+    },
   });
 
   DATABASE_LOGGER.log({
@@ -140,6 +158,8 @@ const updateRestaurant = async (req: Request, res: Response) => {
     action: 'UPDATE',
     resource: 'RESTAURANT',
     resourceId: restaurant.id,
+    oldData: restaurant,
+    newData: updatedRestaurant,
     metadata: { data },
   });
 
@@ -165,6 +185,10 @@ const deleteRestaurant = async (req: Request, res: Response) => {
   const deletedRestaurant = await prisma.restaurant.delete({
     where: { id: restaurantId },
   });
+
+  if (restaurant.image) {
+    deleteImage(restaurant.image);
+  }
 
   DATABASE_LOGGER.log({
     request: req,

@@ -112,6 +112,25 @@ describe('POST /auth/login', () => {
     expect(res.body.details.length).toBeGreaterThan(0);
   });
 
+  it('should fail when password is invalid', async () => {
+    const dummyEmail = faker.internet.email();
+
+    await request(app).post('/api/auth/register').send({
+      name: faker.person.fullName(),
+      email: dummyEmail,
+      password: '123456789',
+    });
+
+    const res = await request(app).post('/api/auth/login').send({
+      email: dummyEmail,
+      password: 'wrong_pass',
+    });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.success).toBe(false);
+    expect(res.body.details.length).toBeGreaterThan(0);
+  });
+
   it('should return error for missing fields', async () => {
     const res = await request(app).post('/api/auth/login').send({});
 

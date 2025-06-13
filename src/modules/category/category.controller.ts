@@ -1,10 +1,11 @@
 import { Request, Response } from 'express';
 
 import prisma from '@/config/prisma';
+import DATABASE_LOGGER from '@/services/database-log.service';
 import { AuthenticatedRequest } from '@/types/import';
 import { ConflictError, ForbiddenError, NotFoundError } from '@/utils/errors.utils';
+import { deleteImage, uploadImage } from '@/utils/multer.utils';
 import sendResponse from '@/utils/sendResponse';
-import DATABASE_LOGGER from '@/services/database-log.service';
 
 async function createCategory(req: Request, res: Response) {
   const request = req as AuthenticatedRequest;
@@ -23,8 +24,17 @@ async function createCategory(req: Request, res: Response) {
     throw new ForbiddenError('You do not own this restaurant');
   }
 
+  let imageUrl = undefined;
+
+  if (request.file) {
+    imageUrl = await uploadImage(request.file, 'menu');
+  }
+
   const category = await prisma.category.create({
-    data: request.body,
+    data: {
+      ...request.body,
+      image: imageUrl,
+    },
   });
 
   DATABASE_LOGGER.log({
@@ -66,9 +76,19 @@ async function updateCategory(req: Request, res: Response) {
     throw new ForbiddenError('You do not own this category');
   }
 
+  let imageUrl = category.image;
+
+  if (category.image && req.file) {
+    deleteImage(category.image);
+  }
+
+  if (req.file) {
+    imageUrl = await uploadImage(req.file, 'restaurant');
+  }
+
   const updated = await prisma.category.update({
     where: { id: categoryId },
-    data: { ...request.body },
+    data: { ...request.body, image: imageUrl },
   });
 
   DATABASE_LOGGER.log({
@@ -78,6 +98,8 @@ async function updateCategory(req: Request, res: Response) {
     action: 'UPDATE',
     resource: 'CATEGORY',
     resourceId: updated.id,
+    oldData: category,
+    newData: updated,
     metadata: { data: request.body },
   });
 
@@ -167,6 +189,10 @@ async function deleteCategory(req: Request, res: Response) {
   const deletedCategory = await prisma.category.delete({
     where: { id: categoryId },
   });
+
+  if (category.image) {
+    deleteImage(category.image);
+  }
 
   DATABASE_LOGGER.log({
     request: request,

@@ -4,3 +4,4 @@ onlyBuiltDependencies:
   - '@scarf/scarf'
   - bcrypt
   - prisma
+  - sharp

@@ -18,6 +18,7 @@ import authenticate from '@/middleware/authenticate.middleware';
 import authorize from '@/middleware/authorize.middleware';
 import requirePermission from '@/middleware/require-permission.middleware';
 import ZodValidate from '@/middleware/zod-validate.middleware';
+import { upload } from '@/utils/multer.utils';
 
 const router = Router();
 
@@ -37,6 +38,7 @@ router.post(
   authenticate,
   authorize('OWNER', 'ADMIN'),
   requirePermission(['add:menuItem']),
+  upload.single('image'),
   ZodValidate(createMenuItemSchema),
   addMenuItem
 );
@@ -46,6 +48,7 @@ router.patch(
   authenticate,
   authorize('OWNER', 'ADMIN'),
   requirePermission(['update:menuItem']),
+  upload.single('image'),
   ZodValidate(updateMenuItemSchema),
   updateMenuItem
 );

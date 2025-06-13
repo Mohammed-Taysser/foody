@@ -3,6 +3,7 @@ import { Request } from 'express';
 
 import WINSTON_LOGGER from './winston-log.service';
 
+import CONFIG from '@/config/config';
 import prisma from '@/config/prisma';
 import { AuditLogParams, ErrorLogParams } from '@/types/import';
 import { formatDeepDiff } from '@/utils/deep-diff.utils';
@@ -38,10 +39,12 @@ async function logAction(params: AuditLogParams) {
     },
   });
 
-  WINSTON_LOGGER.info(
-    `Log: ${auditLog.id} | Action: ${action} | Actor: ${actorType} ${actorId} | Resource: ${resource} ${resourceId}`,
-    'audit_log'
-  );
+  if (CONFIG.NODE_ENV !== 'test') {
+    WINSTON_LOGGER.info(
+      `Log: ${auditLog.id} | Action: ${action} | Actor: ${actorType} ${actorId} | Resource: ${resource} ${resourceId}`,
+      'audit_log'
+    );
+  }
 }
 
 async function logError(params: ErrorLogParams) {
@@ -60,10 +63,12 @@ async function logError(params: ErrorLogParams) {
     },
   });
 
-  WINSTON_LOGGER.error(
-    `Error: ${errorLog.id} | Actor: ${params.actorType} ${params.actorId} | Resource: ${params.resource} ${params.resourceId}`,
-    'audit_log'
-  );
+  if (CONFIG.NODE_ENV !== 'test') {
+    WINSTON_LOGGER.error(
+      `Error: ${errorLog.id} | Actor: ${params.actorType} ${params.actorId} | Resource: ${params.resource} ${params.resourceId}`,
+      'audit_log'
+    );
+  }
 }
 
 const DATABASE_LOGGER = {

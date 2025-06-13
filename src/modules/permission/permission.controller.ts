@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
 
 import prisma from '@/config/prisma';
+import DATABASE_LOGGER from '@/services/database-log.service';
 import { AuthenticatedRequest } from '@/types/import';
 import { ConflictError, NotFoundError } from '@/utils/errors.utils';
 import sendResponse from '@/utils/sendResponse';
-import DATABASE_LOGGER from '@/services/database-log.service';
 
 async function listPermissions(req: Request, res: Response) {
   const request = req as AuthenticatedRequest;
@@ -104,14 +104,18 @@ async function updatePermission(req: Request, res: Response) {
   const { permissionId } = request.params;
   const { key, description } = request.body;
 
-  const permission = await prisma.permission.update({
+  const permission = await prisma.permission.findUnique({
     where: { id: permissionId },
-    data: { key, description },
   });
 
   if (!permission) {
     throw new NotFoundError('Permission not found');
   }
+
+  const updatedPermission = await prisma.permission.update({
+    where: { id: permissionId },
+    data: { key, description },
+  });
 
   DATABASE_LOGGER.log({
     request: request,
@@ -119,14 +123,16 @@ async function updatePermission(req: Request, res: Response) {
     actorType: 'USER',
     action: 'UPDATE',
     resource: 'PERMISSION',
-    resourceId: permission.id,
-    metadata: { permission },
+    oldData: { key: updatedPermission.key, description: updatedPermission.description },
+    newData: { key, description },
+    resourceId: updatedPermission.id,
+    metadata: { permission: updatedPermission },
   });
 
   sendResponse({
     res,
     message: 'Permission updated',
-    data: permission,
+    data: updatedPermission,
   });
 }
 
