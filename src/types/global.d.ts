@@ -4,4 +4,17 @@ interface UserTokenPayload {
   role: Role;
 }
 
-type AppModules = 'auth' | 'user' | 'restaurant' | 'menu' | 'category';
+type AppModules = 'auth' | 'user' | 'restaurant' | 'menu' | 'category' | 'audit_log' | 'order';
+
+type PermittedAction = 'add' | 'view' | 'update' | 'delete';
+type PermittedModule =
+  | 'category'
+  | 'menuItem'
+  | 'restaurant'
+  | 'user'
+  | 'order'
+  | 'permission'
+  | 'permissionGroup';
+
+type AdditionalPermissions = 'custom_permission';
+type PermittedId = `${PermittedAction}:${PermittedModule}` | AdditionalPermissions;

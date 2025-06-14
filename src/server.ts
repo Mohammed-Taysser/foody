@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 
-import LOGGER from './services/log.service';
+import WINSTON_LOGGER from './services/winston-log.service';
 import { isPortAvailable } from './utils/network';
 import { promptYesNo } from './utils/prompts';
 import { logServerInfo } from './utils/system-info-logs';
@@ -30,9 +30,10 @@ async function startServer() {
 
 startServer()
   .then((port) => {
+    console.clear();
     logServerInfo(startTime, port);
   })
   .catch((error) => {
-    LOGGER.error('Error starting server:', error);
+    WINSTON_LOGGER.error('Error starting server:' + error);
     process.exit(1);
   });

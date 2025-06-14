@@ -12,13 +12,13 @@ jest.mock('@/config/prisma', () => ({
   __esModule: true,
   default: {
     user: {
-      findFirst: jest.fn(),
+      findUnique: jest.fn(),
     },
   },
 }));
 
 const mockVerifyToken = tokenService.verifyToken as jest.Mock;
-const mockFindFirst = prisma.user.findFirst as jest.Mock;
+const mockFindUnique = prisma.user.findUnique as jest.Mock;
 
 describe('Authenticate middleware', () => {
   const mockNext = jest.fn();
@@ -66,11 +66,18 @@ describe('Authenticate middleware', () => {
     } as Request;
 
     mockVerifyToken.mockReturnValue({ id: 1 });
-    mockFindFirst.mockResolvedValue(null);
+    mockFindUnique.mockResolvedValue(null);
 
     await expect(authenticateMiddleware(req, mockRes, mockNext)).rejects.toThrow('Invalid token');
 
-    expect(mockFindFirst).toHaveBeenCalledWith({ where: { id: 1 } });
+    expect(mockFindUnique).toHaveBeenCalledWith({
+      where: { id: 1 },
+      include: {
+        permissions: true,
+        permissionGroups: { include: { permissions: true } },
+      },
+    });
+
     expect(mockNext).not.toHaveBeenCalled();
   });
 
@@ -81,11 +88,11 @@ describe('Authenticate middleware', () => {
 
     const user = { id: 1, email: 'test@example.com' };
     mockVerifyToken.mockReturnValue({ id: 1 });
-    mockFindFirst.mockResolvedValue(user);
+    mockFindUnique.mockResolvedValue(user);
 
     const requestWithUser = req as AuthenticatedRequest;
 
-    await authenticateMiddleware(requestWithUser, mockRes, mockNext);
+    await authenticateMiddleware(req, mockRes, mockNext);
 
     expect(requestWithUser.user).toEqual(user);
     expect(mockNext).toHaveBeenCalled();
