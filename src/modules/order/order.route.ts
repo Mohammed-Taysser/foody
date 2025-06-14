@@ -1,10 +1,11 @@
 import { Router } from 'express';
 
 import {
+  cancelOrder,
   createOrder,
   deleteOrder,
-  getOrders,
   getOrderById,
+  getOrders,
   getOrdersList,
   payOrder,
   updateOrder,
@@ -70,6 +71,13 @@ router.patch(
   requirePermission(['update:order']),
   ZodValidate(payOrderSchema),
   payOrder
+);
+
+router.patch(
+  '/:orderId/cancel-order',
+  authenticate,
+  requirePermission(['update:order']),
+  cancelOrder
 );
 
 export default router;

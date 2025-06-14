@@ -103,6 +103,31 @@ describe('Order API', () => {
 
       expect(res.statusCode).toBe(400);
     });
+
+    it('should return 400 if restaurantId is missing', async () => {
+      const res = await request(app)
+        .post('/api/orders')
+        .set('Authorization', `Bearer ${customerToken}`)
+        .send({
+          items: [{ menuItemId, quantity: 2 }],
+          discount: 0,
+        });
+
+      expect(res.statusCode).toBe(400);
+    });
+
+    it('should return 400 if items array is empty', async () => {
+      const res = await request(app)
+        .post('/api/orders')
+        .set('Authorization', `Bearer ${customerToken}`)
+        .send({
+          restaurantId,
+          items: [],
+          discount: 0,
+        });
+
+      expect(res.statusCode).toBe(400);
+    });
   });
 
   describe('GET /orders', () => {
@@ -113,6 +138,30 @@ describe('Order API', () => {
 
       expect(res.statusCode).toBe(200);
       expect(Array.isArray(res.body.data.data)).toBe(true);
+    });
+
+    it('should return 401 if no token is provided', async () => {
+      const res = await request(app).get('/api/orders');
+
+      expect(res.statusCode).toBe(401);
+    });
+
+    it("should return 403 when a user tries to access another user's order", async () => {
+      // Register a second customer
+      const anotherCustomerRes = await request(app).post('/api/auth/register').send({
+        name: faker.person.fullName(),
+        email: faker.internet.email(),
+        password: '123456789',
+        role: 'CUSTOMER',
+      });
+
+      const anotherCustomerToken = anotherCustomerRes.body.data.data.accessToken;
+
+      const res = await request(app)
+        .get(`/api/orders/${orderId}`)
+        .set('Authorization', `Bearer ${anotherCustomerToken}`);
+
+      expect(res.statusCode).toBe(403);
     });
   });
 
@@ -166,6 +215,15 @@ describe('Order API', () => {
 
       expect(res.statusCode).toBe(404);
     });
+
+    it('should return 403 if non-admin tries to update an order', async () => {
+      const res = await request(app)
+        .patch(`/api/orders/${orderId}`)
+        .set('Authorization', `Bearer ${customerToken}`)
+        .send({ notes: 'Unauthorized update' });
+
+      expect(res.statusCode).toBe(403);
+    });
   });
 
   describe('PATCH /orders/:orderId/update-order-status', () => {
@@ -187,10 +245,30 @@ describe('Order API', () => {
 
       expect(res.statusCode).toBe(404);
     });
+
+    it('should return 400 for invalid status value', async () => {
+      const res = await request(app)
+        .patch(`/api/orders/${orderId}/update-order-status`)
+        .set('Authorization', `Bearer ${customerToken}`)
+        .send({ status: 'INVALID_STATUS' });
+
+      expect(res.statusCode).toBe(400);
+    });
   });
 
   describe('PATCH /orders/:id/pay-order', () => {
     it('should mark order as paid', async () => {
+      const orderRes = await request(app)
+        .post('/api/orders')
+        .set('Authorization', `Bearer ${customerToken}`)
+        .send({
+          restaurantId,
+          items: [{ menuItemId, quantity: 2 }],
+          discount: 0,
+        });
+
+      const orderId = orderRes.body.data.data.id;
+
       const res = await request(app)
         .patch(`/api/orders/${orderId}/pay-order`)
         .set('Authorization', `Bearer ${customerToken}`)
@@ -208,16 +286,82 @@ describe('Order API', () => {
 
       expect(res.statusCode).toBe(404);
     });
+
+    it('should return 400 for invalid payment method', async () => {
+      const res = await request(app)
+        .patch(`/api/orders/${orderId}/pay-order`)
+        .set('Authorization', `Bearer ${customerToken}`)
+        .send({ method: 'BITCOIN' });
+
+      expect(res.statusCode).toBe(400);
+    });
   });
 
-  describe('DELETE /orders/:id', () => {
-    it('should cancel an order', async () => {
+  describe('PATCH /orders/:id/cancel', () => {
+    it('should cancel the order successfully', async () => {
+      const resOrder = await request(app)
+        .post('/api/orders')
+        .set('Authorization', `Bearer ${customerToken}`)
+        .send({
+          restaurantId,
+          items: [{ menuItemId, quantity: 2 }],
+          discount: 0,
+        });
+
+      const newOrderId = resOrder.body.data.data.id;
+
       const res = await request(app)
-        .delete(`/api/orders/${orderId}`)
+        .patch(`/api/orders/${newOrderId}/cancel-order`)
         .set('Authorization', `Bearer ${customerToken}`);
 
       expect(res.statusCode).toBe(200);
       expect(res.body.data.data.status).toBe('CANCELLED');
+    });
+
+    it('should return 404 if order does not exist', async () => {
+      const res = await request(app)
+        .patch('/api/orders/non-existing-id/cancel-order')
+        .set('Authorization', `Bearer ${customerToken}`);
+
+      expect(res.statusCode).toBe(404);
+    });
+
+    it('should return 403 if user is not the owner of the order', async () => {
+      const anotherCustomer = await request(app).post('/api/auth/register').send({
+        name: faker.person.fullName(),
+        email: faker.internet.email(),
+        password: '123456789',
+        role: 'CUSTOMER',
+      });
+
+      const anotherToken = anotherCustomer.body.data.data.accessToken;
+
+      const res = await request(app)
+        .patch(`/api/orders/${orderId}/cancel-order`)
+        .set('Authorization', `Bearer ${anotherToken}`);
+
+      expect(res.statusCode).toBe(403);
+    });
+  });
+
+  describe('DELETE /orders/:id', () => {
+    it('should delete an order', async () => {
+      const resOrder = await request(app)
+        .post('/api/orders')
+        .set('Authorization', `Bearer ${customerToken}`)
+        .send({
+          restaurantId,
+          items: [{ menuItemId, quantity: 1 }],
+          discount: 0,
+        });
+
+      const newOrderId = resOrder.body.data.data.id;
+
+      const res = await request(app)
+        .delete(`/api/orders/${newOrderId}`)
+        .set('Authorization', `Bearer ${customerToken}`);
+
+      expect(res.statusCode).toBe(200);
     });
 
     it('should return 404 for non-existing order', async () => {

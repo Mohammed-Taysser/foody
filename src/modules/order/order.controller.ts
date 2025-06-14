@@ -1,12 +1,13 @@
 import { Prisma } from '@prisma/client';
 import { Request, Response } from 'express';
 
-import { CreateOrderInput } from './order.validation';
+import { VALID_TRANSITIONS } from './order.constant';
+import { CreateOrderInput, UpdateOrderInput } from './order.validation';
 
 import prisma from '@/config/prisma';
 import DATABASE_LOGGER from '@/services/database-log.service';
 import { AuthenticatedRequest } from '@/types/import';
-import { BadRequestError, NotFoundError } from '@/utils/errors.utils';
+import { BadRequestError, ForbiddenError, NotFoundError } from '@/utils/errors.utils';
 import { sendPaginatedResponse, sendSuccessResponse } from '@/utils/send-response';
 import { BasePaginationInput } from '@/validations/pagination.validation';
 
@@ -61,6 +62,12 @@ async function getOrdersList(request: Request, response: Response) {
 
 async function getOrderById(request: Request, response: Response) {
   const orderId = request.params.orderId;
+  const authenticatedRequest = request as unknown as AuthenticatedRequest<
+    unknown,
+    unknown,
+    unknown,
+    unknown
+  >;
 
   const order = await prisma.order.findUnique({
     where: { id: orderId },
@@ -68,6 +75,10 @@ async function getOrderById(request: Request, response: Response) {
 
   if (!order) {
     throw new NotFoundError('Order not found');
+  }
+
+  if (authenticatedRequest.user.role !== 'ADMIN' && order.userId !== authenticatedRequest.user.id) {
+    throw new ForbiddenError('Not your order');
   }
 
   sendSuccessResponse({ response, message: 'Order found', data: order });
@@ -172,6 +183,17 @@ async function updateOrderStatus(request: Request, response: Response) {
     throw new NotFoundError('Order not found');
   }
 
+  // Final state check
+  if (['COMPLETED', 'CANCELLED'].includes(order.status)) {
+    throw new BadRequestError('Cannot update a finalized order');
+  }
+
+  const validNext = VALID_TRANSITIONS[order.status];
+
+  if (!validNext.includes(status)) {
+    throw new BadRequestError(`Invalid status transition from ${order.status} to ${status}`);
+  }
+
   const updatedOrder = await prisma.order.update({
     where: { id: orderId },
     data: { status },
@@ -204,6 +226,14 @@ async function payOrder(request: Request, response: Response) {
     throw new NotFoundError('Order not found');
   }
 
+  if (existOrder.paymentStatus === 'PAID') {
+    throw new BadRequestError('Order is already paid');
+  }
+
+  if (!['PENDING', 'PREPARING'].includes(existOrder.status)) {
+    throw new BadRequestError('Cannot pay for this order anymore');
+  }
+
   const order = await prisma.order.update({
     where: { id: orderId },
     data: {
@@ -227,6 +257,36 @@ async function payOrder(request: Request, response: Response) {
   sendSuccessResponse({ response, message: 'Order marked as paid', data: order });
 }
 
+async function cancelOrder(request: Request, response: Response) {
+  const { orderId } = request.params;
+
+  const authenticatedRequest = request as AuthenticatedRequest<unknown, unknown, UpdateOrderInput>;
+
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: { id: true, status: true, userId: true },
+  });
+
+  if (!order) {
+    throw new NotFoundError('Order not found');
+  }
+
+  if (order.userId !== authenticatedRequest.user.id) {
+    throw new ForbiddenError('Not your order');
+  }
+
+  if (order.status !== 'PENDING') {
+    throw new BadRequestError('Cannot cancel at this stage');
+  }
+
+  const cancelled = await prisma.order.update({
+    where: { id: orderId },
+    data: { status: 'CANCELLED' },
+  });
+
+  sendSuccessResponse({ response, message: 'Order cancelled', data: cancelled });
+}
+
 async function deleteOrder(request: Request, response: Response) {
   const { orderId } = request.params;
   const user = (request as AuthenticatedRequest).user;
@@ -239,31 +299,28 @@ async function deleteOrder(request: Request, response: Response) {
     throw new NotFoundError('Order not found');
   }
 
-  const order = await prisma.order.update({
+  const order = await prisma.order.delete({
     where: { id: orderId },
-    data: {
-      status: 'CANCELLED',
-    },
   });
 
   DATABASE_LOGGER.log({
     action: 'DELETE',
     resource: 'ORDER',
     resourceId: orderId,
-    metadata: { data: { status: 'CANCELLED' } },
     request: request,
     actorId: user.id,
     actorType: 'USER',
   });
 
-  sendSuccessResponse({ response, message: 'Order cancelled', data: order });
+  sendSuccessResponse({ response, message: 'Order deleted', data: order });
 }
 
 export {
+  cancelOrder,
   createOrder,
   deleteOrder,
-  getOrders,
   getOrderById,
+  getOrders,
   getOrdersList,
   payOrder,
   updateOrder,

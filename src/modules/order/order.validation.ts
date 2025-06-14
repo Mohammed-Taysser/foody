@@ -2,12 +2,14 @@ import { z } from 'zod';
 
 const baseOrderSchema = z.object({
   restaurantId: z.string(),
-  items: z.array(
-    z.object({
-      menuItemId: z.string(),
-      quantity: z.number().min(1),
-    })
-  ),
+  items: z
+    .array(
+      z.object({
+        menuItemId: z.string(),
+        quantity: z.number().min(1),
+      })
+    )
+    .min(1),
   tableNumber: z.number().optional(),
   notes: z.string().optional(),
   discount: z.number().min(0).default(0),
