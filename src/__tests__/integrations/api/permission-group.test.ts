@@ -18,7 +18,7 @@ describe('Permission Group API', () => {
         password: '123456789',
         role: 'ADMIN',
       });
-    adminToken = adminRes.body.data.accessToken;
+    adminToken = adminRes.body.data.data.accessToken;
   });
 
   describe('POST /api/permissions/permission-groups', () => {
@@ -33,10 +33,10 @@ describe('Permission Group API', () => {
         });
 
       expect(res.status).toBe(201);
-      expect(res.body.data).toHaveProperty('id');
-      expect(res.body.data.name).toBe(name);
+      expect(res.body.data.data).toHaveProperty('id');
+      expect(res.body.data.data.name).toBe(name);
 
-      permissionGroupId = res.body.data.id;
+      permissionGroupId = res.body.data.data.id;
     });
 
     it('should fail if group already exists', async () => {
@@ -64,8 +64,8 @@ describe('Permission Group API', () => {
     it('should list all permission groups', async () => {
       const res = await request(app).get('/api/permissions/permission-groups/list');
       expect(res.status).toBe(200);
-      expect(Array.isArray(res.body.data)).toBe(true);
-      expect(res.body.data.length).toBeGreaterThan(0);
+      expect(Array.isArray(res.body.data.data)).toBe(true);
+      expect(res.body.data.data.length).toBeGreaterThan(0);
     });
   });
 
@@ -74,7 +74,7 @@ describe('Permission Group API', () => {
       const res = await request(app).get(`/api/permissions/permission-groups/${permissionGroupId}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.data.id).toBe(permissionGroupId);
+      expect(res.body.data.data.id).toBe(permissionGroupId);
     });
 
     it('should return 404 if group does not exist', async () => {
@@ -94,7 +94,7 @@ describe('Permission Group API', () => {
         });
 
       expect(res.status).toBe(200);
-      expect(res.body.data.name).toBe('Updated Group');
+      expect(res.body.data.data.name).toBe('Updated Group');
     });
 
     it('should return 404 if group does not exist', async () => {
@@ -115,7 +115,7 @@ describe('Permission Group API', () => {
         .delete(`/api/permissions/permission-groups/${permissionGroupId}`)
         .set('Authorization', `Bearer ${adminToken}`);
       expect(res.status).toBe(200);
-      expect(res.body.data.id).toBe(permissionGroupId);
+      expect(res.body.data.data.id).toBe(permissionGroupId);
     });
 
     it('should return 404 if already deleted', async () => {

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 
 import {
-  addMenuItem,
+  createMenuItem,
   deleteMenuItem,
   getMenuItemById,
   getMenuItems,
@@ -40,7 +40,7 @@ router.post(
   requirePermission(['add:menuItem']),
   upload.single('image'),
   ZodValidate(createMenuItemSchema),
-  addMenuItem
+  createMenuItem
 );
 
 router.patch(

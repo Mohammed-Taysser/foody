@@ -3,7 +3,7 @@ import { Router } from 'express';
 import {
   createOrder,
   deleteOrder,
-  getAllOrders,
+  getOrders,
   getOrderById,
   getOrdersList,
   payOrder,
@@ -30,7 +30,7 @@ router.get(
   authenticate,
   ZodValidate(basePaginationSchema, 'query'),
   requirePermission(['view:order']),
-  getAllOrders
+  getOrders
 );
 
 router.post(

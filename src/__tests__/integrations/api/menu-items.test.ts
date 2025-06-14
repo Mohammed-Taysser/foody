@@ -25,8 +25,8 @@ describe('Menu Items API', () => {
       password: '123456789',
       role: 'OWNER',
     });
-    ownerToken = ownerRes.body.data.accessToken;
-    ownerId = ownerRes.body.data.user.id;
+    ownerToken = ownerRes.body.data.data.accessToken;
+    ownerId = ownerRes.body.data.data.user.id;
 
     // Register an ADMIN
     const adminRes = await request(app).post('/api/auth/register').send({
@@ -35,7 +35,7 @@ describe('Menu Items API', () => {
       password: '123456789',
       role: 'ADMIN',
     });
-    adminToken = adminRes.body.data.accessToken;
+    adminToken = adminRes.body.data.data.accessToken;
 
     // Create a restaurant
     const restaurantRes = await request(app)
@@ -47,7 +47,7 @@ describe('Menu Items API', () => {
         ownerId,
       });
 
-    restaurantId = restaurantRes.body.data.id;
+    restaurantId = restaurantRes.body.data.data.id;
 
     // Create a category
     const categoryRes = await request(app)
@@ -58,7 +58,7 @@ describe('Menu Items API', () => {
         restaurantId,
       });
 
-    categoryId = categoryRes.body.data.id;
+    categoryId = categoryRes.body.data.data.id;
 
     // Seed 10 menu items for pagination & filtering test
     Promise.all(
@@ -91,8 +91,8 @@ describe('Menu Items API', () => {
         });
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.data.name).toBe('Pizza Margherita');
-      menuItemId = res.body.data.id;
+      expect(res.body.data.data.name).toBe('Pizza Margherita');
+      menuItemId = res.body.data.data.id;
     });
 
     it("should forbid adding menu item to someone else's restaurant", async () => {
@@ -103,7 +103,7 @@ describe('Menu Items API', () => {
         role: 'OWNER',
       });
 
-      const token = otherOwnerRes.body.data.accessToken;
+      const token = otherOwnerRes.body.data.data.accessToken;
 
       const res = await request(app)
         .post(`/api/menu-items`)
@@ -161,7 +161,7 @@ describe('Menu Items API', () => {
         .attach('image', mockImagePath);
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.data.image).toMatch(/\/uploads\/menu\//);
+      expect(res.body.data.data.image).toMatch(/\/uploads\/menu\//);
     });
 
     it('should return 401 if unauthenticated user tries to create a menu item', async () => {
@@ -239,7 +239,7 @@ describe('Menu Items API', () => {
       const res = await request(app).get(`/api/menu-items/${menuItemId}`);
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.data.id).toBe(menuItemId);
+      expect(res.body.data.data.id).toBe(menuItemId);
     });
 
     it('should return 404 for non-existent item', async () => {
@@ -261,7 +261,7 @@ describe('Menu Items API', () => {
       const res = await request(app).get(`/api/menu-items/list`);
 
       expect(res.statusCode).toBe(200);
-      expect(Array.isArray(res.body.data)).toBe(true);
+      expect(Array.isArray(res.body.data.data)).toBe(true);
     });
   });
 
@@ -273,7 +273,7 @@ describe('Menu Items API', () => {
         .send({ price: 12.99 });
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.data.price).toBe(12.99);
+      expect(res.body.data.data.price).toBe(12.99);
     });
 
     it('should return 409 when updating with non-existent restaurantId', async () => {
@@ -302,7 +302,7 @@ describe('Menu Items API', () => {
         role: 'OWNER',
       });
 
-      const token = otherOwner.body.data.accessToken;
+      const token = otherOwner.body.data.data.accessToken;
 
       const res = await request(app)
         .patch(`/api/menu-items/${menuItemId}`)
@@ -324,7 +324,7 @@ describe('Menu Items API', () => {
         .field('categoryId', categoryId)
         .attach('image', mockImagePath);
 
-      const itemId = createRes.body.data.id;
+      const itemId = createRes.body.data.data.id;
 
       // Then, update with a new image
       const updateRes = await request(app)
@@ -333,7 +333,7 @@ describe('Menu Items API', () => {
         .attach('image', mockImagePath);
 
       expect(updateRes.statusCode).toBe(200);
-      expect(updateRes.body.data.image).toMatch(/\/uploads\/menu\//);
+      expect(updateRes.body.data.data.image).toMatch(/\/uploads\/menu\//);
     });
 
     it('should return 401 if unauthenticated user tries to update a menu item', async () => {
@@ -380,10 +380,10 @@ describe('Menu Items API', () => {
           categoryId,
         });
 
-      const token = otherOwner.body.data.accessToken;
+      const token = otherOwner.body.data.data.accessToken;
 
       const res = await request(app)
-        .delete(`/api/menu-items/${menuItemToDelete.body.data.id}`)
+        .delete(`/api/menu-items/${menuItemToDelete.body.data.data.id}`)
         .set('Authorization', `Bearer ${token}`);
 
       expect(res.statusCode).toBe(403);

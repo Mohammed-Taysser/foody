@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 
 import prisma from '@/config/prisma';
 import dayjsTZ from '@/utils/dayjs.utils';
-import sendResponse from '@/utils/sendResponse';
+import { sendSuccessResponse } from '@/utils/send-response';
 
 async function getAnalyticsMetrics(request: Request, response: Response) {
   const now = dayjsTZ();
@@ -88,8 +88,8 @@ async function getAnalyticsMetrics(request: Request, response: Response) {
     return Number((((current - previous) / previous) * 100).toFixed(2));
   };
 
-  sendResponse({
-    res: response,
+  sendSuccessResponse({
+    response,
     message: 'Dashboard analytics',
     data: {
       totals: {

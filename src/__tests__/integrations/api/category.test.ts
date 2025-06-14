@@ -21,8 +21,8 @@ describe('Category API', () => {
       password: '123456789',
       role: 'OWNER',
     });
-    ownerToken = ownerRes.body.data.accessToken;
-    const ownerId = ownerRes.body.data.user.id;
+    ownerToken = ownerRes.body.data.data.accessToken;
+    const ownerId = ownerRes.body.data.data.user.id;
 
     // Create restaurant
     const restaurantRes = await request(app)
@@ -34,7 +34,7 @@ describe('Category API', () => {
         ownerId,
       });
 
-    restaurantId = restaurantRes.body.data.id;
+    restaurantId = restaurantRes.body.data.data.id;
 
     // Register ADMIN
     const adminRes = await request(app).post('/api/auth/register').send({
@@ -43,7 +43,7 @@ describe('Category API', () => {
       password: '123456789',
       role: 'ADMIN',
     });
-    adminToken = adminRes.body.data.accessToken;
+    adminToken = adminRes.body.data.data.accessToken;
 
     // Seed 10 categories for pagination & filtering test
     await Promise.all(
@@ -64,8 +64,8 @@ describe('Category API', () => {
         .send({ name: 'Appetizers', restaurantId });
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.data.name).toBe('Appetizers');
-      categoryId = res.body.data.id;
+      expect(res.body.data.data.name).toBe('Appetizers');
+      categoryId = res.body.data.data.id;
     });
 
     it('should forbid another owner from creating a category', async () => {
@@ -78,7 +78,7 @@ describe('Category API', () => {
 
       const res = await request(app)
         .post(`/api/categories`)
-        .set('Authorization', `Bearer ${otherOwner.body.data.accessToken}`)
+        .set('Authorization', `Bearer ${otherOwner.body.data.data.accessToken}`)
         .send({ name: 'Unauthorized', restaurantId });
 
       expect(res.statusCode).toBe(403);
@@ -117,7 +117,7 @@ describe('Category API', () => {
         .attach('image', mockImagePath);
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.data.image).toMatch(/\/uploads\/category\//);
+      expect(res.body.data.data.image).toMatch(/\/uploads\/category\//);
     });
   });
 
@@ -129,12 +129,12 @@ describe('Category API', () => {
         .set('Authorization', `Bearer ${ownerToken}`)
         .send({ name: 'Drinks', restaurantId });
 
-      categoryId = resCreate.body.data.id;
+      categoryId = resCreate.body.data.data.id;
 
       const res = await request(app).get(`/api/categories/${categoryId}`);
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.data.name).toBe('Drinks');
+      expect(res.body.data.data.name).toBe('Drinks');
     });
 
     it('should return 404 if category does not exist', async () => {
@@ -159,7 +159,7 @@ describe('Category API', () => {
       const res = await request(app).get(`/api/categories/list`);
 
       expect(res.statusCode).toBe(200);
-      expect(Array.isArray(res.body.data)).toBe(true);
+      expect(Array.isArray(res.body.data.data)).toBe(true);
     });
   });
 
@@ -171,7 +171,7 @@ describe('Category API', () => {
         .send({ name: 'Updated Category', restaurantId });
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.data.name).toBe('Updated Category');
+      expect(res.body.data.data.name).toBe('Updated Category');
     });
 
     it('should forbid another owner from updating category', async () => {
@@ -184,7 +184,7 @@ describe('Category API', () => {
 
       const res = await request(app)
         .patch(`/api/categories/${categoryId}`)
-        .set('Authorization', `Bearer ${otherOwner.body.data.accessToken}`)
+        .set('Authorization', `Bearer ${otherOwner.body.data.data.accessToken}`)
         .send({ name: 'Hack Attempt', restaurantId });
 
       expect(res.statusCode).toBe(403);
@@ -217,7 +217,7 @@ describe('Category API', () => {
         .field('restaurantId', restaurantId)
         .attach('image', mockImagePath);
 
-      const categoryId = createRes.body.data.id;
+      const categoryId = createRes.body.data.data.id;
 
       // Then, update with a new image
       const updateRes = await request(app)
@@ -227,7 +227,7 @@ describe('Category API', () => {
         .attach('image', mockImagePath);
 
       expect(updateRes.statusCode).toBe(200);
-      expect(updateRes.body.data.image).toMatch(/\/uploads\/category\//);
+      expect(updateRes.body.data.data.image).toMatch(/\/uploads\/category\//);
     });
   });
 
@@ -243,7 +243,7 @@ describe('Category API', () => {
 
       const res = await request(app)
         .delete(`/api/categories/${categoryId}`)
-        .set('Authorization', `Bearer ${anotherOwner.body.data.accessToken}`);
+        .set('Authorization', `Bearer ${anotherOwner.body.data.data.accessToken}`);
 
       expect(res.statusCode).toBe(403);
     });
@@ -254,7 +254,7 @@ describe('Category API', () => {
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.data.id).toBe(categoryId);
+      expect(res.body.data.data.id).toBe(categoryId);
     });
 
     it('should return 404 if category does not exist', async () => {

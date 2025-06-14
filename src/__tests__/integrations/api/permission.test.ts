@@ -15,7 +15,7 @@ describe('Permission API', () => {
       password: '123456789',
       role: 'ADMIN',
     });
-    adminToken = adminRes.body.data.accessToken;
+    adminToken = adminRes.body.data.data.accessToken;
   });
 
   describe('POST /api/permissions', () => {
@@ -28,11 +28,11 @@ describe('Permission API', () => {
           description: 'Create a test',
         });
 
-      permissionId = res.body.data.id;
+      permissionId = res.body.data.data.id;
 
       expect(res.status).toBe(201);
-      expect(res.body.data).toHaveProperty('id');
-      expect(res.body.data.key).toBe('add:test');
+      expect(res.body.data.data).toHaveProperty('id');
+      expect(res.body.data.data.key).toBe('add:test');
     });
 
     it('should not create duplicate permission', async () => {
@@ -52,7 +52,7 @@ describe('Permission API', () => {
     it('should return all permissions', async () => {
       const res = await request(app).get('/api/permissions/list');
       expect(res.status).toBe(200);
-      expect(Array.isArray(res.body.data)).toBe(true);
+      expect(Array.isArray(res.body.data.data)).toBe(true);
     });
   });
 
@@ -60,7 +60,7 @@ describe('Permission API', () => {
     it('should return permission by ID', async () => {
       const res = await request(app).get(`/api/permissions/${permissionId}`);
       expect(res.status).toBe(200);
-      expect(res.body.data.key).toBe('add:test');
+      expect(res.body.data.data.key).toBe('add:test');
     });
 
     it('should return 404 for non-existing permission', async () => {
@@ -80,7 +80,7 @@ describe('Permission API', () => {
         });
 
       expect(res.status).toBe(200);
-      expect(res.body.data.key).toBe('update:test');
+      expect(res.body.data.data.key).toBe('update:test');
     });
 
     it('should return 404 for non-existing permission', async () => {
@@ -110,7 +110,7 @@ describe('Permission API', () => {
         .delete(`/api/permissions/${permissionId}`)
         .set('Authorization', `Bearer ${adminToken}`);
       expect(res.status).toBe(200);
-      expect(res.body.data.id).toBe(permissionId);
+      expect(res.body.data.data.id).toBe(permissionId);
     });
 
     it('should return 404 when deleting again', async () => {

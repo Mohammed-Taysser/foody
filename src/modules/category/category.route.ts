@@ -5,7 +5,7 @@ import {
   deleteCategory,
   getCategoriesList,
   getCategoryById,
-  listCategories,
+  getCategories,
   updateCategory,
 } from './category.controller';
 import { createCategorySchema, updateCategorySchema } from './category.validator';
@@ -23,7 +23,7 @@ router.get(
   '/',
   requirePermission(['view:category'], true),
   ZodValidate(basePaginationSchema, 'query'),
-  listCategories
+  getCategories
 );
 
 router.get('/list', requirePermission(['view:category'], true), getCategoriesList);

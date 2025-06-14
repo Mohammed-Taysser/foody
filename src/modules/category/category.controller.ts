@@ -11,121 +11,18 @@ import DATABASE_LOGGER from '@/services/database-log.service';
 import { AuthenticatedRequest } from '@/types/import';
 import { ConflictError, ForbiddenError, NotFoundError } from '@/utils/errors.utils';
 import { deleteImage, uploadImage } from '@/utils/multer.utils';
-import sendResponse from '@/utils/sendResponse';
+import { sendPaginatedResponse, sendSuccessResponse } from '@/utils/send-response';
 import { BasePaginationInput } from '@/validations/pagination.validation';
 
-async function createCategory(req: Request, res: Response) {
-  const request = req as AuthenticatedRequest<unknown, unknown, CreateCategoryInput>;
-
-  const user = request.user;
-
-  const restaurant = await prisma.restaurant.findUnique({
-    where: { id: request.body.restaurantId },
-  });
-
-  if (!restaurant) {
-    throw new ConflictError('Restaurant not found');
-  }
-
-  if (user.role !== 'ADMIN' && restaurant.ownerId !== user.id) {
-    throw new ForbiddenError('You do not own this restaurant');
-  }
-
-  let imageUrl = undefined;
-
-  if (request.file) {
-    imageUrl = await uploadImage(request.file, 'category');
-  }
-
-  const category = await prisma.category.create({
-    data: {
-      ...request.body,
-      image: imageUrl,
-    },
-  });
-
-  DATABASE_LOGGER.log({
-    request: request,
-    actorId: user.id,
-    actorType: 'USER',
-    action: 'CREATE',
-    resource: 'CATEGORY',
-    resourceId: category.id,
-    metadata: { data: request.body },
-  });
-
-  sendResponse({ res, message: 'Category created', data: category });
-}
-
-async function updateCategory(req: Request, res: Response) {
-  const request = req as unknown as AuthenticatedRequest<
-    GetByIdCategoryParams,
-    unknown,
-    UpdateCategoryInput
-  >;
-
-  const categoryId = request.params.categoryId;
-
-  const user = request.user;
-
-  const category = await prisma.category.findUnique({
-    where: { id: categoryId },
-    include: { restaurant: true },
-  });
-
-  if (!category) throw new NotFoundError('Category not found');
-
-  const restaurant = await prisma.restaurant.findUnique({
-    where: { id: request.body.restaurantId },
-  });
-
-  if (!restaurant) {
-    throw new ConflictError('Restaurant not found');
-  }
-
-  if (user.role !== 'ADMIN' && category.restaurant.ownerId !== user.id) {
-    throw new ForbiddenError('You do not own this category');
-  }
-
-  let imageUrl = category.image;
-
-  if (category.image && request.file) {
-    deleteImage(category.image);
-  }
-
-  if (request.file) {
-    imageUrl = await uploadImage(request.file, 'category');
-  }
-
-  const updated = await prisma.category.update({
-    where: { id: categoryId },
-    data: { ...request.body, image: imageUrl },
-  });
-
-  DATABASE_LOGGER.log({
-    request: request,
-    actorId: user.id,
-    actorType: 'USER',
-    action: 'UPDATE',
-    resource: 'CATEGORY',
-    resourceId: updated.id,
-    oldData: category,
-    newData: updated,
-    metadata: { data: request.body },
-  });
-
-  sendResponse({ res, message: 'Category updated', data: updated });
-}
-
-async function listCategories(req: Request, res: Response) {
-  const request = req as unknown as AuthenticatedRequest<
+async function getCategories(request: Request, response: Response) {
+  const authenticatedRequest = request as unknown as AuthenticatedRequest<
     unknown,
     unknown,
     unknown,
     BasePaginationInput
   >;
 
-  const query = request.parsedQuery;
+  const query = authenticatedRequest.parsedQuery;
 
   const skip = (query.page - 1) * query.limit;
 
@@ -138,22 +35,20 @@ async function listCategories(req: Request, res: Response) {
     prisma.category.count(),
   ]);
 
-  sendResponse({
-    res,
+  sendPaginatedResponse({
+    response,
     message: 'Paginated categories',
-    data: {
-      data,
-      metadata: {
-        total,
-        page: query.page,
-        limit: query.limit,
-        totalPages: Math.ceil(total / query.limit),
-      },
+    data,
+    metadata: {
+      total,
+      page: query.page,
+      limit: query.limit,
+      totalPages: Math.ceil(total / query.limit),
     },
   });
 }
 
-async function getCategoriesList(req: Request, res: Response) {
+async function getCategoriesList(request: Request, response: Response) {
   const data = await prisma.category.findMany({
     select: {
       id: true,
@@ -161,18 +56,18 @@ async function getCategoriesList(req: Request, res: Response) {
     },
   });
 
-  sendResponse({ res, message: 'Categories list', data });
+  sendSuccessResponse({ response, message: 'Categories list', data });
 }
 
-async function getCategoryById(req: Request, res: Response) {
-  const request = req as unknown as AuthenticatedRequest<
+async function getCategoryById(request: Request, response: Response) {
+  const authenticatedRequest = request as unknown as AuthenticatedRequest<
     GetByIdCategoryParams,
     unknown,
     unknown,
     unknown
   >;
 
-  const categoryId = request.params.categoryId;
+  const categoryId = authenticatedRequest.params.categoryId;
 
   const category = await prisma.category.findUnique({
     where: { id: categoryId },
@@ -182,20 +77,127 @@ async function getCategoryById(req: Request, res: Response) {
     throw new NotFoundError('Category not found');
   }
 
-  sendResponse({ res, message: 'Category found', data: category });
+  sendSuccessResponse({ response, message: 'Category found', data: category });
 }
 
-async function deleteCategory(req: Request, res: Response) {
-  const request = req as unknown as AuthenticatedRequest<
+async function createCategory(request: Request, response: Response) {
+  const authenticatedRequest = request as AuthenticatedRequest<
+    unknown,
+    unknown,
+    CreateCategoryInput
+  >;
+
+  const user = authenticatedRequest.user;
+
+  const restaurant = await prisma.restaurant.findUnique({
+    where: { id: authenticatedRequest.body.restaurantId },
+  });
+
+  if (!restaurant) {
+    throw new ConflictError('Restaurant not found');
+  }
+
+  if (user.role !== 'ADMIN' && restaurant.ownerId !== user.id) {
+    throw new ForbiddenError('You do not own this restaurant');
+  }
+
+  let imageUrl = undefined;
+
+  if (authenticatedRequest.file) {
+    imageUrl = await uploadImage(authenticatedRequest.file, 'category');
+  }
+
+  const category = await prisma.category.create({
+    data: {
+      ...authenticatedRequest.body,
+      image: imageUrl,
+    },
+  });
+
+  DATABASE_LOGGER.log({
+    request: authenticatedRequest,
+    actorId: user.id,
+    actorType: 'USER',
+    action: 'CREATE',
+    resource: 'CATEGORY',
+    resourceId: category.id,
+    metadata: { data: authenticatedRequest.body },
+  });
+
+  sendSuccessResponse({ response, message: 'Category created', data: category });
+}
+
+async function updateCategory(request: Request, response: Response) {
+  const authenticatedRequest = request as unknown as AuthenticatedRequest<
+    GetByIdCategoryParams,
+    unknown,
+    UpdateCategoryInput
+  >;
+
+  const categoryId = authenticatedRequest.params.categoryId;
+
+  const user = authenticatedRequest.user;
+
+  const category = await prisma.category.findUnique({
+    where: { id: categoryId },
+    include: { restaurant: true },
+  });
+
+  if (!category) throw new NotFoundError('Category not found');
+
+  const restaurant = await prisma.restaurant.findUnique({
+    where: { id: authenticatedRequest.body.restaurantId },
+  });
+
+  if (!restaurant) {
+    throw new ConflictError('Restaurant not found');
+  }
+
+  if (user.role !== 'ADMIN' && category.restaurant.ownerId !== user.id) {
+    throw new ForbiddenError('You do not own this category');
+  }
+
+  let imageUrl = category.image;
+
+  if (category.image && authenticatedRequest.file) {
+    deleteImage(category.image);
+  }
+
+  if (authenticatedRequest.file) {
+    imageUrl = await uploadImage(authenticatedRequest.file, 'category');
+  }
+
+  const updated = await prisma.category.update({
+    where: { id: categoryId },
+    data: { ...authenticatedRequest.body, image: imageUrl },
+  });
+
+  DATABASE_LOGGER.log({
+    request: authenticatedRequest,
+    actorId: user.id,
+    actorType: 'USER',
+    action: 'UPDATE',
+    resource: 'CATEGORY',
+    resourceId: updated.id,
+    oldData: category,
+    newData: updated,
+    metadata: { data: authenticatedRequest.body },
+  });
+
+  sendSuccessResponse({ response, message: 'Category updated', data: updated });
+}
+
+async function deleteCategory(request: Request, response: Response) {
+  const authenticatedRequest = request as unknown as AuthenticatedRequest<
     GetByIdCategoryParams,
     unknown,
     unknown,
     unknown
   >;
 
-  const categoryId = request.params.categoryId;
+  const categoryId = authenticatedRequest.params.categoryId;
 
-  const user = request.user;
+  const user = authenticatedRequest.user;
 
   const category = await prisma.category.findUnique({
     where: { id: categoryId },
@@ -219,7 +221,7 @@ async function deleteCategory(req: Request, res: Response) {
   }
 
   DATABASE_LOGGER.log({
-    request: request,
+    request: authenticatedRequest,
     actorId: user.id,
     actorType: 'USER',
     action: 'DELETE',
@@ -227,14 +229,14 @@ async function deleteCategory(req: Request, res: Response) {
     resourceId: deletedCategory.id,
   });
 
-  sendResponse({ res, message: 'Category deleted', data: deletedCategory });
+  sendSuccessResponse({ response, message: 'Category deleted', data: deletedCategory });
 }
 
 export {
   createCategory,
   deleteCategory,
+  getCategories,
   getCategoriesList,
   getCategoryById,
-  listCategories,
   updateCategory,
 };

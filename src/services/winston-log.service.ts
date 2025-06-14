@@ -1,4 +1,4 @@
-import { winstonLogger } from '@/utils/logger.utils';
+import { winstonLogger } from '@/utils/winston-logger.utils';
 
 class WinstonLoggerService {
   info(message: string, module?: AppModules) {

@@ -22,8 +22,8 @@ describe('Restaurant API', () => {
       password: '123456789',
       role: 'OWNER',
     });
-    ownerToken = ownerRes.body.data.accessToken;
-    ownerId = ownerRes.body.data.user.id;
+    ownerToken = ownerRes.body.data.data.accessToken;
+    ownerId = ownerRes.body.data.data.user.id;
 
     // Register CUSTOMER
     const customerRes = await request(app).post('/api/auth/register').send({
@@ -32,8 +32,8 @@ describe('Restaurant API', () => {
       password: '123456789',
       role: 'CUSTOMER',
     });
-    customerToken = customerRes.body.data.accessToken;
-    customerId = customerRes.body.data.user.id;
+    customerToken = customerRes.body.data.data.accessToken;
+    customerId = customerRes.body.data.data.user.id;
   });
 
   describe('GET /restaurants', () => {
@@ -57,7 +57,7 @@ describe('Restaurant API', () => {
       const res = await request(app).get('/api/restaurants/list');
 
       expect(res.statusCode).toBe(200);
-      expect(Array.isArray(res.body.data)).toBe(true);
+      expect(Array.isArray(res.body.data.data)).toBe(true);
     });
   });
 
@@ -72,12 +72,12 @@ describe('Restaurant API', () => {
           location: faker.location.city(),
         });
 
-      const restaurantId = createRes.body.data.id;
+      const restaurantId = createRes.body.data.data.id;
 
       const res = await request(app).get(`/api/restaurants/${restaurantId}`);
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.data.id).toBe(restaurantId);
+      expect(res.body.data.data.id).toBe(restaurantId);
     });
 
     it('should return 404 if restaurant not found', async () => {
@@ -196,7 +196,7 @@ describe('Restaurant API', () => {
         .attach('image', mockImagePath);
 
       expect(res.statusCode).toBe(201);
-      expect(res.body.data.image).toMatch(/restaurant/);
+      expect(res.body.data.data.image).toMatch(/restaurant/);
     });
   });
 
@@ -211,7 +211,7 @@ describe('Restaurant API', () => {
           location: faker.location.city(),
         });
 
-      const restaurantId = createRes.body.data.id;
+      const restaurantId = createRes.body.data.data.id;
 
       const updateRes = await request(app)
         .patch(`/api/restaurants/${restaurantId}`)
@@ -243,7 +243,7 @@ describe('Restaurant API', () => {
         .field('location', faker.location.city())
         .attach('image', mockImagePath);
 
-      const restaurantId = createRes.body.data.id;
+      const restaurantId = createRes.body.data.data.id;
 
       const updateRes = await request(app)
         .patch(`/api/restaurants/${restaurantId}`)
@@ -252,7 +252,7 @@ describe('Restaurant API', () => {
         .attach('image', mockImagePath);
 
       expect(updateRes.statusCode).toBe(200);
-      expect(updateRes.body.data.image).toMatch(/restaurant/);
+      expect(updateRes.body.data.data.image).toMatch(/restaurant/);
     });
 
     it('should return 401 if update attempted without auth', async () => {
@@ -275,7 +275,7 @@ describe('Restaurant API', () => {
           location: faker.location.city(),
         });
 
-      const restaurantId = createRes.body.data.id;
+      const restaurantId = createRes.body.data.data.id;
 
       const deleteRes = await request(app)
         .delete(`/api/restaurants/${restaurantId}`)

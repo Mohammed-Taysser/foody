@@ -11,81 +11,13 @@ import tokenService from '@/services/token.service';
 import { AuthenticatedRequest } from '@/types/import';
 import { ConflictError, NotFoundError } from '@/utils/errors.utils';
 import { deleteImage, uploadImage } from '@/utils/multer.utils';
-import sendResponse from '@/utils/sendResponse';
+import { sendPaginatedResponse, sendSuccessResponse } from '@/utils/send-response';
 import { BasePaginationInput } from '@/validations/pagination.validation';
 
-async function updateMe(req: Request, res: Response) {
-  const request = req as unknown as AuthenticatedRequest<unknown, unknown, UpdateUserInput>;
-  const user = request.user;
+async function getUserPermission(request: Request, response: Response) {
+  const authenticatedRequest = request as AuthenticatedRequest;
 
-  if (request.body.email) {
-    const existingUser = await prisma.user.findUnique({
-      where: { email: request.body.email },
-    });
-
-    if (existingUser && existingUser.id !== user.id) {
-      throw new ConflictError('Email already registered');
-    }
-  }
-
-  let imageUrl = undefined;
-
-  if (user.image && req.file) {
-    deleteImage(user.image);
-  }
-
-  if (request.file) {
-    imageUrl = await uploadImage(request.file, 'user');
-  }
-
-  const updatedUser = await prisma.user.update({
-    where: { id: user.id },
-    data: {
-      ...request.body,
-      image: imageUrl,
-    },
-  });
-
-  const oldUserData = {
-    name: user.name,
-    email: user.email,
-    role: user.role,
-  };
-
-  DATABASE_LOGGER.log({
-    actorId: user.id,
-    action: 'UPDATE',
-    actorType: 'USER',
-    resource: 'USER',
-    resourceId: user.id,
-    oldData: oldUserData,
-    newData: updatedUser,
-    request,
-  });
-
-  sendResponse({
-    res,
-    message: 'User profile updated',
-    data: updatedUser,
-  });
-}
-
-function getProfile(req: Request, res: Response) {
-  const request = req as AuthenticatedRequest;
-
-  const user = request.user;
-
-  sendResponse({
-    res,
-    message: 'Current user',
-    data: user,
-  });
-}
-
-async function getUserPermission(req: Request, res: Response) {
-  const request = req as AuthenticatedRequest;
-
-  const user = request.user;
+  const user = authenticatedRequest.user;
 
   const effectivePermissions = new Set([
     ...user.permissions.map((p) => p.key),
@@ -96,22 +28,22 @@ async function getUserPermission(req: Request, res: Response) {
     .map((permission) => permission.split(':'))
     .map(([action, module]) => ({ action, module }));
 
-  sendResponse({
-    res,
+  sendSuccessResponse({
+    response,
     message: 'User permissions',
     data: serializedPermissions,
   });
 }
 
-async function getUsers(req: Request, res: Response) {
-  const request = req as unknown as AuthenticatedRequest<
+async function getUsers(request: Request, response: Response) {
+  const authenticatedRequest = request as unknown as AuthenticatedRequest<
     unknown,
     unknown,
     unknown,
     BasePaginationInput
   >;
 
-  const query = request.parsedQuery;
+  const query = authenticatedRequest.parsedQuery;
 
   const skip = (query.page - 1) * query.limit;
 
@@ -124,23 +56,32 @@ async function getUsers(req: Request, res: Response) {
     prisma.user.count(),
   ]);
 
-  sendResponse({
-    res,
+  sendPaginatedResponse({
+    response,
     message: 'All users',
-    data: {
-      data,
-      metadata: {
-        total,
-        page: query.page,
-        limit: query.limit,
-        totalPages: Math.ceil(total / query.limit),
-      },
+    data,
+    metadata: {
+      total,
+      page: query.page,
+      limit: query.limit,
+      totalPages: Math.ceil(total / query.limit),
     },
   });
 }
 
-async function getUser(req: Request, res: Response) {
-  const userId = req.params.userId;
+async function getUsersList(request: Request, response: Response) {
+  const users = await prisma.user.findMany({
+    select: {
+      id: true,
+      name: true,
+    },
+  });
+
+  sendSuccessResponse({ response, message: 'Users list', data: users });
+}
+
+async function getUserById(request: Request, response: Response) {
+  const userId = request.params.userId;
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -150,15 +91,27 @@ async function getUser(req: Request, res: Response) {
     throw new NotFoundError('User not found');
   }
 
-  sendResponse({
-    res,
+  sendSuccessResponse({
+    response,
     message: 'User found',
     data: user,
   });
 }
 
-async function createUser(req: Request, res: Response) {
-  const data = req.body;
+async function getProfile(request: Request, response: Response) {
+  const authenticatedRequest = request as AuthenticatedRequest;
+
+  const user = authenticatedRequest.user;
+
+  sendSuccessResponse({
+    response,
+    message: 'Current user',
+    data: user,
+  });
+}
+
+async function createUser(request: Request, response: Response) {
+  const data = request.body;
 
   const user = await prisma.user.findUnique({
     where: { email: data.email },
@@ -195,7 +148,7 @@ async function createUser(req: Request, res: Response) {
   });
 
   DATABASE_LOGGER.log({
-    request: req,
+    request: request,
     actorId: newUser.id,
     actorType: 'USER',
     action: 'CREATE',
@@ -204,17 +157,17 @@ async function createUser(req: Request, res: Response) {
     metadata: { data },
   });
 
-  sendResponse({
-    res,
+  sendSuccessResponse({
+    response,
     message: 'User created',
     data: newUser,
     statusCode: 201,
   });
 }
 
-async function updateUser(req: Request, res: Response) {
-  const userId = req.params.userId;
-  const data = req.body;
+async function updateUser(request: Request, response: Response) {
+  const userId = request.params.userId;
+  const data = request.body;
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -239,7 +192,7 @@ async function updateUser(req: Request, res: Response) {
   });
 
   DATABASE_LOGGER.log({
-    request: req,
+    request: request,
     actorId: user.id,
     actorType: 'USER',
     action: 'UPDATE',
@@ -248,22 +201,82 @@ async function updateUser(req: Request, res: Response) {
     metadata: { data },
   });
 
-  sendResponse({
-    res,
+  sendSuccessResponse({
+    response,
     message: 'User updated',
     data: updatedUser,
   });
 }
 
-async function deleteUser(req: Request, res: Response) {
-  const request = req as unknown as AuthenticatedRequest<
+async function updateMe(request: Request, response: Response) {
+  const authenticatedRequest = request as unknown as AuthenticatedRequest<
+    unknown,
+    unknown,
+    UpdateUserInput
+  >;
+  const user = authenticatedRequest.user;
+
+  if (authenticatedRequest.body.email) {
+    const existingUser = await prisma.user.findUnique({
+      where: { email: authenticatedRequest.body.email },
+    });
+
+    if (existingUser && existingUser.id !== user.id) {
+      throw new ConflictError('Email already registered');
+    }
+  }
+
+  let imageUrl = undefined;
+
+  if (user.image && request.file) {
+    deleteImage(user.image);
+  }
+
+  if (authenticatedRequest.file) {
+    imageUrl = await uploadImage(authenticatedRequest.file, 'user');
+  }
+
+  const updatedUser = await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      ...authenticatedRequest.body,
+      image: imageUrl,
+    },
+  });
+
+  const oldUserData = {
+    name: user.name,
+    email: user.email,
+    role: user.role,
+  };
+
+  DATABASE_LOGGER.log({
+    actorId: user.id,
+    action: 'UPDATE',
+    actorType: 'USER',
+    resource: 'USER',
+    resourceId: user.id,
+    oldData: oldUserData,
+    newData: updatedUser,
+    request: authenticatedRequest,
+  });
+
+  sendSuccessResponse({
+    response,
+    message: 'User profile updated',
+    data: updatedUser,
+  });
+}
+
+async function deleteUser(request: Request, response: Response) {
+  const authenticatedRequest = request as unknown as AuthenticatedRequest<
     GetByIdUserParams,
     unknown,
     unknown,
     unknown
   >;
 
-  const userId = request.params.userId;
+  const userId = authenticatedRequest.params.userId;
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -282,36 +295,26 @@ async function deleteUser(req: Request, res: Response) {
   }
 
   DATABASE_LOGGER.log({
-    request: request,
-    actorId: request.user.id,
+    request: authenticatedRequest,
+    actorId: authenticatedRequest.user.id,
     actorType: 'USER',
     action: 'DELETE',
     resource: 'USER',
     resourceId: user.id,
   });
 
-  sendResponse({
-    res,
+  sendSuccessResponse({
+    response,
     message: 'User deleted',
     data: deletedUser,
   });
-}
-
-async function getUsersList(req: Request, res: Response) {
-  const users = await prisma.user.findMany({
-    select: {
-      id: true,
-      name: true,
-    },
-  });
-  sendResponse({ res, message: 'Users list', data: users });
 }
 
 export {
   createUser,
   deleteUser,
   getProfile,
-  getUser,
+  getUserById,
   getUserPermission,
   getUsers,
   getUsersList,

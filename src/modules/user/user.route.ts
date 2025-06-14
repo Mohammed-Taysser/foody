@@ -4,7 +4,7 @@ import {
   createUser,
   deleteUser,
   getProfile,
-  getUser,
+  getUserById,
   getUserPermission,
   getUsers,
   getUsersList,
@@ -32,7 +32,8 @@ router.get(
   zodValidate(basePaginationSchema, 'query'),
   getUsers
 );
-router.get('/:userId', requirePermission(['view:user'], true), getUser);
+router.get('/:userId', requirePermission(['view:user'], true), getUserById);
+
 router.post(
   '/',
   authenticateMiddleware,

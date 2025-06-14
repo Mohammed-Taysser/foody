@@ -20,7 +20,7 @@ describe('Order API', () => {
       password: '123456789',
       role: 'OWNER',
     });
-    ownerToken = ownerRes.body.data.accessToken;
+    ownerToken = ownerRes.body.data.data.accessToken;
 
     // Register ADMIN
     const adminRes = await request(app).post('/api/auth/register').send({
@@ -29,7 +29,7 @@ describe('Order API', () => {
       password: '123456789',
       role: 'ADMIN',
     });
-    adminToken = adminRes.body.data.accessToken;
+    adminToken = adminRes.body.data.data.accessToken;
 
     // Register CUSTOMER
     const customerRes = await request(app).post('/api/auth/register').send({
@@ -38,7 +38,7 @@ describe('Order API', () => {
       password: '123456789',
       role: 'CUSTOMER',
     });
-    customerToken = customerRes.body.data.accessToken;
+    customerToken = customerRes.body.data.data.accessToken;
 
     // Create restaurant
     const restaurantRes = await request(app)
@@ -47,9 +47,9 @@ describe('Order API', () => {
       .send({
         name: faker.company.name(),
         location: faker.location.city(),
-        ownerId: ownerRes.body.data.user.id,
+        ownerId: ownerRes.body.data.data.user.id,
       });
-    restaurantId = restaurantRes.body.data.id;
+    restaurantId = restaurantRes.body.data.data.id;
 
     // Create category
     const categoryRes = await request(app)
@@ -59,7 +59,7 @@ describe('Order API', () => {
         name: 'Appetizers',
         restaurantId,
       });
-    categoryId = categoryRes.body.data.id;
+    categoryId = categoryRes.body.data.data.id;
 
     // Create menu item
     const itemRes = await request(app)
@@ -72,7 +72,7 @@ describe('Order API', () => {
         categoryId,
       });
 
-    menuItemId = itemRes.body.data.id;
+    menuItemId = itemRes.body.data.data.id;
   });
 
   describe('POST /orders', () => {
@@ -87,8 +87,21 @@ describe('Order API', () => {
         });
 
       expect(res.statusCode).toBe(201);
-      expect(res.body.data.items.length).toBeGreaterThan(0);
-      orderId = res.body.data.id;
+      expect(res.body.data.data.items.length).toBeGreaterThan(0);
+      orderId = res.body.data.data.id;
+    });
+
+    it('should not place an order with invalid items', async () => {
+      const res = await request(app)
+        .post('/api/orders')
+        .set('Authorization', `Bearer ${customerToken}`)
+        .send({
+          restaurantId,
+          items: [{ menuItemId: 'invalid-item-id', quantity: 2 }],
+          discount: 0,
+        });
+
+      expect(res.statusCode).toBe(400);
     });
   });
 
@@ -110,8 +123,8 @@ describe('Order API', () => {
         .set('Authorization', `Bearer ${customerToken}`);
 
       expect(res.statusCode).toBe(200);
-      expect(Array.isArray(res.body.data)).toBe(true);
-      expect(res.body.data[0]).toHaveProperty('name');
+      expect(Array.isArray(res.body.data.data)).toBe(true);
+      expect(res.body.data.data[0]).toHaveProperty('name');
     });
   });
 
@@ -122,7 +135,7 @@ describe('Order API', () => {
         .set('Authorization', `Bearer ${customerToken}`);
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.data.id).toBe(orderId);
+      expect(res.body.data.data.id).toBe(orderId);
     });
 
     it('should return 404 for invalid order ID', async () => {
@@ -142,7 +155,16 @@ describe('Order API', () => {
         .send({ notes: 'Please make it spicy' });
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.data.notes).toContain('spicy');
+      expect(res.body.data.data.notes).toContain('spicy');
+    });
+
+    it('should return 404 for invalid order ID', async () => {
+      const res = await request(app)
+        .patch('/api/orders/non-existing-id')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ notes: 'Please make it spicy' });
+
+      expect(res.statusCode).toBe(404);
     });
   });
 
@@ -154,7 +176,16 @@ describe('Order API', () => {
         .send({ status: 'PREPARING' });
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.data.status).toBe('PREPARING');
+      expect(res.body.data.data.status).toBe('PREPARING');
+    });
+
+    it('should return 404 for invalid order ID', async () => {
+      const res = await request(app)
+        .patch('/api/orders/non-existing-id/update-order-status')
+        .set('Authorization', `Bearer ${customerToken}`)
+        .send({ status: 'PREPARING' });
+
+      expect(res.statusCode).toBe(404);
     });
   });
 
@@ -166,7 +197,16 @@ describe('Order API', () => {
         .send({ method: 'CARD' });
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.data.paymentStatus).toBe('PAID');
+      expect(res.body.data.data.paymentStatus).toBe('PAID');
+    });
+
+    it('should return 404 for invalid order ID', async () => {
+      const res = await request(app)
+        .patch('/api/orders/non-existing-id/pay-order')
+        .set('Authorization', `Bearer ${customerToken}`)
+        .send({ method: 'CARD' });
+
+      expect(res.statusCode).toBe(404);
     });
   });
 
@@ -177,7 +217,7 @@ describe('Order API', () => {
         .set('Authorization', `Bearer ${customerToken}`);
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.data.status).toBe('CANCELLED');
+      expect(res.body.data.data.status).toBe('CANCELLED');
     });
 
     it('should return 404 for non-existing order', async () => {

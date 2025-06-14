@@ -7,17 +7,17 @@ import prisma from '@/config/prisma';
 import DATABASE_LOGGER from '@/services/database-log.service';
 import { AuthenticatedRequest } from '@/types/import';
 import { BadRequestError, NotFoundError } from '@/utils/errors.utils';
-import sendResponse from '@/utils/sendResponse';
+import { sendPaginatedResponse, sendSuccessResponse } from '@/utils/send-response';
 import { BasePaginationInput } from '@/validations/pagination.validation';
 
-async function getAllOrders(req: Request, res: Response) {
-  const request = req as unknown as AuthenticatedRequest<
+async function getOrders(request: Request, response: Response) {
+  const authenticatedRequest = request as unknown as AuthenticatedRequest<
     unknown,
     unknown,
     unknown,
     BasePaginationInput
   >;
-  const query = request.parsedQuery;
+  const query = authenticatedRequest.parsedQuery;
 
   const skip = (query.page - 1) * query.limit;
 
@@ -30,22 +30,20 @@ async function getAllOrders(req: Request, res: Response) {
     prisma.order.count(),
   ]);
 
-  sendResponse({
-    res,
+  sendPaginatedResponse({
+    response,
     message: 'All orders',
-    data: {
-      data,
-      metadata: {
-        total,
-        page: query.page,
-        limit: query.limit,
-        totalPages: Math.ceil(total / query.limit),
-      },
+    data,
+    metadata: {
+      total,
+      page: query.page,
+      limit: query.limit,
+      totalPages: Math.ceil(total / query.limit),
     },
   });
 }
 
-async function getOrdersList(req: Request, res: Response) {
+async function getOrdersList(request: Request, response: Response) {
   const orders = await prisma.order.findMany({
     select: {
       id: true,
@@ -58,11 +56,11 @@ async function getOrdersList(req: Request, res: Response) {
     name: invoiceNumber,
   }));
 
-  sendResponse({ res, message: 'Orders list', data: renamed });
+  sendSuccessResponse({ response, message: 'Orders list', data: renamed });
 }
 
-async function getOrderById(req: Request, res: Response) {
-  const orderId = req.params.orderId;
+async function getOrderById(request: Request, response: Response) {
+  const orderId = request.params.orderId;
 
   const order = await prisma.order.findUnique({
     where: { id: orderId },
@@ -72,77 +70,13 @@ async function getOrderById(req: Request, res: Response) {
     throw new NotFoundError('Order not found');
   }
 
-  sendResponse({ res, message: 'Order found', data: order });
+  sendSuccessResponse({ response, message: 'Order found', data: order });
 }
 
-async function updateOrder(req: Request, res: Response) {
-  const orderId = req.params.orderId;
+async function createOrder(request: Request, response: Response) {
+  const authenticatedRequest = request as AuthenticatedRequest<object, object, CreateOrderInput>;
 
-  const order = await prisma.order.findUnique({
-    where: { id: orderId },
-  });
-
-  if (!order) {
-    throw new NotFoundError('Order not found');
-  }
-
-  const updatedOrder = await prisma.order.update({
-    where: { id: orderId },
-    data: req.body,
-  });
-
-  DATABASE_LOGGER.log({
-    action: 'UPDATE',
-    resource: 'ORDER',
-    resourceId: orderId,
-    metadata: { data: req.body },
-    request: req,
-    actorId: order.userId,
-    actorType: 'USER',
-    oldData: order,
-    newData: updatedOrder,
-  });
-
-  sendResponse({ res, message: 'Order updated', data: updatedOrder });
-}
-
-async function updateOrderStatus(req: Request, res: Response) {
-  const { status } = req.body;
-
-  const orderId = req.params.orderId;
-
-  const order = await prisma.order.findUnique({
-    where: { id: orderId },
-  });
-
-  if (!order) {
-    throw new NotFoundError('Order not found');
-  }
-
-  const updatedOrder = await prisma.order.update({
-    where: { id: orderId },
-    data: { status },
-  });
-
-  DATABASE_LOGGER.log({
-    action: 'UPDATE',
-    resource: 'ORDER',
-    resourceId: orderId,
-    metadata: { data: { status } },
-    request: req,
-    actorId: order.userId,
-    actorType: 'USER',
-    oldData: order,
-    newData: updatedOrder,
-  });
-
-  sendResponse({ res, message: 'Order status updated', data: updatedOrder });
-}
-
-async function createOrder(req: Request, res: Response) {
-  const request = req as AuthenticatedRequest<object, object, CreateOrderInput>;
-
-  const { restaurantId, items, discount } = request.body;
+  const { restaurantId, items, discount } = authenticatedRequest.body;
 
   const menuItems = await prisma.menuItem.findMany({
     where: {
@@ -172,7 +106,7 @@ async function createOrder(req: Request, res: Response) {
 
   const order = await prisma.order.create({
     data: {
-      userId: request.user.id,
+      userId: authenticatedRequest.user.id,
       restaurantId,
       total,
       subtotal: total - discount,
@@ -186,17 +120,81 @@ async function createOrder(req: Request, res: Response) {
     resource: 'ORDER',
     resourceId: order.id,
     metadata: { data: order },
-    request: req,
+    request: request,
     actorId: order.userId,
     actorType: 'USER',
   });
 
-  sendResponse({ res, message: 'Order placed', data: order, statusCode: 201 });
+  sendSuccessResponse({ response, message: 'Order placed', data: order, statusCode: 201 });
 }
 
-async function payOrder(req: Request, res: Response) {
-  const { orderId } = req.params;
-  const { method } = req.body;
+async function updateOrder(request: Request, response: Response) {
+  const orderId = request.params.orderId;
+
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+  });
+
+  if (!order) {
+    throw new NotFoundError('Order not found');
+  }
+
+  const updatedOrder = await prisma.order.update({
+    where: { id: orderId },
+    data: request.body,
+  });
+
+  DATABASE_LOGGER.log({
+    action: 'UPDATE',
+    resource: 'ORDER',
+    resourceId: orderId,
+    metadata: { data: request.body },
+    request: request,
+    actorId: order.userId,
+    actorType: 'USER',
+    oldData: order,
+    newData: updatedOrder,
+  });
+
+  sendSuccessResponse({ response, message: 'Order updated', data: updatedOrder });
+}
+
+async function updateOrderStatus(request: Request, response: Response) {
+  const { status } = request.body;
+
+  const orderId = request.params.orderId;
+
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+  });
+
+  if (!order) {
+    throw new NotFoundError('Order not found');
+  }
+
+  const updatedOrder = await prisma.order.update({
+    where: { id: orderId },
+    data: { status },
+  });
+
+  DATABASE_LOGGER.log({
+    action: 'UPDATE',
+    resource: 'ORDER',
+    resourceId: orderId,
+    metadata: { data: { status } },
+    request: request,
+    actorId: order.userId,
+    actorType: 'USER',
+    oldData: order,
+    newData: updatedOrder,
+  });
+
+  sendSuccessResponse({ response, message: 'Order status updated', data: updatedOrder });
+}
+
+async function payOrder(request: Request, response: Response) {
+  const { orderId } = request.params;
+  const { method } = request.body;
 
   const existOrder = await prisma.order.findUnique({
     where: { id: orderId },
@@ -219,19 +217,19 @@ async function payOrder(req: Request, res: Response) {
     resource: 'ORDER',
     resourceId: orderId,
     metadata: { data: { paymentStatus: 'PAID', paymentMethod: method } },
-    request: req,
+    request: request,
     actorId: order.userId,
     actorType: 'USER',
     oldData: existOrder,
     newData: order,
   });
 
-  sendResponse({ res, message: 'Order marked as paid', data: order });
+  sendSuccessResponse({ response, message: 'Order marked as paid', data: order });
 }
 
-async function deleteOrder(req: Request, res: Response) {
-  const { orderId } = req.params;
-  const user = (req as AuthenticatedRequest).user;
+async function deleteOrder(request: Request, response: Response) {
+  const { orderId } = request.params;
+  const user = (request as AuthenticatedRequest).user;
 
   const existOrder = await prisma.order.findUnique({
     where: { id: orderId },
@@ -253,18 +251,18 @@ async function deleteOrder(req: Request, res: Response) {
     resource: 'ORDER',
     resourceId: orderId,
     metadata: { data: { status: 'CANCELLED' } },
-    request: req,
+    request: request,
     actorId: user.id,
     actorType: 'USER',
   });
 
-  sendResponse({ res, message: 'Order cancelled', data: order });
+  sendSuccessResponse({ response, message: 'Order cancelled', data: order });
 }
 
 export {
   createOrder,
   deleteOrder,
-  getAllOrders,
+  getOrders,
   getOrderById,
   getOrdersList,
   payOrder,

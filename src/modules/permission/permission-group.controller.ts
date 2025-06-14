@@ -1,20 +1,22 @@
 import { Request, Response } from 'express';
 
+import type { CreatePermissionGroupInput } from './permission.validator';
+
 import prisma from '@/config/prisma';
 import DATABASE_LOGGER from '@/services/database-log.service';
 import { AuthenticatedRequest } from '@/types/import';
 import { NotFoundError } from '@/utils/errors.utils';
-import sendResponse from '@/utils/sendResponse';
+import { sendPaginatedResponse, sendSuccessResponse } from '@/utils/send-response';
 import { BasePaginationInput } from '@/validations/pagination.validation';
 
-async function listPermissionGroups(req: Request, res: Response) {
-  const request = req as unknown as AuthenticatedRequest<
+async function getPermissionGroups(request: Request, response: Response) {
+  const authenticatedRequest = request as unknown as AuthenticatedRequest<
     unknown,
     unknown,
     unknown,
     BasePaginationInput
   >;
-  const query = request.parsedQuery;
+  const query = authenticatedRequest.parsedQuery;
 
   const skip = (query.page - 1) * query.limit;
 
@@ -27,32 +29,30 @@ async function listPermissionGroups(req: Request, res: Response) {
     prisma.permissionGroup.count(),
   ]);
 
-  sendResponse({
-    res,
+  sendPaginatedResponse({
+    response,
     message: 'Paginated permission groups',
-    data: {
-      data,
-      metadata: {
-        total,
-        page: query.page,
-        limit: query.limit,
-        totalPages: Math.ceil(total / query.limit),
-      },
+    data,
+    metadata: {
+      total,
+      page: query.page,
+      limit: query.limit,
+      totalPages: Math.ceil(total / query.limit),
     },
   });
 }
 
-async function getPermissionGroupList(req: Request, res: Response) {
+async function getPermissionGroupList(request: Request, response: Response) {
   const permissions = await prisma.permissionGroup.findMany();
-  sendResponse({
-    res,
+  sendSuccessResponse({
+    response,
     message: 'All permissions groups',
     data: permissions,
   });
 }
 
-async function getPermissionGroupById(req: Request, res: Response) {
-  const { permissionGroupId } = req.params;
+async function getPermissionGroupById(request: Request, response: Response) {
+  const { permissionGroupId } = request.params;
 
   const permission = await prisma.permissionGroup.findUnique({
     where: { id: permissionGroupId },
@@ -62,18 +62,22 @@ async function getPermissionGroupById(req: Request, res: Response) {
     throw new NotFoundError('Permission group not found');
   }
 
-  sendResponse({
-    res,
+  sendSuccessResponse({
+    response,
     message: 'Permission group found',
     data: permission,
   });
 }
 
-async function createPermissionGroup(req: Request, res: Response) {
-  const request = req as AuthenticatedRequest;
+async function createPermissionGroup(request: Request, response: Response) {
+  const authenticatedRequest = request as unknown as AuthenticatedRequest<
+    unknown,
+    unknown,
+    CreatePermissionGroupInput
+  >;
 
   const existingGroup = await prisma.permissionGroup.findUnique({
-    where: { name: req.body.name },
+    where: { name: authenticatedRequest.body.name },
   });
 
   if (existingGroup) {
@@ -81,32 +85,32 @@ async function createPermissionGroup(req: Request, res: Response) {
   }
 
   const permission = await prisma.permissionGroup.create({
-    data: req.body,
+    data: authenticatedRequest.body,
   });
 
   DATABASE_LOGGER.log({
-    request: request,
-    actorId: request.user.id,
+    request: authenticatedRequest,
+    actorId: authenticatedRequest.user.id,
     actorType: 'USER',
     action: 'CREATE',
     resource: 'PERMISSION_GROUP',
     resourceId: permission.id,
-    metadata: { data: req.body },
+    metadata: { data: request.body },
   });
 
-  sendResponse({
-    res,
+  sendSuccessResponse({
+    response,
     message: 'Permission group created',
     data: permission,
     statusCode: 201,
   });
 }
 
-async function updatePermissionGroup(req: Request, res: Response) {
-  const request = req as AuthenticatedRequest;
+async function updatePermissionGroup(request: Request, response: Response) {
+  const authenticatedRequest = request as AuthenticatedRequest;
 
-  const { permissionGroupId } = req.params;
-  const { name, description } = req.body;
+  const { permissionGroupId } = request.params;
+  const { name, description } = request.body;
 
   const permission = await prisma.permissionGroup.findUnique({
     where: { id: permissionGroupId },
@@ -122,8 +126,8 @@ async function updatePermissionGroup(req: Request, res: Response) {
   });
 
   DATABASE_LOGGER.log({
-    request: request,
-    actorId: request.user.id,
+    request: authenticatedRequest,
+    actorId: authenticatedRequest.user.id,
     actorType: 'USER',
     action: 'UPDATE',
     resource: 'PERMISSION_GROUP',
@@ -133,17 +137,17 @@ async function updatePermissionGroup(req: Request, res: Response) {
     metadata: { permission: updatedPermission },
   });
 
-  sendResponse({
-    res,
+  sendSuccessResponse({
+    response,
     message: 'Permission group updated',
     data: updatedPermission,
   });
 }
 
-async function deletePermissionGroup(req: Request, res: Response) {
-  const request = req as AuthenticatedRequest;
+async function deletePermissionGroup(request: Request, response: Response) {
+  const authenticatedRequest = request as AuthenticatedRequest;
 
-  const { permissionGroupId } = req.params;
+  const { permissionGroupId } = request.params;
 
   const permission = await prisma.permissionGroup.findUnique({
     where: { id: permissionGroupId },
@@ -158,8 +162,8 @@ async function deletePermissionGroup(req: Request, res: Response) {
   });
 
   DATABASE_LOGGER.log({
-    request: request,
-    actorId: request.user.id,
+    request: authenticatedRequest,
+    actorId: authenticatedRequest.user.id,
     actorType: 'USER',
     action: 'DELETE',
     resource: 'PERMISSION_GROUP',
@@ -167,8 +171,8 @@ async function deletePermissionGroup(req: Request, res: Response) {
     metadata: { deletedGroupPermission },
   });
 
-  sendResponse({
-    res,
+  sendSuccessResponse({
+    response,
     message: 'Permission group deleted',
     data: deletedGroupPermission,
   });
@@ -179,6 +183,6 @@ export {
   deletePermissionGroup,
   getPermissionGroupById,
   getPermissionGroupList,
-  listPermissionGroups,
+  getPermissionGroups,
   updatePermissionGroup,
 };

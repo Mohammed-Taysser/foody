@@ -5,7 +5,7 @@ import {
   deletePermissionGroup,
   getPermissionGroupById,
   getPermissionGroupList,
-  listPermissionGroups,
+  getPermissionGroups,
   updatePermissionGroup,
 } from './permission-group.controller';
 import { createPermissionGroupSchema, updatePermissionGroupSchema } from './permission.validator';
@@ -22,7 +22,7 @@ router.get(
   '/',
   ZodValidate(basePaginationSchema, 'query'),
   requirePermission(['view:permissionGroup'], true),
-  listPermissionGroups
+  getPermissionGroups
 );
 
 router.post(

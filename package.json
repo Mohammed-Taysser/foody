@@ -1,6 +1,6 @@
 {
   "name": "foody",
-  "version": "1.0.38",
+  "version": "1.0.39",
   "description": "API documentation for the Foody restaurant platform",
   "main": "dist/server.js",
   "repository": {
