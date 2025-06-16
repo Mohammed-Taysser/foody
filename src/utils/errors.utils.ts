@@ -1,15 +1,15 @@
-import { ErrorMiddlewareDetails } from '@/types/error';
-
 class BaseError extends Error {
   public statusCode: number;
   public isOperational: boolean;
-  public details?: ErrorMiddlewareDetails;
+  public details: ErrorMiddlewareDetails;
 
-  constructor(message: ErrorMiddlewareDetails, statusCode: number, isOperational = true) {
-    super(typeof message === 'string' ? message : 'An error occurred');
+  constructor(error: ErrorMiddlewareDetails, statusCode: number, isOperational = true) {
+    const resolvedMessage = typeof error === 'string' ? error : 'An error occurred';
+
+    super(resolvedMessage);
     this.statusCode = statusCode;
     this.isOperational = isOperational;
-    this.details = message;
+    this.details = typeof error === 'string' ? { error: resolvedMessage } : error;
 
     Error.captureStackTrace(this, this.constructor);
   }

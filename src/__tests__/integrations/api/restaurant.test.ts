@@ -1,11 +1,18 @@
+import path from 'path';
+
 import { faker } from '@faker-js/faker';
 import request from 'supertest';
 
 import app from '@/app';
 
+const mockImagePath = path.join(__dirname, '../../../../public/avatar.jpg');
+
 describe('Restaurant API', () => {
   let ownerToken: string;
   let ownerId: string;
+
+  let customerToken: string;
+  let customerId: string;
 
   beforeAll(async () => {
     // Register OWNER
@@ -15,8 +22,18 @@ describe('Restaurant API', () => {
       password: '123456789',
       role: 'OWNER',
     });
-    ownerToken = ownerRes.body.data.accessToken;
-    ownerId = ownerRes.body.data.user.id;
+    ownerToken = ownerRes.body.data.data.accessToken;
+    ownerId = ownerRes.body.data.data.user.id;
+
+    // Register CUSTOMER
+    const customerRes = await request(app).post('/api/auth/register').send({
+      name: faker.person.fullName(),
+      email: faker.internet.email(),
+      password: '123456789',
+      role: 'CUSTOMER',
+    });
+    customerToken = customerRes.body.data.data.accessToken;
+    customerId = customerRes.body.data.data.user.id;
   });
 
   describe('GET /restaurants', () => {
@@ -26,6 +43,13 @@ describe('Restaurant API', () => {
       expect(res.statusCode).toBe(200);
       expect(Array.isArray(res.body.data.data)).toBe(true);
     });
+
+    it('should paginate restaurants with query params', async () => {
+      const res = await request(app).get('/api/restaurants?page=1&limit=5');
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data.metadata).toHaveProperty('page');
+      expect(res.body.data.metadata).toHaveProperty('limit');
+    });
   });
 
   describe('GET /restaurants/list', () => {
@@ -33,7 +57,7 @@ describe('Restaurant API', () => {
       const res = await request(app).get('/api/restaurants/list');
 
       expect(res.statusCode).toBe(200);
-      expect(Array.isArray(res.body.data)).toBe(true);
+      expect(Array.isArray(res.body.data.data)).toBe(true);
     });
   });
 
@@ -48,12 +72,12 @@ describe('Restaurant API', () => {
           location: faker.location.city(),
         });
 
-      const restaurantId = createRes.body.data.id;
+      const restaurantId = createRes.body.data.data.id;
 
       const res = await request(app).get(`/api/restaurants/${restaurantId}`);
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.data.id).toBe(restaurantId);
+      expect(res.body.data.data.id).toBe(restaurantId);
     });
 
     it('should return 404 if restaurant not found', async () => {
@@ -64,36 +88,6 @@ describe('Restaurant API', () => {
   });
 
   describe('POST /restaurants', () => {
-    let ownerToken: string;
-    let ownerId: string;
-
-    let customerId: string;
-    let customerToken: string;
-
-    beforeAll(async () => {
-      const dummyEmail = faker.internet.email();
-
-      const ownerResponse = await request(app).post('/api/auth/register').send({
-        name: faker.person.fullName(),
-        email: dummyEmail,
-        password: '123456789',
-        role: 'OWNER',
-      });
-
-      const customerResponse = await request(app).post('/api/auth/register').send({
-        name: faker.person.fullName(),
-        email: faker.internet.email(),
-        password: '123456789',
-        role: 'CUSTOMER',
-      });
-
-      customerToken = customerResponse.body.data.accessToken;
-      customerId = customerResponse.body.data.user.id;
-
-      ownerToken = ownerResponse.body.data.accessToken;
-      ownerId = ownerResponse.body.data.user.id;
-    });
-
     it('should create a new restaurant', async () => {
       const res = await request(app)
         .post('/api/restaurants')
@@ -191,6 +185,19 @@ describe('Restaurant API', () => {
 
       expect(res.statusCode).toBe(201);
     });
+
+    it('should allow uploading an image when creating a restaurant', async () => {
+      const res = await request(app)
+        .post('/api/restaurants')
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .field('name', faker.company.name())
+        .field('ownerId', ownerId)
+        .field('location', faker.location.city())
+        .attach('image', mockImagePath);
+
+      expect(res.statusCode).toBe(201);
+      expect(res.body.data.data.image).toMatch(/restaurant/);
+    });
   });
 
   describe('PATCH /restaurants/:restaurantId', () => {
@@ -204,7 +211,7 @@ describe('Restaurant API', () => {
           location: faker.location.city(),
         });
 
-      const restaurantId = createRes.body.data.id;
+      const restaurantId = createRes.body.data.data.id;
 
       const updateRes = await request(app)
         .patch(`/api/restaurants/${restaurantId}`)
@@ -226,6 +233,35 @@ describe('Restaurant API', () => {
 
       expect(res.statusCode).toBe(404);
     });
+
+    it('should update restaurant image when new file is uploaded', async () => {
+      const createRes = await request(app)
+        .post('/api/restaurants')
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .field('name', faker.company.name())
+        .field('ownerId', ownerId)
+        .field('location', faker.location.city())
+        .attach('image', mockImagePath);
+
+      const restaurantId = createRes.body.data.data.id;
+
+      const updateRes = await request(app)
+        .patch(`/api/restaurants/${restaurantId}`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .field('name', faker.company.name())
+        .attach('image', mockImagePath);
+
+      expect(updateRes.statusCode).toBe(200);
+      expect(updateRes.body.data.data.image).toMatch(/restaurant/);
+    });
+
+    it('should return 401 if update attempted without auth', async () => {
+      const res = await request(app)
+        .patch('/api/restaurants/some-id')
+        .send({ name: 'Unauthorized update' });
+
+      expect(res.statusCode).toBe(401);
+    });
   });
 
   describe('DELETE /restaurants/:restaurantId', () => {
@@ -239,7 +275,7 @@ describe('Restaurant API', () => {
           location: faker.location.city(),
         });
 
-      const restaurantId = createRes.body.data.id;
+      const restaurantId = createRes.body.data.data.id;
 
       const deleteRes = await request(app)
         .delete(`/api/restaurants/${restaurantId}`)
@@ -254,6 +290,12 @@ describe('Restaurant API', () => {
         .set('Authorization', `Bearer ${ownerToken}`);
 
       expect(res.statusCode).toBe(404);
+    });
+
+    it('should return 401 if delete attempted without auth', async () => {
+      const res = await request(app).delete('/api/restaurants/some-id');
+
+      expect(res.statusCode).toBe(401);
     });
   });
 });

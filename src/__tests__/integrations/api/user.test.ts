@@ -13,14 +13,14 @@ describe('GET /users/me', () => {
       password: '123456789',
     });
 
-    const accessToken = registerResponse.body.data.accessToken;
+    const accessToken = registerResponse.body.data.data.accessToken;
 
     const profileResponse = await request(app)
       .get('/api/users/me')
       .set('Authorization', `Bearer ${accessToken}`);
 
     expect(profileResponse.statusCode).toBe(200);
-    expect(profileResponse.body.data.email).toBe(dummyEmail);
+    expect(profileResponse.body.data.data.email).toBe(dummyEmail);
   });
 
   it('should fail profile if not authenticated', async () => {
@@ -46,7 +46,7 @@ describe('PATCH /api/users/me', () => {
       role: 'CUSTOMER',
     });
 
-    accessToken = registerRes.body.data.accessToken;
+    accessToken = registerRes.body.data.data.accessToken;
   });
 
   it('should update user profile successfully', async () => {
@@ -58,7 +58,7 @@ describe('PATCH /api/users/me', () => {
       .send({ name: newName });
 
     expect(res.statusCode).toBe(200);
-    expect(res.body.data.name).toBe(newName);
+    expect(res.body.data.data.name).toBe(newName);
     expect(res.body.message).toBe('User profile updated');
   });
 
@@ -85,7 +85,7 @@ describe('PATCH /api/users/me', () => {
       password: '123456789',
     });
 
-    const existingEmail = secondUserRes.body.data.user.email;
+    const existingEmail = secondUserRes.body.data.data.user.email;
 
     // Try to update the first user’s email to the second user’s email
     const res = await request(app)
@@ -114,7 +114,7 @@ describe('GET /users/list', () => {
     const res = await request(app).get('/api/users/list');
 
     expect(res.statusCode).toBe(200);
-    expect(Array.isArray(res.body.data)).toBe(true);
+    expect(Array.isArray(res.body.data.data)).toBe(true);
   });
 });
 
@@ -129,7 +129,7 @@ describe('GET /api/users/:id', () => {
       password: '123456789',
       role: 'ADMIN',
     });
-    adminToken = adminRes.body.data.accessToken;
+    adminToken = adminRes.body.data.data.accessToken;
   });
 
   it('should return a user by ID', async () => {
@@ -143,10 +143,10 @@ describe('GET /api/users/:id', () => {
         role: 'CUSTOMER',
       });
 
-    const res = await request(app).get(`/api/users/${user.body.data.id}`);
+    const res = await request(app).get(`/api/users/${user.body.data.data.id}`);
 
     expect(res.statusCode).toBe(200);
-    expect(res.body.data.id).toBe(user.body.data.id);
+    expect(res.body.data.data.id).toBe(user.body.data.data.id);
   });
 
   it('should return 404 if user not found', async () => {
@@ -167,7 +167,7 @@ describe('POST /api/users', () => {
       password: '123456789',
       role: 'ADMIN',
     });
-    adminToken = adminRes.body.data.accessToken;
+    adminToken = adminRes.body.data.data.accessToken;
   });
 
   it('should create a user successfully', async () => {
@@ -186,8 +186,8 @@ describe('POST /api/users', () => {
 
     expect(res.statusCode).toBe(201);
     expect(res.body.success).toBe(true);
-    expect(res.body.data.email).toBe(email);
-    expect(res.body.data.name).toBe(name);
+    expect(res.body.data.data.email).toBe(email);
+    expect(res.body.data.data.name).toBe(name);
   });
 
   it('should fail to create user with invalid data', async () => {
@@ -238,7 +238,7 @@ describe('PATCH /api/users/:id', () => {
       password: '123456789',
       role: 'ADMIN',
     });
-    adminToken = adminRes.body.data.accessToken;
+    adminToken = adminRes.body.data.data.accessToken;
   });
 
   it('should update the user successfully', async () => {
@@ -257,14 +257,14 @@ describe('PATCH /api/users/:id', () => {
       });
 
     const res = await request(app)
-      .patch(`/api/users/${user.body.data.id}`)
+      .patch(`/api/users/${user.body.data.data.id}`)
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         name: newName,
       });
 
     expect(res.statusCode).toBe(200);
-    expect(res.body.data.name).toBe(newName);
+    expect(res.body.data.data.name).toBe(newName);
   });
 
   it('should return 404 if user is not found', async () => {
@@ -295,7 +295,7 @@ describe('DELETE /api/users/:id', () => {
         password: '123456789',
         role: 'ADMIN',
       });
-    adminToken = adminRes.body.data.accessToken;
+    adminToken = adminRes.body.data.data.accessToken;
   });
 
   it('should delete the user successfully', async () => {
@@ -310,7 +310,7 @@ describe('DELETE /api/users/:id', () => {
       });
 
     const res = await request(app)
-      .delete(`/api/users/${user.body.data.id}`)
+      .delete(`/api/users/${user.body.data.data.id}`)
       .set('Authorization', `Bearer ${adminToken}`);
 
     expect(res.statusCode).toBe(200);

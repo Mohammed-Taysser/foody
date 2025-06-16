@@ -1,7 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 
 import errorHandlerMiddleware from '@/middleware/error.middleware';
-import { ErrorMiddlewareDetails } from '@/types/error';
 import { NotFoundError } from '@/utils/errors.utils';
 
 jest.mock('@/config/config', () => ({
