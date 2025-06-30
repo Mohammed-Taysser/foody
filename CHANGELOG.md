@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/mohammed-taysser/foody/compare/v1.0.42...v1.1.0) (2025-06-30)
+
+
+### Features
+
+* implement release script for versioning and changelog generation ([73832ed](https://github.com/mohammed-taysser/foody/commit/73832ed9d90de46dbce958b07327132da40d87c1))
+
 ## 1.0.42 (2025-06-30)
 
 
@@ -80,6 +87,3 @@
 * **users, menu, category:** enhance endpoints and improve functionality ([3b2ba61](https://github.com/mohammed-taysser/foody/commit/3b2ba61f0630a574cfe13114c5a5103c641b83c4))
 * **users:** add missing CRUD API endpoints ([e372df3](https://github.com/mohammed-taysser/foody/commit/e372df35f03367b600040eddb2b2f184b874a9ad))
 * **utils:** create dayjsTZ wrapper using default timezone from .env ([734cbf6](https://github.com/mohammed-taysser/foody/commit/734cbf6ce5849c814096c99c90a9f97e2fcc50d9))
-
-
-
