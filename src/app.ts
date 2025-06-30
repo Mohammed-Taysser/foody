@@ -10,9 +10,12 @@ import apiLimiter from '@/middleware/api-rate-limit.middleware';
 import compressionMiddleware from '@/middleware/compression.middleware';
 import errorHandlerMiddleware from '@/middleware/error.middleware';
 import loggerMiddleware from '@/middleware/logger.middleware';
+import analyticsRoutes from '@/modules/analytics/analytics.route';
 import authRoutes from '@/modules/auth/auth.route';
 import categoriesRoutes from '@/modules/category/category.route';
 import menuItemsRoutes from '@/modules/menu-items/menu-items.route';
+import orderRoutes from '@/modules/order/order.route';
+import permissionRoutes from '@/modules/permission/permission.route';
 import restaurantRoutes from '@/modules/restaurant/restaurant.route';
 import userRoutes from '@/modules/user/user.route';
 import { ForbiddenError, NotFoundError } from '@/utils/errors.utils';
@@ -59,6 +62,7 @@ app.use(compressionMiddleware);
 
 // Serve static Files
 app.use(express.static('public'));
+app.use('/uploads', express.static('uploads'));
 
 // Health check route
 app.get('/health', (_req, res) => {
@@ -70,8 +74,11 @@ app.use('/api', apiLimiter);
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/permissions', permissionRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/restaurants', restaurantRoutes);
+app.use('/api/orders', orderRoutes);
 app.use('/api/categories', categoriesRoutes);
 app.use('/api/menu-items', menuItemsRoutes);
 

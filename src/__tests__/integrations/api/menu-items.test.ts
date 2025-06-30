@@ -1,8 +1,12 @@
+import path from 'path';
+
 import { faker } from '@faker-js/faker';
 import { MenuItem } from '@prisma/client';
 import request from 'supertest';
 
 import app from '@/app';
+
+const mockImagePath = path.join(__dirname, '../../../../public/avatar.jpg');
 
 describe('Menu Items API', () => {
   let ownerToken: string;
@@ -21,20 +25,8 @@ describe('Menu Items API', () => {
       password: '123456789',
       role: 'OWNER',
     });
-    ownerToken = ownerRes.body.data.accessToken;
-    ownerId = ownerRes.body.data.user.id;
-
-    // Create a restaurant
-    const restaurantRes = await request(app)
-      .post('/api/restaurants')
-      .set('Authorization', `Bearer ${ownerToken}`)
-      .send({
-        name: faker.company.name(),
-        location: faker.location.city(),
-        ownerId,
-      });
-
-    restaurantId = restaurantRes.body.data.id;
+    ownerToken = ownerRes.body.data.data.accessToken;
+    ownerId = ownerRes.body.data.data.user.id;
 
     // Register an ADMIN
     const adminRes = await request(app).post('/api/auth/register').send({
@@ -43,7 +35,19 @@ describe('Menu Items API', () => {
       password: '123456789',
       role: 'ADMIN',
     });
-    adminToken = adminRes.body.data.accessToken;
+    adminToken = adminRes.body.data.data.accessToken;
+
+    // Create a restaurant
+    const restaurantRes = await request(app)
+      .post('/api/restaurants')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        name: faker.company.name(),
+        location: faker.location.city(),
+        ownerId,
+      });
+
+    restaurantId = restaurantRes.body.data.data.id;
 
     // Create a category
     const categoryRes = await request(app)
@@ -54,7 +58,7 @@ describe('Menu Items API', () => {
         restaurantId,
       });
 
-    categoryId = categoryRes.body.data.id;
+    categoryId = categoryRes.body.data.data.id;
 
     // Seed 10 menu items for pagination & filtering test
     Promise.all(
@@ -87,8 +91,8 @@ describe('Menu Items API', () => {
         });
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.data.name).toBe('Pizza Margherita');
-      menuItemId = res.body.data.id;
+      expect(res.body.data.data.name).toBe('Pizza Margherita');
+      menuItemId = res.body.data.data.id;
     });
 
     it("should forbid adding menu item to someone else's restaurant", async () => {
@@ -99,7 +103,7 @@ describe('Menu Items API', () => {
         role: 'OWNER',
       });
 
-      const token = otherOwnerRes.body.data.accessToken;
+      const token = otherOwnerRes.body.data.data.accessToken;
 
       const res = await request(app)
         .post(`/api/menu-items`)
@@ -143,6 +147,32 @@ describe('Menu Items API', () => {
         });
 
       expect(res.statusCode).toBe(409);
+    });
+
+    it('should allow uploading image when adding a menu item', async () => {
+      const res = await request(app)
+        .post(`/api/menu-items`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .field('name', 'Pizza Upload')
+        .field('price', 15.99)
+        .field('available', true)
+        .field('restaurantId', restaurantId)
+        .field('categoryId', categoryId)
+        .attach('image', mockImagePath);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data.data.image).toMatch(/\/uploads\/menu\//);
+    });
+
+    it('should return 401 if unauthenticated user tries to create a menu item', async () => {
+      const res = await request(app).post(`/api/menu-items`).send({
+        name: 'Unauthorized Dish',
+        price: 10,
+        restaurantId,
+        categoryId,
+      });
+
+      expect(res.statusCode).toBe(401);
     });
   });
 
@@ -209,7 +239,7 @@ describe('Menu Items API', () => {
       const res = await request(app).get(`/api/menu-items/${menuItemId}`);
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.data.id).toBe(menuItemId);
+      expect(res.body.data.data.id).toBe(menuItemId);
     });
 
     it('should return 404 for non-existent item', async () => {
@@ -231,7 +261,7 @@ describe('Menu Items API', () => {
       const res = await request(app).get(`/api/menu-items/list`);
 
       expect(res.statusCode).toBe(200);
-      expect(Array.isArray(res.body.data)).toBe(true);
+      expect(Array.isArray(res.body.data.data)).toBe(true);
     });
   });
 
@@ -243,7 +273,7 @@ describe('Menu Items API', () => {
         .send({ price: 12.99 });
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.data.price).toBe(12.99);
+      expect(res.body.data.data.price).toBe(12.99);
     });
 
     it('should return 409 when updating with non-existent restaurantId', async () => {
@@ -272,7 +302,7 @@ describe('Menu Items API', () => {
         role: 'OWNER',
       });
 
-      const token = otherOwner.body.data.accessToken;
+      const token = otherOwner.body.data.data.accessToken;
 
       const res = await request(app)
         .patch(`/api/menu-items/${menuItemId}`)
@@ -280,6 +310,36 @@ describe('Menu Items API', () => {
         .send({ price: 20 });
 
       expect(res.statusCode).toBe(403);
+    });
+
+    it('should replace image when updating a menu item', async () => {
+      // First, create item with initial image
+      const createRes = await request(app)
+        .post(`/api/menu-items`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .field('name', 'Image Replace')
+        .field('price', 18.99)
+        .field('available', true)
+        .field('restaurantId', restaurantId)
+        .field('categoryId', categoryId)
+        .attach('image', mockImagePath);
+
+      const itemId = createRes.body.data.data.id;
+
+      // Then, update with a new image
+      const updateRes = await request(app)
+        .patch(`/api/menu-items/${itemId}`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .attach('image', mockImagePath);
+
+      expect(updateRes.statusCode).toBe(200);
+      expect(updateRes.body.data.data.image).toMatch(/\/uploads\/menu\//);
+    });
+
+    it('should return 401 if unauthenticated user tries to update a menu item', async () => {
+      const res = await request(app).patch(`/api/menu-items/${menuItemId}`).send({ price: 999 });
+
+      expect(res.statusCode).toBe(401);
     });
   });
 
@@ -320,13 +380,18 @@ describe('Menu Items API', () => {
           categoryId,
         });
 
-      const token = otherOwner.body.data.accessToken;
+      const token = otherOwner.body.data.data.accessToken;
 
       const res = await request(app)
-        .delete(`/api/menu-items/${menuItemToDelete.body.data.id}`)
+        .delete(`/api/menu-items/${menuItemToDelete.body.data.data.id}`)
         .set('Authorization', `Bearer ${token}`);
 
       expect(res.statusCode).toBe(403);
+    });
+
+    it('should return 401 if unauthenticated user tries to delete a menu item', async () => {
+      const res = await request(app).delete(`/api/menu-items/${menuItemId}`);
+      expect(res.statusCode).toBe(401);
     });
   });
 });

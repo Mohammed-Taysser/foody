@@ -1,0 +1,286 @@
+//// ------------------------------------------------------
+//// THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+//// ------------------------------------------------------
+
+Table User {
+  id String [pk]
+  name String [not null]
+  email String [unique, not null]
+  password String [not null]
+  role Role [not null, default: 'CUSTOMER']
+  image String [default: '/avatar.jpg']
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  restaurants Restaurant [not null]
+  permissionGroups PermissionGroup [not null]
+  permissions Permission [not null]
+  UserPermissionGroup UserPermissionGroup [not null]
+  AuditLog AuditLog [not null]
+  ErrorLog ErrorLog [not null]
+  Orders Order [not null]
+}
+
+Table Restaurant {
+  id String [pk]
+  name String [not null]
+  description String [default: '']
+  location String [not null]
+  ownerId String [not null]
+  image String [default: '/avatar.jpg']
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  Category Category [not null]
+  MenuItem MenuItem [not null]
+  owner User [not null]
+  orders Order [not null]
+}
+
+Table MenuItem {
+  id String [pk]
+  name String [not null]
+  description String [default: '']
+  image String [default: '/avatar.jpg']
+  price Float [not null]
+  available Boolean [not null, default: true]
+  restaurantId String [not null]
+  categoryId String
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  category Category
+  restaurant Restaurant [not null]
+  orders OrderItem [not null]
+}
+
+Table Category {
+  id String [pk]
+  name String [not null]
+  restaurantId String [not null]
+  image String [default: '/avatar.jpg']
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  restaurant Restaurant [not null]
+  items MenuItem [not null]
+}
+
+Table Permission {
+  id String [pk]
+  key String [unique, not null]
+  description String [default: '']
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  groups PermissionGroup [not null]
+  users User [not null]
+  PermissionInGroup PermissionInGroup [not null]
+}
+
+Table PermissionGroup {
+  id String [pk]
+  name String [unique, not null]
+  description String [default: '']
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  permissions Permission [not null]
+  users User [not null]
+  PermissionInGroup PermissionInGroup [not null]
+  UserPermissionGroup UserPermissionGroup [not null]
+}
+
+Table PermissionInGroup {
+  id String [pk]
+  permissionGroup PermissionGroup [not null]
+  permissionGroupId String [not null]
+  permission Permission [not null]
+  permissionId String [not null]
+
+  indexes {
+    (permissionGroupId, permissionId) [unique]
+  }
+}
+
+Table UserPermissionGroup {
+  id String [pk]
+  user User [not null]
+  userId String [not null]
+  permissionGroup PermissionGroup [not null]
+  permissionGroupId String [not null]
+
+  indexes {
+    (userId, permissionGroupId) [unique]
+  }
+}
+
+Table AuditLog {
+  id String [pk]
+  actorId String
+  actorType ActorType [not null]
+  action ActionType [not null]
+  resource ResourceType [not null]
+  resourceId String [not null]
+  diff Json
+  metadata Json
+  createdAt DateTime [default: `now()`, not null]
+  User User
+}
+
+Table ErrorLog {
+  id String [pk]
+  actorId String
+  actorType ActorType [not null]
+  resource ResourceType [not null]
+  resourceId String [not null]
+  metadata Json
+  createdAt DateTime [default: `now()`, not null]
+  User User
+}
+
+Table Order {
+  id String [pk]
+  userId String [not null]
+  restaurantId String [not null]
+  items OrderItem [not null]
+  status OrderStatus [not null, default: 'PENDING']
+  total Float [not null]
+  subtotal Float [not null]
+  discount Float [default: 0]
+  notes String [default: '']
+  paymentStatus PaymentStatus [not null, default: 'UNPAID']
+  paymentMethod PaymentMethod
+  tableNumber Int
+  invoiceNumber String [unique]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  user User [not null]
+  restaurant Restaurant [not null]
+}
+
+Table OrderItem {
+  id String [pk]
+  orderId String [not null]
+  menuItemId String [not null]
+  quantity Int [not null]
+  notes String [default: '']
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  order Order [not null]
+  menuItem MenuItem [not null]
+}
+
+Table JobLog {
+  id String [pk]
+  jobId String [not null]
+  jobName String [not null]
+  status JobLogStatus [not null]
+  data Json [not null]
+  result Json
+  error String
+  createdAt DateTime [default: `now()`, not null]
+}
+
+Table UserGroups {
+  permissiongroupsId String [ref: > PermissionGroup.id]
+  usersId String [ref: > User.id]
+}
+
+Table UserPermissions {
+  permissionsId String [ref: > Permission.id]
+  usersId String [ref: > User.id]
+}
+
+Table GroupPermissions {
+  groupsId String [ref: > PermissionGroup.id]
+  permissionsId String [ref: > Permission.id]
+}
+
+Enum Role {
+  ADMIN
+  OWNER
+  CUSTOMER
+}
+
+Enum ActorType {
+  ADMIN
+  USER
+  CRON_JOB
+  WEBHOOK
+  BOT
+}
+
+Enum ActionType {
+  CREATE
+  UPDATE
+  DELETE
+  PASSWORD_RESET
+  LOGIN
+  REGISTER
+  PLACE_ORDER
+  CANCEL_ORDER
+  EXPORT
+  IMPORT
+  DOWNLOAD
+  UPLOAD
+  REFRESH_TOKEN
+  SYNC
+  NOTIFY
+}
+
+Enum ResourceType {
+  PERMISSION
+  PERMISSION_GROUP
+  CATEGORY
+  MENU_ITEM
+  USER
+  RESTAURANT
+  ORDER
+}
+
+Enum OrderStatus {
+  PENDING
+  PREPARING
+  COMPLETED
+  CANCELLED
+}
+
+Enum PaymentStatus {
+  UNPAID
+  PAID
+  REFUNDED
+}
+
+Enum PaymentMethod {
+  CASH
+  CARD
+  ONLINE
+}
+
+Enum JobLogStatus {
+  COMPLETED
+  FAILED
+}
+
+Ref: Restaurant.ownerId > User.id
+
+Ref: MenuItem.categoryId > Category.id
+
+Ref: MenuItem.restaurantId > Restaurant.id
+
+Ref: Category.restaurantId > Restaurant.id
+
+Ref: PermissionInGroup.permissionGroupId > PermissionGroup.id
+
+Ref: PermissionInGroup.permissionId > Permission.id
+
+Ref: UserPermissionGroup.userId > User.id
+
+Ref: UserPermissionGroup.permissionGroupId > PermissionGroup.id
+
+Ref: AuditLog.actorId > User.id
+
+Ref: ErrorLog.actorId > User.id
+
+Ref: Order.userId > User.id
+
+Ref: Order.restaurantId > Restaurant.id
+
+Ref: OrderItem.orderId > Order.id [delete: Cascade]
+
+Ref: OrderItem.menuItemId > MenuItem.id

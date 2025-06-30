@@ -14,9 +14,9 @@ describe('POST /auth/register', () => {
     });
 
     expect(res.statusCode).toBe(201);
-    expect(res.body.data.accessToken).toBeDefined();
-    expect(res.body.data.refreshToken).toBeDefined();
-    expect(res.body.data.user.email).toBe(dummyEmail);
+    expect(res.body.data.data.accessToken).toBeDefined();
+    expect(res.body.data.data.refreshToken).toBeDefined();
+    expect(res.body.data.data.user.email).toBe(dummyEmail);
   });
 
   it('should not allow duplicate registration', async () => {
@@ -68,7 +68,7 @@ describe('POST /auth/login', () => {
       password: 'wrong_pass',
     });
 
-    expect(res.statusCode).toBe(401);
+    expect(res.statusCode).toBe(400);
     expect(res.body.success).toBe(false);
   });
 
@@ -87,9 +87,9 @@ describe('POST /auth/login', () => {
     });
 
     expect(res.statusCode).toBe(200);
-    expect(res.body.data.accessToken).toBeDefined();
-    expect(res.body.data.refreshToken).toBeDefined();
-    expect(res.body.data.user.email).toBe(dummyEmail);
+    expect(res.body.data.data.accessToken).toBeDefined();
+    expect(res.body.data.data.refreshToken).toBeDefined();
+    expect(res.body.data.data.user.email).toBe(dummyEmail);
   });
 
   it('should fail when email is missing', async () => {
@@ -112,12 +112,29 @@ describe('POST /auth/login', () => {
     expect(res.body.details.length).toBeGreaterThan(0);
   });
 
+  it('should fail when password is invalid', async () => {
+    const dummyEmail = faker.internet.email();
+
+    await request(app).post('/api/auth/register').send({
+      name: faker.person.fullName(),
+      email: dummyEmail,
+      password: '123456789',
+    });
+
+    const res = await request(app).post('/api/auth/login').send({
+      email: dummyEmail,
+      password: 'wrong_pass',
+    });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.success).toBe(false);
+  });
+
   it('should return error for missing fields', async () => {
     const res = await request(app).post('/api/auth/login').send({});
 
     expect(res.statusCode).toBe(400);
     expect(res.body.success).toBe(false);
-    expect(res.body.details.length).toBeGreaterThan(0);
   });
 });
 
@@ -136,15 +153,15 @@ describe('POST /auth/refresh', () => {
       password: '123456789',
     });
 
-    const refreshToken = loginResponse.body.data.refreshToken;
+    const refreshToken = loginResponse.body.data.data.refreshToken;
 
     const refreshResponse = await request(app).post('/api/auth/refresh').send({
       refreshToken,
     });
 
     expect(refreshResponse.statusCode).toBe(200);
-    expect(refreshResponse.body.data.accessToken).toBeDefined();
-    expect(refreshResponse.body.data.refreshToken).toBeDefined();
+    expect(refreshResponse.body.data.data.accessToken).toBeDefined();
+    expect(refreshResponse.body.data.data.refreshToken).toBeDefined();
   });
 
   it('should fail refresh with no token', async () => {

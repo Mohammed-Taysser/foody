@@ -83,6 +83,7 @@ jobs:
       JWT_SECRET: super_secret_key
       JWT_ACCESS_EXPIRES_IN: 1d
       JWT_REFRESH_EXPIRES_IN: 7d
+      DEFAULT_TIMEZONE: Africa/Cairo
 
     needs: setup
 
@@ -103,6 +104,9 @@ jobs:
 
       - name: Run database migrations
         run: pnpm run prisma:deploy
+
+      - name: Seed database
+        run: pnpm run seed
 
       - name: Run tests with coverage
         run: pnpm run test:coverage

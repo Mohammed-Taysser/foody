@@ -1,12 +1,76 @@
 import { Request, Response } from 'express';
 
 import prisma from '@/config/prisma';
+import DATABASE_LOGGER from '@/services/database-log.service';
 import { AuthenticatedRequest } from '@/types/import';
 import { BadRequestError, NotFoundError } from '@/utils/errors.utils';
-import sendResponse from '@/utils/sendResponse';
+import { deleteImage, uploadImage } from '@/utils/multer.utils';
+import { sendPaginatedResponse, sendSuccessResponse } from '@/utils/send-response';
+import { BasePaginationInput } from '@/validations/pagination.validation';
+import { getRequestInfo } from '@/utils/request.utils';
 
-async function createRestaurant(req: Request, res: Response) {
-  const data = req.body;
+async function getRestaurants(request: Request, response: Response) {
+  const authenticatedRequest = request as unknown as AuthenticatedRequest<
+    unknown,
+    unknown,
+    unknown,
+    BasePaginationInput
+  >;
+
+  const query = authenticatedRequest.parsedQuery;
+
+  const skip = (query.page - 1) * query.limit;
+
+  const [data, total] = await Promise.all([
+    prisma.restaurant.findMany({
+      skip,
+      take: query.limit,
+      orderBy: { createdAt: 'desc' },
+    }),
+    prisma.restaurant.count(),
+  ]);
+
+  sendPaginatedResponse({
+    response,
+    message: 'All restaurants',
+    data,
+    metadata: {
+      total,
+      page: query.page,
+      limit: query.limit,
+      totalPages: Math.ceil(total / query.limit),
+    },
+  });
+}
+
+async function getRestaurantsList(request: Request, response: Response) {
+  const restaurants = await prisma.restaurant.findMany({
+    select: {
+      id: true,
+      name: true,
+    },
+  });
+
+  sendSuccessResponse({ response, message: 'Restaurants list', data: restaurants });
+}
+
+async function getRestaurantById(request: Request, response: Response) {
+  const restaurantId = request.params.restaurantId;
+
+  const restaurant = await prisma.restaurant.findUnique({
+    where: { id: restaurantId },
+  });
+
+  if (!restaurant) {
+    throw new NotFoundError('Restaurant not found');
+  }
+
+  sendSuccessResponse({ response, message: 'Restaurant found', data: restaurant });
+}
+
+async function createRestaurant(request: Request, response: Response) {
+  const data = request.body;
+  const image = request.file;
 
   if (!data.ownerId) {
     throw new BadRequestError('Owner id is required');
@@ -20,8 +84,10 @@ async function createRestaurant(req: Request, res: Response) {
     throw new NotFoundError('Owner not found');
   }
 
-  if (owner.role !== 'OWNER') {
-    throw new BadRequestError('User is not an owner');
+  let imageUrl = undefined;
+
+  if (image) {
+    imageUrl = await uploadImage(image, 'restaurant');
   }
 
   const newRestaurant = await prisma.restaurant.create({
@@ -30,6 +96,7 @@ async function createRestaurant(req: Request, res: Response) {
       description: data.description,
       location: data.location,
       ownerId: owner.id,
+      image: imageUrl,
     },
     include: {
       owner: {
@@ -42,58 +109,26 @@ async function createRestaurant(req: Request, res: Response) {
     },
   });
 
-  sendResponse({
-    res,
+  DATABASE_LOGGER.log({
+    requestInfo: getRequestInfo(request),
+    actorId: owner.id,
+    actorType: 'USER',
+    action: 'CREATE',
+    resource: 'RESTAURANT',
+    resourceId: newRestaurant.id,
+  });
+
+  sendSuccessResponse({
+    response,
     message: 'Restaurant created',
     data: newRestaurant,
     statusCode: 201,
   });
 }
 
-async function getRestaurants(req: Request, res: Response) {
-  const request = req as AuthenticatedRequest;
-  const query = request.parsedQuery;
-
-  const page = query.page as number;
-  const limit = query.limit as number;
-  const skip = (page - 1) * limit;
-
-  const [data, total] = await Promise.all([
-    prisma.restaurant.findMany({
-      skip,
-      take: limit,
-      orderBy: { createdAt: 'desc' },
-    }),
-    prisma.restaurant.count(),
-  ]);
-
-  sendResponse({
-    res,
-    message: 'All restaurants',
-    data: {
-      data,
-      metadata: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    },
-  });
-}
-
-async function getRestaurantsList(req: Request, res: Response) {
-  const restaurants = await prisma.restaurant.findMany({
-    select: {
-      id: true,
-      name: true,
-    },
-  });
-  sendResponse({ res, message: 'Restaurants list', data: restaurants });
-}
-
-const getRestaurantById = async (req: Request, res: Response) => {
-  const restaurantId = req.params.restaurantId;
+async function updateRestaurant(request: Request, response: Response) {
+  const restaurantId = request.params.restaurantId;
+  const data = request.body;
 
   const restaurant = await prisma.restaurant.findUnique({
     where: { id: restaurantId },
@@ -103,35 +138,46 @@ const getRestaurantById = async (req: Request, res: Response) => {
     throw new NotFoundError('Restaurant not found');
   }
 
-  sendResponse({ res, message: 'Restaurant found', data: restaurant });
-};
+  let imageUrl = restaurant.image;
 
-const updateRestaurant = async (req: Request, res: Response) => {
-  const restaurantId = req.params.restaurantId;
-  const data = req.body;
+  if (restaurant.image && request.file) {
+    deleteImage(restaurant.image);
+  }
 
-  const restaurant = await prisma.restaurant.findUnique({
-    where: { id: restaurantId },
-  });
-
-  if (!restaurant) {
-    throw new NotFoundError('Restaurant not found');
+  if (request.file) {
+    imageUrl = await uploadImage(request.file, 'restaurant');
   }
 
   const updatedRestaurant = await prisma.restaurant.update({
     where: { id: restaurantId },
-    data,
+    data: {
+      ...data,
+      image: imageUrl,
+    },
   });
 
-  sendResponse({
-    res,
+  DATABASE_LOGGER.log({
+    requestInfo: getRequestInfo(request),
+    actorId: restaurant.ownerId,
+    actorType: 'USER',
+    action: 'UPDATE',
+    resource: 'RESTAURANT',
+    resourceId: restaurant.id,
+    oldData: restaurant,
+    newData: updatedRestaurant,
+    metadata: { data },
+  });
+
+  sendSuccessResponse({
+    response,
     message: 'Restaurant updated',
     data: updatedRestaurant,
   });
-};
+}
 
-const deleteRestaurant = async (req: Request, res: Response) => {
-  const restaurantId = req.params.restaurantId;
+async function deleteRestaurant(request: Request, response: Response) {
+  const authenticatedRequest = request as AuthenticatedRequest;
+  const restaurantId = request.params.restaurantId;
 
   const restaurant = await prisma.restaurant.findUnique({
     where: { id: restaurantId },
@@ -145,8 +191,22 @@ const deleteRestaurant = async (req: Request, res: Response) => {
     where: { id: restaurantId },
   });
 
-  sendResponse({ res, message: 'Restaurant deleted', data: deletedRestaurant });
-};
+  if (restaurant.image) {
+    deleteImage(restaurant.image);
+  }
+
+  DATABASE_LOGGER.log({
+    requestInfo: getRequestInfo(request),
+    actorId: authenticatedRequest.user.id,
+    actorType: 'USER',
+    action: 'DELETE',
+    resource: 'RESTAURANT',
+    resourceId: restaurant.id,
+    metadata: { deletedRestaurant },
+  });
+
+  sendSuccessResponse({ response, message: 'Restaurant deleted', data: deletedRestaurant });
+}
 
 export {
   createRestaurant,

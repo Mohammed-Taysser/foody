@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: Foody API
-  version: 1.0.22
+  version: 1.0.38
   description: API documentation for the Foody restaurant platform
   contact:
     name: Mohammed Taysser
@@ -23,6 +23,8 @@ servers:
 tags:
   - name: Auth
     description: Authentication related endpoints
+  - name: Permissions
+    description: Permission management
   - name: Users
     description: User-related operations
   - name: Restaurants
@@ -31,6 +33,10 @@ tags:
     description: Menu category management per restaurant
   - name: Menu Items
     description: Menu items within restaurant
+  - name: Orders
+    description: Order management
+  - name: Analytics
+    description: Metrics and chart data
 
 security:
   - bearerAuth: []
@@ -93,11 +99,11 @@ paths:
                 email:
                   type: string
                   format: email
-                  example: 1B3yK@example.com
+                  example: admin@demo.com
                 password:
                   type: string
                   format: password
-                  example: 'StrongPassword123'
+                  example: '123456789'
       responses:
         200:
           description: Successful login
@@ -143,6 +149,285 @@ paths:
                           refreshToken:
                             type: string
 
+  /permissions:
+    get:
+      tags: [Permissions]
+      summary: Get all permissions
+      responses:
+        200:
+          description: List of permissions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: All permissions
+                  data:
+                    type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Permission'
+                      metadata:
+                        $ref: '#/components/schemas/PaginationMetadata'
+
+    post:
+      tags: [Permissions]
+      summary: Create a new permission
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+      responses:
+        201:
+          description: Permission created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Permission'
+
+  /permissions/list:
+    get:
+      tags: [Permissions]
+      summary: Get a list of permissions
+      responses:
+        200:
+          description: List of permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+
+  /permissions/{permissionId}:
+    get:
+      tags: [Permissions]
+      summary: Get a permission by ID
+      parameters:
+        - name: permissionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Permission found
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Permission'
+
+    patch:
+      tags: [Permissions]
+      summary: Update a permission by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: permissionId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        200:
+          description: Permission updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Permission'
+
+    delete:
+      tags: [Permissions]
+      summary: Delete a permission by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: permissionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Permission deleted successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Permission'
+
+  /permissions/permission-groups:
+    get:
+      tags: [Permissions]
+      summary: Get all permission groups
+      responses:
+        200:
+          description: List of permission groups
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+
+    post:
+      tags: [Permissions]
+      summary: Create a new permission group
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+      responses:
+        201:
+          description: Permission group created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/PermissionGroup'
+
+  /permissions/permission-groups/list:
+    get:
+      tags: [Permissions]
+      summary: Get a list of permission groups
+      responses:
+        200:
+          description: List of permission groups
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+
+  /permissions/permission-groups/{permissionGroupId}:
+    get:
+      tags: [Permissions]
+      summary: Get a permission group by ID
+      parameters:
+        - name: permissionGroupId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Permission group found
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/PermissionGroup'
+
+    patch:
+      tags: [Permissions]
+      summary: Update a permission group by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: permissionGroupId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        200:
+          description: Permission group updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/PermissionGroup'
+
+    delete:
+      tags: [Permissions]
+      summary: Delete a permission group by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: permissionGroupId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Permission group deleted successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/PermissionGroup'
+
   /users/me:
     get:
       tags: [Users]
@@ -183,6 +468,23 @@ paths:
                 role:
                   type: string
                   enum: [CUSTOMER, OWNER, ADMIN]
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+                role:
+                  type: string
+                  enum: [CUSTOMER, OWNER, ADMIN]
+                image:
+                  type: file
+                  format: binary
+
       responses:
         200:
           description: User updated successfully
@@ -195,6 +497,32 @@ paths:
                     properties:
                       data:
                         $ref: '#/components/schemas/User'
+
+  /users/me/permissions:
+    get:
+      tags: [Users]
+      summary: Get current user permissions
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Current user permissions
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          properties:
+                            action:
+                              type: enum
+                              enum: [add, view, update, delete]
+                            module:
+                              type: string
 
   /users:
     get:
@@ -434,12 +762,35 @@ paths:
               type: object
               required:
                 - name
-                - address
+                - location
               properties:
                 name:
                   type: string
-                address:
+                location:
                   type: string
+                description:
+                  type: string
+                ownerId:
+                  type: string
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - name
+                - location
+              properties:
+                name:
+                  type: string
+                location:
+                  type: string
+                description:
+                  type: string
+                image:
+                  type: string
+                  format: binary
+                ownerId:
+                  type: string
+
       responses:
         201:
           description: Restaurant created successfully
@@ -508,8 +859,31 @@ paths:
               properties:
                 name:
                   type: string
-                address:
+                location:
                   type: string
+                description:
+                  type: string
+                ownerId:
+                  type: string
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - name
+                - location
+              properties:
+                name:
+                  type: string
+                location:
+                  type: string
+                description:
+                  type: string
+                image:
+                  type: string
+                  format: binary
+                ownerId:
+                  type: string
+
       responses:
         200:
           description: Restaurant updated successfully
@@ -665,6 +1039,15 @@ paths:
                   type: string
                 restaurantId:
                   type: string
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                image:
+                  type: string
+                  format: binary
       responses:
         200:
           description: Category updated successfully
@@ -830,6 +1213,17 @@ paths:
                   type: number
                 available:
                   type: boolean
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                price:
+                  type: number
+                image:
+                  type: string
+                  format: binary
       responses:
         200:
           description: Menu updated successfully
@@ -867,6 +1261,287 @@ paths:
                       data:
                         type: object
                         example: { deleted: true }
+
+  /orders:
+    get:
+      tags: [Orders]
+      summary: Get all orders
+      parameters:
+        - $ref: '#/components/parameters/PageParameter'
+        - $ref: '#/components/parameters/LimitParameter'
+      responses:
+        200:
+          description: List of orders
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Order'
+
+    post:
+      tags: [Orders]
+      summary: Create a new order
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Order'
+      responses:
+        201:
+          description: Order created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Order'
+
+  /orders/list:
+    get:
+      tags: [Orders]
+      summary: Get a list of orders
+      responses:
+        200:
+          description: List of orders
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+
+  /orders/{orderId}:
+    get:
+      tags: [Orders]
+      summary: Get a specific order by ID
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Order found
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Order'
+
+    delete:
+      tags: [Orders]
+      summary: Delete a specific order by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Order deleted successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Order'
+
+    patch:
+      tags: [Orders]
+      summary: Update a specific order by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                total:
+                  type: number
+                  format: float
+      responses:
+        200:
+          description: Order updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Order'
+
+  /orders/{orderId}/pay-order:
+    patch:
+      tags: [Orders]
+      summary: Pay for an order
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Order paid successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Order'
+
+  /orders/{orderId}/update-order-status:
+    patch:
+      tags: [Orders]
+      summary: Update the status of an order
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: enum
+                  enum: [PENDING, PREPARING, DELIVERED, CANCELLED]
+      responses:
+        200:
+          description: Order status updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Order'
+
+  /analytics:
+    get:
+      tags: [Analytics]
+      summary: Get platform analytics
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Metrics and chart data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Dashboard analytics
+                  data:
+                    type: object
+                    properties:
+                      totals:
+                        type: object
+                        properties:
+                          users:
+                            type: integer
+                            example: 95
+                          restaurants:
+                            type: integer
+                            example: 21
+                          categories:
+                            type: integer
+                            example: 45
+                          menuItem:
+                            type: integer
+                            example: 123
+                      thisWeek:
+                        type: object
+                        properties:
+                          users:
+                            type: integer
+                            example: 95
+                          restaurants:
+                            type: integer
+                            example: 21
+                          categories:
+                            type: integer
+                            example: 45
+                          menuItem:
+                            type: integer
+                            example: 123
+                      lastWeek:
+                        type: object
+                        properties:
+                          users:
+                            type: integer
+                            example: 0
+                          restaurants:
+                            type: integer
+                            example: 0
+                          categories:
+                            type: integer
+                            example: 0
+                          menuItem:
+                            type: integer
+                            example: 0
+                      growth:
+                        type: object
+                        properties:
+                          users:
+                            type: integer
+                            example: 100
+                          restaurants:
+                            type: integer
+                            example: 100
+                          categories:
+                            type: integer
+                            example: 100
+                          menuItem:
+                            type: integer
+                            example: 100
 
 components:
   schemas:
@@ -1081,8 +1756,153 @@ components:
           type: string
           format: date-time
           example: 2022-01-01T00:00:00.000Z
-      required:
-        - name
+
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426655440000
+        status:
+          type: string
+          format: enum
+          enum: [PENDING, IN_PROGRESS, DELIVERED]
+          example: PENDING
+        restaurantId:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426655440000
+        userId:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426655440000
+        total:
+          type: number
+          format: float
+          example: 19.99
+        subtotal:
+          type: number
+          format: float
+          example: 15.99
+        discount:
+          type: number
+          format: float
+          example: 4.00
+        notes:
+          type: string
+          format: string
+          example: 'No onions, no ketchup'
+        paymentStatus:
+          type: string
+          format: enum
+          enum: [PENDING, PAID, REFUNDED]
+          example: PENDING
+        paymentMethod:
+          type: string
+          format: enum
+          enum: [CASH, CARD, ONLINE]
+          example: CASH
+        tableNumber:
+          type: number
+          format: integer
+          example: 5
+        invoiceNumber:
+          type: string
+          format: string
+          example: INV123
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        createdAt:
+          type: string
+          format: date-time
+          example: 2022-01-01T00:00:00.000Z
+        updatedAt:
+          type: string
+          format: date-time
+          example: 2022-01-01T00:00:00.000Z
+
+    OrderItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426655440000
+        orderId:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426655440000
+        menuItemId:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426655440000
+        quantity:
+          type: number
+          format: integer
+          example: 2
+        notes:
+          type: string
+          format: string
+          example: 'No onions, no ketchup'
+        createdAt:
+          type: string
+          format: date-time
+          example: 2022-01-01T00:00:00.000Z
+        updatedAt:
+          type: string
+          format: date-time
+          example: 2022-01-01T00:00:00.000Z
+
+    Permission:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426655440000
+        key:
+          type: string
+          format: string
+          example: add_item
+        description:
+          type: string
+          format: string
+          example: Add a new item
+        createdAt:
+          type: string
+          format: date-time
+          example: 2022-01-01T00:00:00.000Z
+        updatedAt:
+          type: string
+          format: date-time
+          example: 2022-01-01T00:00:00.000Z
+
+    PermissionGroup:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426655440000
+        name:
+          type: string
+          format: string
+          example: Manager
+        description:
+          type: string
+          format: string
+          example: Manager description
+        createdAt:
+          type: string
+          format: date-time
+          example: 2022-01-01T00:00:00.000Z
+        updatedAt:
+          type: string
+          format: date-time
+          example: 2022-01-01T00:00:00.000Z
 
   securitySchemes:
     bearerAuth:

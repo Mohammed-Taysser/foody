@@ -1,6 +1,6 @@
-import { winstonLogger } from '@/utils/logger.utils';
+import { winstonLogger } from '@/utils/winston-logger.utils';
 
-class LoggerService {
+class WinstonLoggerService {
   info(message: string, module?: AppModules) {
     winstonLogger.info(message, { label: module });
   }
@@ -18,7 +18,7 @@ class LoggerService {
   }
 }
 
-const LOGGER = new LoggerService();
+const WINSTON_LOGGER = new WinstonLoggerService();
 
-export default LOGGER;
-export { LoggerService };
+export default WINSTON_LOGGER;
+export { WinstonLoggerService };

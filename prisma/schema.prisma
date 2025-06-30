@@ -2,61 +2,282 @@ generator client {
   provider = "prisma-client-js"
 }
 
+generator dbml {
+  provider = "prisma-dbml-generator"
+  output     = "./"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id          String       @id @default(cuid())
-  name        String
-  email       String       @unique
-  password    String
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  role        Role         @default(CUSTOMER)
-  restaurants Restaurant[]
+  id       String  @id @default(cuid())
+  name     String
+  email    String  @unique
+  password String
+  role     Role    @default(CUSTOMER)
+  image    String? @default("/avatar.jpg")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  restaurants         Restaurant[]
+  permissionGroups    PermissionGroup[]     @relation("UserGroups")
+  permissions         Permission[]          @relation("UserPermissions")
+  UserPermissionGroup UserPermissionGroup[]
+  AuditLog            AuditLog[]
+  ErrorLog            ErrorLog[]
+  Orders              Order[]
 }
 
 model Restaurant {
-  id          String     @id @default(cuid())
+  id          String  @id @default(cuid())
   name        String
-  description String?
+  description String? @default("")
   location    String
   ownerId     String
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  Category    Category[]
-  MenuItem    MenuItem[]
-  owner       User       @relation(fields: [ownerId], references: [id])
+  image       String? @default("/avatar.jpg")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  Category Category[]
+  MenuItem MenuItem[]
+  owner    User       @relation(fields: [ownerId], references: [id])
+  orders   Order[]
 }
 
 model MenuItem {
-  id           String     @id @default(cuid())
+  id           String  @id @default(cuid())
   name         String
-  description  String?
+  description  String? @default("")
+  image        String? @default("/avatar.jpg")
   price        Float
-  available    Boolean    @default(true)
+  available    Boolean @default(true)
   restaurantId String
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
   categoryId   String?
-  category     Category?  @relation(fields: [categoryId], references: [id])
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  category   Category?   @relation(fields: [categoryId], references: [id])
+  restaurant Restaurant  @relation(fields: [restaurantId], references: [id])
+  orders     OrderItem[]
 }
 
 model Category {
-  id           String     @id @default(cuid())
+  id           String  @id @default(cuid())
   name         String
   restaurantId String
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
-  items        MenuItem[]
+  image        String? @default("/avatar.jpg")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  items      MenuItem[]
 }
 
 enum Role {
   ADMIN
   OWNER
   CUSTOMER
+}
+
+model Permission {
+  id          String  @id @default(cuid())
+  key         String  @unique
+  description String? @default("")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  groups            PermissionGroup[]   @relation("GroupPermissions")
+  users             User[]              @relation("UserPermissions")
+  PermissionInGroup PermissionInGroup[]
+}
+
+model PermissionGroup {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  description String? @default("")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  permissions         Permission[]          @relation("GroupPermissions")
+  users               User[]                @relation("UserGroups")
+  PermissionInGroup   PermissionInGroup[]
+  UserPermissionGroup UserPermissionGroup[]
+}
+
+// Pivot table for PermissionGroup <-> Permission (many-to-many)
+model PermissionInGroup {
+  id                String          @id @default(cuid())
+  permissionGroup   PermissionGroup @relation(fields: [permissionGroupId], references: [id])
+  permissionGroupId String
+  permission        Permission      @relation(fields: [permissionId], references: [id])
+  permissionId      String
+
+  @@unique([permissionGroupId, permissionId])
+}
+
+// Pivot table for User <-> PermissionGroup (many-to-many)
+model UserPermissionGroup {
+  id                String          @id @default(cuid())
+  user              User            @relation(fields: [userId], references: [id])
+  userId            String
+  permissionGroup   PermissionGroup @relation(fields: [permissionGroupId], references: [id])
+  permissionGroupId String
+
+  @@unique([userId, permissionGroupId])
+}
+
+model AuditLog {
+  id         String       @id @default(uuid())
+  actorId    String?
+  actorType  ActorType
+  action     ActionType
+  resource   ResourceType
+  resourceId String
+  diff       Json?
+  metadata   Json?
+  createdAt  DateTime     @default(now())
+  User       User?        @relation(fields: [actorId], references: [id])
+
+  @@index([action])
+  @@index([resource])
+  @@index([createdAt])
+  @@index([actorType])
+}
+
+model ErrorLog {
+  id         String       @id @default(uuid())
+  actorId    String?
+  actorType  ActorType
+  resource   ResourceType
+  resourceId String
+  metadata   Json?
+  createdAt  DateTime     @default(now())
+  User       User?        @relation(fields: [actorId], references: [id])
+
+  @@index([resource])
+  @@index([createdAt])
+  @@index([actorType])
+}
+
+enum ActorType {
+  ADMIN
+  USER
+  CRON_JOB
+  WEBHOOK
+  BOT
+}
+
+enum ActionType {
+  CREATE
+  UPDATE
+  DELETE
+
+  PASSWORD_RESET
+  LOGIN
+  REGISTER
+
+  PLACE_ORDER
+  CANCEL_ORDER
+
+  EXPORT
+  IMPORT
+  DOWNLOAD
+  UPLOAD
+
+  REFRESH_TOKEN
+
+  SYNC
+  NOTIFY
+}
+
+enum ResourceType {
+  PERMISSION
+  PERMISSION_GROUP
+  CATEGORY
+  MENU_ITEM
+  USER
+  RESTAURANT
+  ORDER
+}
+
+model Order {
+  id           String      @id @default(cuid())
+  userId       String
+  restaurantId String
+  items        OrderItem[]
+  status       OrderStatus @default(PENDING)
+  total        Float
+  subtotal     Float
+  discount     Float?      @default(0)
+  notes        String?     @default("")
+
+  paymentStatus PaymentStatus  @default(UNPAID)
+  paymentMethod PaymentMethod?
+
+  tableNumber   Int?
+  invoiceNumber String? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user       User       @relation(fields: [userId], references: [id])
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+}
+
+model OrderItem {
+  id         String  @id @default(cuid())
+  orderId    String
+  menuItemId String
+  quantity   Int
+  notes      String? @default("")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+}
+
+enum OrderStatus {
+  PENDING
+  PREPARING
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  REFUNDED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  ONLINE
+}
+
+model JobLog {
+  id        String       @id @default(cuid())
+  jobId     String
+  jobName   String
+  status    JobLogStatus
+  data      Json
+  result    Json?
+  error     String?
+  createdAt DateTime     @default(now())
+}
+
+enum JobLogStatus {
+  COMPLETED
+  FAILED
 }

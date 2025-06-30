@@ -4,10 +4,19 @@ import chalk from 'chalk';
 import tokenService from '../services/token.service';
 
 import prisma from '@/config/prisma';
+import {
+  DEFAULT_ROLE_PERMISSIONS,
+  PERMISSION_GROUPS,
+  PERMISSION_IDS,
+  PERMISSION_MODULES,
+} from '@/modules/auth/auth.constant';
 
 async function seedDummyData() {
   console.log(chalk.blue('\n🌱 Seeding data...\n'));
 
+  // 🧹 Clear existing data
+  await prisma.permissionGroup.deleteMany();
+  await prisma.permission.deleteMany();
   await prisma.menuItem.deleteMany();
   await prisma.category.deleteMany();
   await prisma.restaurant.deleteMany();
@@ -15,33 +24,77 @@ async function seedDummyData() {
 
   console.log(chalk.yellow(`Database cleared`));
 
-  const hashedPassword = await tokenService.hash('12346789');
+  const hashedPassword = await tokenService.hash('123456789');
 
-  console.log(`Password hashed from '12346789' successfully`);
+  console.log(`Password hashed from '123456789' successfully`);
+
+  // permissions
+  await prisma.permission.createMany({
+    data: PERMISSION_IDS.map((id) => ({ key: id, description: id })),
+  });
+
+  console.log(chalk.green(`\n🔐 Permissions created (${PERMISSION_IDS.length})`));
+
+  PERMISSION_MODULES.forEach((module) => {
+    console.log(`  - ${module}`);
+  });
+
+  // Groups
+  for (const [groupName, permissionKeys] of Object.entries(PERMISSION_GROUPS)) {
+    await prisma.permissionGroup.create({
+      data: {
+        name: groupName,
+        description: groupName,
+        permissions: {
+          connect: permissionKeys.map((key) => ({ key })),
+        },
+      },
+    });
+  }
+
+  console.log(chalk.green(`\n👥 Permission groups created:`));
+  Object.keys(PERMISSION_GROUPS).forEach((group) => {
+    console.log(`  - ${group}`);
+  });
 
   // Seed users
+  const adminConfig = DEFAULT_ROLE_PERMISSIONS['ADMIN'];
   const admin = await prisma.user.create({
     data: {
       name: 'Admin User',
       email: 'admin@demo.com',
       password: hashedPassword,
       role: 'ADMIN',
+      permissionGroups: {
+        connect: adminConfig.groups.map((name) => ({ name })),
+      },
+      permissions: {
+        connect: adminConfig.permissions.map((id) => ({ key: id })),
+      },
     },
   });
 
   console.log(chalk.green(`Admin user created:`), chalk.whiteBright(admin.email));
 
   const owners = await Promise.all(
-    Array.from({ length: 3 }).map(() =>
-      prisma.user.create({
+    Array.from({ length: 3 }).map(() => {
+      const ownerConfig = DEFAULT_ROLE_PERMISSIONS['OWNER'];
+
+      return prisma.user.create({
         data: {
           name: faker.person.fullName(),
           email: faker.internet.email(),
           password: hashedPassword,
           role: 'OWNER',
+          permissionGroups: {
+            connect: ownerConfig.groups.map((name) => ({ name })),
+          },
+          permissions: {
+            connect: ownerConfig.permissions.map((id) => ({ key: id })),
+          },
         },
-      })
-    )
+      });
+    })
   );
 
   console.log(`\n${owners.length} owners created`);

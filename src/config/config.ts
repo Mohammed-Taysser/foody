@@ -3,6 +3,11 @@ import { config as loadEnvSafe } from 'dotenv-safe';
 import { SignOptions } from 'jsonwebtoken';
 import { z } from 'zod';
 
+import timezones from '../../public/timezones.json';
+
+// Extract the list of valid timezone names
+const validTimezones = timezones.map((tz) => tz.tzCode);
+
 // 🌟 STEP 1: Load and validate presence (via .env.example)
 try {
   loadEnvSafe({
@@ -33,6 +38,7 @@ try {
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.string().transform(Number),
+
   ALLOWED_ORIGINS: z
     .string()
     .default('')
@@ -43,6 +49,9 @@ const envSchema = z.object({
         .filter((origin) => origin !== '');
       return origins;
     }),
+
+  DEFAULT_TIMEZONE: z.enum(validTimezones as [string, ...string[]]).default('UTC'),
+
   JWT_SECRET: z.string().min(10),
   JWT_ACCESS_EXPIRES_IN: z.string().regex(/^\d+[smhd]$/, {
     message: 'JWT_EXPIRES_IN must be a duration like "7d", "15m", "1h", or "30s"',
