@@ -1,6 +1,6 @@
 {
   "name": "foody",
-  "version": "1.0.41",
+  "version": "1.0.42",
   "description": "API documentation for the Foody restaurant platform",
   "main": "dist/server.js",
   "repository": {
@@ -20,6 +20,10 @@
     "seed": "ts-node --transpile-only --require tsconfig-paths/register src/scripts/seed.ts",
     "test": "cross-env NODE_ENV=test jest && echo",
     "test:coverage": "cross-env NODE_ENV=test jest --coverage",
+    "release": "sh ./scripts/release.sh patch",
+    "release:minor": "sh ./scripts/release.sh minor",
+    "release:major": "sh ./scripts/release.sh major",
+    "changelog:generate": "standard-changelog -i CHANGELOG.md -s",
     "postinstall": "prisma generate",
     "prisma:format": "prisma format",
     "prisma:generate": "prisma generate",
@@ -103,6 +107,7 @@
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.1",
     "sharp": "^0.34.2",
+    "standard-changelog": "^7.0.1",
     "swagger-ui-express": "^5.0.1",
     "winston-daily-rotate-file": "^5.0.0",
     "yamljs": "^0.3.0",
@@ -116,7 +121,7 @@
   },
   "config": {
     "commitizen": {
-      "path": "./node_modules/cz-conventional-changelog"
+      "path": "cz-conventional-changelog"
     }
   },
   "engines": {
