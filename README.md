@@ -95,3 +95,6 @@ npm run test:watch
 
 - [Swagger Documentation](https://swagger.io/docs/specification/v3_0/about/)
 - [Swagger Editor](https://editor.swagger.io/)
+- [DB Diagram](https://dbdiagram.io)
+- [DB Docs](https://dbdocs.io/)
+- [Project DB Docs](https://dbdocs.io/mohammed-taysser/Foody)

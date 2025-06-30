@@ -2,6 +2,11 @@ generator client {
   provider = "prisma-client-js"
 }
 
+generator dbml {
+  provider = "prisma-dbml-generator"
+  output     = "./"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -259,4 +264,20 @@ enum PaymentMethod {
   CASH
   CARD
   ONLINE
+}
+
+model JobLog {
+  id        String       @id @default(cuid())
+  jobId     String
+  jobName   String
+  status    JobLogStatus
+  data      Json
+  result    Json?
+  error     String?
+  createdAt DateTime     @default(now())
+}
+
+enum JobLogStatus {
+  COMPLETED
+  FAILED
 }

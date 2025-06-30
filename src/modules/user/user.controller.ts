@@ -13,6 +13,7 @@ import { ConflictError, NotFoundError } from '@/utils/errors.utils';
 import { deleteImage, uploadImage } from '@/utils/multer.utils';
 import { sendPaginatedResponse, sendSuccessResponse } from '@/utils/send-response';
 import { BasePaginationInput } from '@/validations/pagination.validation';
+import { getRequestInfo } from '@/utils/request.utils';
 
 async function getUserPermission(request: Request, response: Response) {
   const authenticatedRequest = request as AuthenticatedRequest;
@@ -148,7 +149,7 @@ async function createUser(request: Request, response: Response) {
   });
 
   DATABASE_LOGGER.log({
-    request: request,
+    requestInfo: getRequestInfo(request),
     actorId: newUser.id,
     actorType: 'USER',
     action: 'CREATE',
@@ -192,7 +193,7 @@ async function updateUser(request: Request, response: Response) {
   });
 
   DATABASE_LOGGER.log({
-    request: request,
+    requestInfo: getRequestInfo(request),
     actorId: user.id,
     actorType: 'USER',
     action: 'UPDATE',
@@ -258,7 +259,7 @@ async function updateMe(request: Request, response: Response) {
     resourceId: user.id,
     oldData: oldUserData,
     newData: updatedUser,
-    request: authenticatedRequest,
+    requestInfo: getRequestInfo(authenticatedRequest),
   });
 
   sendSuccessResponse({
@@ -295,7 +296,7 @@ async function deleteUser(request: Request, response: Response) {
   }
 
   DATABASE_LOGGER.log({
-    request: authenticatedRequest,
+    requestInfo: getRequestInfo(authenticatedRequest),
     actorId: authenticatedRequest.user.id,
     actorType: 'USER',
     action: 'DELETE',

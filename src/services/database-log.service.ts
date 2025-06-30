@@ -1,5 +1,4 @@
 import { Prisma } from '@prisma/client';
-import { Request } from 'express';
 
 import WINSTON_LOGGER from './winston-log.service';
 
@@ -8,21 +7,20 @@ import prisma from '@/config/prisma';
 import { AuditLogParams, ErrorLogParams } from '@/types/import';
 import { formatDeepDiff } from '@/utils/deep-diff.utils';
 
-const getRequestInfo = (request: Request<unknown, unknown, unknown, unknown>) => {
-  return {
-    ip: request.ip,
-    userAgent: request.headers['user-agent'],
-    url: request.originalUrl,
-    method: request.method,
-  };
-};
-
 async function logAction(params: AuditLogParams) {
-  const { actorId, action, actorType, resource, resourceId, oldData, newData, metadata } = params;
+  const {
+    actorId,
+    action,
+    actorType,
+    resource,
+    resourceId,
+    oldData,
+    newData,
+    metadata,
+    requestInfo,
+  } = params;
 
   const diff = oldData && newData ? formatDeepDiff(oldData, newData) : {};
-
-  const requestInfo = getRequestInfo(params.request);
 
   const auditLog = await prisma.auditLog.create({
     data: {
@@ -48,8 +46,6 @@ async function logAction(params: AuditLogParams) {
 }
 
 async function logError(params: ErrorLogParams) {
-  const requestInfo = getRequestInfo(params.request);
-
   const errorLog = await prisma.errorLog.create({
     data: {
       actorType: params.actorType,
@@ -57,7 +53,7 @@ async function logError(params: ErrorLogParams) {
       resource: params.resource,
       resourceId: params.resourceId,
       metadata: {
-        ...requestInfo,
+        ...params.requestInfo,
         ...params.metadata,
       },
     },

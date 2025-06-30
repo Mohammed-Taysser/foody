@@ -7,6 +7,7 @@ import { BadRequestError, NotFoundError } from '@/utils/errors.utils';
 import { deleteImage, uploadImage } from '@/utils/multer.utils';
 import { sendPaginatedResponse, sendSuccessResponse } from '@/utils/send-response';
 import { BasePaginationInput } from '@/validations/pagination.validation';
+import { getRequestInfo } from '@/utils/request.utils';
 
 async function getRestaurants(request: Request, response: Response) {
   const authenticatedRequest = request as unknown as AuthenticatedRequest<
@@ -109,7 +110,7 @@ async function createRestaurant(request: Request, response: Response) {
   });
 
   DATABASE_LOGGER.log({
-    request: request,
+    requestInfo: getRequestInfo(request),
     actorId: owner.id,
     actorType: 'USER',
     action: 'CREATE',
@@ -156,7 +157,7 @@ async function updateRestaurant(request: Request, response: Response) {
   });
 
   DATABASE_LOGGER.log({
-    request: request,
+    requestInfo: getRequestInfo(request),
     actorId: restaurant.ownerId,
     actorType: 'USER',
     action: 'UPDATE',
@@ -195,7 +196,7 @@ async function deleteRestaurant(request: Request, response: Response) {
   }
 
   DATABASE_LOGGER.log({
-    request: request,
+    requestInfo: getRequestInfo(request),
     actorId: authenticatedRequest.user.id,
     actorType: 'USER',
     action: 'DELETE',

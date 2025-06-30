@@ -13,6 +13,7 @@ import { ConflictError, ForbiddenError, NotFoundError } from '@/utils/errors.uti
 import { deleteImage, uploadImage } from '@/utils/multer.utils';
 import { sendPaginatedResponse, sendSuccessResponse } from '@/utils/send-response';
 import { BasePaginationInput } from '@/validations/pagination.validation';
+import { getRequestInfo } from '@/utils/request.utils';
 
 async function getCategories(request: Request, response: Response) {
   const authenticatedRequest = request as unknown as AuthenticatedRequest<
@@ -115,7 +116,7 @@ async function createCategory(request: Request, response: Response) {
   });
 
   DATABASE_LOGGER.log({
-    request: authenticatedRequest,
+    requestInfo: getRequestInfo(authenticatedRequest),
     actorId: user.id,
     actorType: 'USER',
     action: 'CREATE',
@@ -173,7 +174,7 @@ async function updateCategory(request: Request, response: Response) {
   });
 
   DATABASE_LOGGER.log({
-    request: authenticatedRequest,
+    requestInfo: getRequestInfo(authenticatedRequest),
     actorId: user.id,
     actorType: 'USER',
     action: 'UPDATE',
@@ -221,7 +222,7 @@ async function deleteCategory(request: Request, response: Response) {
   }
 
   DATABASE_LOGGER.log({
-    request: authenticatedRequest,
+    requestInfo: getRequestInfo(authenticatedRequest),
     actorId: user.id,
     actorType: 'USER',
     action: 'DELETE',

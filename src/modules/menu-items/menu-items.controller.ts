@@ -14,6 +14,7 @@ import { AuthenticatedRequest } from '@/types/import';
 import { ConflictError, ForbiddenError, NotFoundError } from '@/utils/errors.utils';
 import { deleteImage, uploadImage } from '@/utils/multer.utils';
 import { sendPaginatedResponse, sendSuccessResponse } from '@/utils/send-response';
+import { getRequestInfo } from '@/utils/request.utils';
 
 async function getMenuItems(req: Request, response: Response) {
   const authenticatedRequest = req as unknown as AuthenticatedRequest<
@@ -132,7 +133,7 @@ async function createMenuItem(
   });
 
   DATABASE_LOGGER.log({
-    request: authenticatedRequest,
+    requestInfo: getRequestInfo(authenticatedRequest),
     actorId: user.id,
     actorType: 'USER',
     action: 'CREATE',
@@ -200,7 +201,7 @@ async function updateMenuItem(request: Request, response: Response) {
   });
 
   DATABASE_LOGGER.log({
-    request: authenticatedRequest,
+    requestInfo: getRequestInfo(authenticatedRequest),
     actorId: user.id,
     actorType: 'USER',
     action: 'UPDATE',
@@ -245,7 +246,7 @@ async function deleteMenuItem(request: Request, response: Response) {
   }
 
   DATABASE_LOGGER.log({
-    request: authenticatedRequest,
+    requestInfo: getRequestInfo(authenticatedRequest),
     actorId: user.id,
     actorType: 'USER',
     action: 'DELETE',

@@ -9,6 +9,7 @@ import DATABASE_LOGGER from '@/services/database-log.service';
 import tokenService from '@/services/token.service';
 import { BadRequestError, ConflictError, UnauthorizedError } from '@/utils/errors.utils';
 import { sendSuccessResponse } from '@/utils/send-response';
+import { getRequestInfo } from '@/utils/request.utils';
 
 async function register(request: Request<unknown, unknown, RegisterInput>, response: Response) {
   const data = request.body;
@@ -49,7 +50,7 @@ async function register(request: Request<unknown, unknown, RegisterInput>, respo
   const { password, ...restUser } = newUser;
 
   DATABASE_LOGGER.log({
-    request: request,
+    requestInfo: getRequestInfo(request),
     actorId: newUser.id,
     actorType: 'USER',
     action: 'REGISTER',
@@ -92,7 +93,7 @@ async function login(request: Request<unknown, unknown, LoginInput>, response: R
   const { password, ...restUser } = user;
 
   DATABASE_LOGGER.log({
-    request: request,
+    requestInfo: getRequestInfo(request),
     actorId: user.id,
     actorType: 'USER',
     action: 'LOGIN',
@@ -118,7 +119,7 @@ function refreshToken(request: Request<unknown, unknown, RefreshTokenInput>, res
     const newRefreshToken = tokenService.signRefreshToken(payload);
 
     DATABASE_LOGGER.log({
-      request: request,
+      requestInfo: getRequestInfo(request),
       actorId: payload.id,
       actorType: 'USER',
       action: 'REFRESH_TOKEN',

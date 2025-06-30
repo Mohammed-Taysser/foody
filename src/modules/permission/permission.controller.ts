@@ -8,6 +8,7 @@ import { AuthenticatedRequest } from '@/types/import';
 import { ConflictError, NotFoundError } from '@/utils/errors.utils';
 import { sendPaginatedResponse, sendSuccessResponse } from '@/utils/send-response';
 import { BasePaginationInput } from '@/validations/pagination.validation';
+import { getRequestInfo } from '@/utils/request.utils';
 
 async function getPermissions(request: Request, response: Response) {
   const authenticatedRequest = request as unknown as AuthenticatedRequest<
@@ -85,7 +86,7 @@ async function createPermission(request: Request, response: Response) {
   });
 
   DATABASE_LOGGER.log({
-    request: authenticatedRequest,
+    requestInfo: getRequestInfo(authenticatedRequest),
     actorId: authenticatedRequest.user.id,
     actorType: 'USER',
     action: 'CREATE',
@@ -127,7 +128,7 @@ async function updatePermission(request: Request, response: Response) {
   });
 
   DATABASE_LOGGER.log({
-    request: authenticatedRequest,
+    requestInfo: getRequestInfo(authenticatedRequest),
     actorId: authenticatedRequest.user.id,
     actorType: 'USER',
     action: 'UPDATE',
@@ -163,7 +164,7 @@ async function deletePermission(request: Request, response: Response) {
   });
 
   DATABASE_LOGGER.log({
-    request: authenticatedRequest,
+    requestInfo: getRequestInfo(authenticatedRequest),
     actorId: authenticatedRequest.user.id,
     actorType: 'USER',
     action: 'DELETE',

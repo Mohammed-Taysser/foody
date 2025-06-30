@@ -1,3 +1,4 @@
+import { OrderStatus } from '@prisma/client';
 import { Request, Response } from 'express';
 
 import prisma from '@/config/prisma';
@@ -124,4 +125,36 @@ async function getAnalyticsMetrics(request: Request, response: Response) {
   });
 }
 
-export { getAnalyticsMetrics };
+async function getOrderStatsPerDay(req: Request, response: Response) {
+  const start = dayjsTZ().startOf('day').subtract(6, 'days'); // 7 days
+
+  const daily = await prisma.order.findMany({
+    where: { createdAt: { gte: start.toDate() } },
+    select: { createdAt: true, status: true },
+  });
+
+  const result = Array.from({ length: 7 }).map((_, i) => {
+    const date = start.add(i, 'day').format('YYYY-MM-DD');
+    const dayOrders = daily.filter((d) => dayjsTZ(d.createdAt).format('YYYY-MM-DD') === date);
+
+    const statusCounts: Record<OrderStatus, number> = {
+      PENDING: 0,
+      PREPARING: 0,
+      COMPLETED: 0,
+      CANCELLED: 0,
+    };
+
+    for (const o of dayOrders) {
+      statusCounts[o.status]++;
+    }
+
+    return {
+      date,
+      ...statusCounts,
+    };
+  });
+
+  sendSuccessResponse({ response, message: 'Order trend data', data: result });
+}
+
+export { getAnalyticsMetrics, getOrderStatsPerDay };

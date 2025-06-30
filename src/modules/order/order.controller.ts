@@ -8,6 +8,7 @@ import prisma from '@/config/prisma';
 import DATABASE_LOGGER from '@/services/database-log.service';
 import { AuthenticatedRequest } from '@/types/import';
 import { BadRequestError, ForbiddenError, NotFoundError } from '@/utils/errors.utils';
+import { getRequestInfo } from '@/utils/request.utils';
 import { sendPaginatedResponse, sendSuccessResponse } from '@/utils/send-response';
 import { BasePaginationInput } from '@/validations/pagination.validation';
 
@@ -131,7 +132,7 @@ async function createOrder(request: Request, response: Response) {
     resource: 'ORDER',
     resourceId: order.id,
     metadata: { data: order },
-    request: request,
+    requestInfo: getRequestInfo(request),
     actorId: order.userId,
     actorType: 'USER',
   });
@@ -160,7 +161,7 @@ async function updateOrder(request: Request, response: Response) {
     resource: 'ORDER',
     resourceId: orderId,
     metadata: { data: request.body },
-    request: request,
+    requestInfo: getRequestInfo(request),
     actorId: order.userId,
     actorType: 'USER',
     oldData: order,
@@ -204,7 +205,7 @@ async function updateOrderStatus(request: Request, response: Response) {
     resource: 'ORDER',
     resourceId: orderId,
     metadata: { data: { status } },
-    request: request,
+    requestInfo: getRequestInfo(request),
     actorId: order.userId,
     actorType: 'USER',
     oldData: order,
@@ -247,13 +248,12 @@ async function payOrder(request: Request, response: Response) {
     resource: 'ORDER',
     resourceId: orderId,
     metadata: { data: { paymentStatus: 'PAID', paymentMethod: method } },
-    request: request,
+    requestInfo: getRequestInfo(request),
     actorId: order.userId,
     actorType: 'USER',
     oldData: existOrder,
     newData: order,
   });
-
   sendSuccessResponse({ response, message: 'Order marked as paid', data: order });
 }
 
@@ -307,7 +307,7 @@ async function deleteOrder(request: Request, response: Response) {
     action: 'DELETE',
     resource: 'ORDER',
     resourceId: orderId,
-    request: request,
+    requestInfo: getRequestInfo(request),
     actorId: user.id,
     actorType: 'USER',
   });

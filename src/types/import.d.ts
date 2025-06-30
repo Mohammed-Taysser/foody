@@ -22,8 +22,19 @@ interface AuthenticatedRequest<
   parsedQuery: ReqQuery;
 }
 
+interface ExtractedRequestInfo {
+  ip: string | undefined;
+  userAgent: string | undefined;
+  url: string;
+  method: string;
+  params: Prisma.InputJsonObject;
+  body: Prisma.InputJsonObject;
+  query: Prisma.InputJsonObject;
+  headers: Prisma.InputJsonObject;
+}
+
 interface BaseLogParams {
-  request: Request<unknown, unknown, unknown, unknown>;
+  requestInfo: ExtractedRequestInfo;
   actorId: string;
   actorType: ActorType;
   resource: ResourceType;
@@ -42,4 +53,4 @@ interface ErrorLogParams extends BaseLogParams {
   metadata: Prisma.InputJsonObject;
 }
 
-export { AuditLogParams, AuthenticatedRequest, ErrorLogParams };
+export { AuditLogParams, AuthenticatedRequest, ErrorLogParams, ExtractedRequestInfo };
