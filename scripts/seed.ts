@@ -1,26 +1,30 @@
 import { faker } from '@faker-js/faker';
 import chalk from 'chalk';
 
-import tokenService from '../services/token.service';
-
-import prisma from '@/config/prisma';
+import prisma from '../src/config/prisma';
 import {
   DEFAULT_ROLE_PERMISSIONS,
   PERMISSION_GROUPS,
   PERMISSION_IDS,
   PERMISSION_MODULES,
-} from '@/modules/auth/auth.constant';
+} from '../src/modules/auth/auth.constant';
+import tokenService from '../src/services/token.service';
 
 async function seedDummyData() {
   console.log(chalk.blue('\n🌱 Seeding data...\n'));
 
   // 🧹 Clear existing data
-  await prisma.permissionGroup.deleteMany();
-  await prisma.permission.deleteMany();
-  await prisma.menuItem.deleteMany();
   await prisma.category.deleteMany();
+  await prisma.menuItem.deleteMany();
+  await prisma.auditLog.deleteMany();
+  await prisma.orderItem.deleteMany();
+  await prisma.errorLog.deleteMany();
+  await prisma.jobLog.deleteMany();
+  await prisma.order.deleteMany();
   await prisma.restaurant.deleteMany();
   await prisma.user.deleteMany();
+  await prisma.permissionGroup.deleteMany();
+  await prisma.permission.deleteMany();
 
   console.log(chalk.yellow(`Database cleared`));
 
