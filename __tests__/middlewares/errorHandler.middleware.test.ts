@@ -1,7 +1,9 @@
 import { NextFunction, Request, Response } from 'express';
 
-import errorHandlerMiddleware from '@/middleware/error.middleware';
-import { NotFoundError } from '@/utils/errors.utils';
+import errorHandlerMiddleware from '../../src/middleware/error.middleware';
+import { NotFoundError } from '../../src/utils/errors.utils';
+
+type ErrorMiddlewareDetails = string | object | object[];
 
 jest.mock('@/config/config', () => ({
   __esModule: true,
@@ -65,7 +67,9 @@ describe('Error middleware', () => {
     }));
 
     // Re-import after mocking env
-    const { default: errorHandlerMiddleware } = await import('@/middleware/error.middleware');
+    const { default: errorHandlerMiddleware } = await import(
+      '../../src/middleware/error.middleware'
+    );
 
     const error = new Error('Dev error');
     error.stack = 'Error stack trace';

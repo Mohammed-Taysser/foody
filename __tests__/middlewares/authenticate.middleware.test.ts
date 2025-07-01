@@ -1,14 +1,14 @@
 import { Request, Response } from 'express';
 
-import prisma from '@/config/prisma';
-import authenticateMiddleware from '@/middleware/authenticate.middleware';
-import tokenService from '@/services/token.service';
-import { AuthenticatedRequest } from '@/types/import';
-import { UnauthorizedError } from '@/utils/errors.utils';
+import prisma from '../../src/config/prisma';
+import authenticateMiddleware from '../../src/middleware/authenticate.middleware';
+import tokenService from '../../src/services/token.service';
+import { AuthenticatedRequest } from '../../src/types/import';
+import { UnauthorizedError } from '../../src/utils/errors.utils';
 
 // Mocks
-jest.mock('@/services/token.service');
-jest.mock('@/config/prisma', () => ({
+jest.mock('../../src/services/token.service');
+jest.mock('../../src/config/prisma', () => ({
   __esModule: true,
   default: {
     user: {

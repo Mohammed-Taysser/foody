@@ -1,6 +1,6 @@
 import request from 'supertest';
 
-import app from '@/app';
+import app from '../../../src/app';
 
 describe('App', () => {
   it('should return 200 for /health', async () => {

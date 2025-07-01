@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import request from 'supertest';
 
-import compressionMiddleware from '@/middleware/compression.middleware';
+import compressionMiddleware from '../../src/middleware/compression.middleware';
 
 describe('Compression middleware', () => {
   let app: express.Express;

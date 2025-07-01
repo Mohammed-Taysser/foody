@@ -4,9 +4,9 @@ import { faker } from '@faker-js/faker';
 import { MenuItem } from '@prisma/client';
 import request from 'supertest';
 
-import app from '@/app';
+import app from '../../../src/app';
 
-const mockImagePath = path.join(__dirname, '../../../../public/avatar.jpg');
+const mockImagePath = path.join(__dirname, '../../../public/avatar.jpg');
 
 describe('Menu Items API', () => {
   let ownerToken: string;

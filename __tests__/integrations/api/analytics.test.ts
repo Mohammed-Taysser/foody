@@ -2,7 +2,7 @@ import { faker } from '@faker-js/faker';
 import { OrderStatus } from '@prisma/client';
 import request from 'supertest';
 
-import app from '@/app';
+import app from '../../../src/app';
 
 describe('Dashboard Analytics', () => {
   let adminToken: string;

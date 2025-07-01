@@ -3,9 +3,9 @@ import path from 'path';
 import { faker } from '@faker-js/faker';
 import request from 'supertest';
 
-import app from '@/app';
+import app from '../../../src/app';
 
-const mockImagePath = path.join(__dirname, '../../../../public/avatar.jpg');
+const mockImagePath = path.join(__dirname, '../../../public/avatar.jpg');
 
 describe('Restaurant API', () => {
   let ownerToken: string;

@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import request from 'supertest';
 
-import app from '@/app';
+import app from '../../../src/app';
 
 describe('Permission API', () => {
   let permissionId: string;
