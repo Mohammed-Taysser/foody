@@ -10,7 +10,7 @@ async function authenticateMiddleware(req: Request, _res: Response, next: NextFu
   const authHeader = request.headers.authorization;
 
   if (!authHeader?.startsWith('Bearer ')) {
-    throw new UnauthorizedError('Missing or invalid Authorization header');
+    throw new UnauthorizedError('errors:missing-or-invalid-authorization-header');
   }
 
   const token = authHeader.split(' ')[1];
@@ -18,11 +18,11 @@ async function authenticateMiddleware(req: Request, _res: Response, next: NextFu
   const decoded = tokenService.verifyToken(token);
 
   if (!decoded) {
-    throw new UnauthorizedError('Invalid token');
+    throw new UnauthorizedError('errors:missing-or-invalid-token');
   }
 
   if (typeof decoded === 'string') {
-    throw new UnauthorizedError('Invalid token');
+    throw new UnauthorizedError('errors:invalid-token');
   }
 
   const user = await prisma.user.findUnique({
@@ -34,7 +34,7 @@ async function authenticateMiddleware(req: Request, _res: Response, next: NextFu
   });
 
   if (!user) {
-    throw new UnauthorizedError('Invalid token');
+    throw new UnauthorizedError('errors:resource-not-found');
   }
 
   request.user = user;

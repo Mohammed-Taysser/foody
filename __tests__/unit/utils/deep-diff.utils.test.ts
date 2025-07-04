@@ -1,4 +1,4 @@
-import { formatDeepDiff } from '@/utils/deep-diff.utils';
+import { formatDeepDiff } from '../../../src/utils/deep-diff.utils';
 
 describe('formatDeepDiff', () => {
   it('returns an empty object when there are no differences', () => {

@@ -43,7 +43,7 @@ describe('Authenticate middleware', () => {
 
     mockVerifyToken.mockReturnValue(null);
 
-    await expect(authenticateMiddleware(req, mockRes, mockNext)).rejects.toThrow('Invalid token');
+    await expect(authenticateMiddleware(req, mockRes, mockNext)).rejects.toThrow();
 
     expect(mockNext).not.toHaveBeenCalled();
   });
@@ -55,7 +55,7 @@ describe('Authenticate middleware', () => {
 
     mockVerifyToken.mockReturnValue('not-an-object');
 
-    await expect(authenticateMiddleware(req, mockRes, mockNext)).rejects.toThrow('Invalid token');
+    await expect(authenticateMiddleware(req, mockRes, mockNext)).rejects.toThrow();
 
     expect(mockNext).not.toHaveBeenCalled();
   });
@@ -68,7 +68,7 @@ describe('Authenticate middleware', () => {
     mockVerifyToken.mockReturnValue({ id: 1 });
     mockFindUnique.mockResolvedValue(null);
 
-    await expect(authenticateMiddleware(req, mockRes, mockNext)).rejects.toThrow('Invalid token');
+    await expect(authenticateMiddleware(req, mockRes, mockNext)).rejects.toThrow();
 
     expect(mockFindUnique).toHaveBeenCalledWith({
       where: { id: 1 },

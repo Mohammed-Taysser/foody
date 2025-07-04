@@ -75,13 +75,13 @@ async function login(request: Request<unknown, unknown, LoginInput>, response: R
   });
 
   if (!user) {
-    throw new BadRequestError('Invalid credentials');
+    throw new BadRequestError('errors:invalid-credentials');
   }
 
   const valid = await tokenService.compare(data.password, user.password);
 
   if (!valid) {
-    throw new BadRequestError('Invalid credentials');
+    throw new BadRequestError('errors:invalid-credentials');
   }
 
   const payload = { id: user.id, email: user.email, role: user.role };
@@ -137,7 +137,7 @@ function refreshToken(request: Request<unknown, unknown, RefreshTokenInput>, res
       },
     });
   } catch {
-    throw new UnauthorizedError('Invalid or expired refresh token');
+    throw new UnauthorizedError('errors:invalid-or-expired-refresh-token');
   }
 }
 

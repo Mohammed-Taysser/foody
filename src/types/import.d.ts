@@ -1,5 +1,6 @@
 import { ActionType, ActorType, Prisma, ResourceType, User } from '@prisma/client';
 import { Request } from 'express';
+import { ZodIssue } from 'zod';
 
 interface AuthenticatedRequest<
   Params = unknown,
@@ -53,4 +54,22 @@ interface ErrorLogParams extends BaseLogParams {
   metadata: Prisma.InputJsonObject;
 }
 
-export { AuditLogParams, AuthenticatedRequest, ErrorLogParams, ExtractedRequestInfo };
+type ErrorMiddlewareDetails = string | { message?: string; [key: string]: unknown } | ZodIssue[];
+
+interface ErrorMiddlewareResponse {
+  success: boolean;
+  message: string;
+  details?: ErrorMiddlewareDetails;
+  stack?: string;
+  path?: string;
+  method?: string;
+}
+
+export {
+  AuditLogParams,
+  AuthenticatedRequest,
+  ErrorLogParams,
+  ExtractedRequestInfo,
+  ErrorMiddlewareDetails,
+  ErrorMiddlewareResponse,
+};

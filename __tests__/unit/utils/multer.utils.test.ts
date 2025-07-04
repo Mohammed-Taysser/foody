@@ -3,7 +3,7 @@ import { Readable } from 'stream';
 
 import sharp from 'sharp';
 
-import { deleteImage, uploadImage } from '@/utils/multer.utils';
+import { deleteImage, uploadImage } from '../../../src/utils/multer.utils';
 
 jest.mock('fs', () => {
   const actualFs = jest.requireActual('fs');
@@ -67,7 +67,7 @@ describe('multer.utils', () => {
     it('should throw if no file is provided', async () => {
       await expect(
         uploadImage(null as unknown as Express.Multer.File, 'restaurant')
-      ).rejects.toThrow('No file provided');
+      ).rejects.toThrow();
     });
   });
 

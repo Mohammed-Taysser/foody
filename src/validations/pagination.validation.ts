@@ -7,6 +7,5 @@ const basePaginationSchema = z.object({
 
 type BasePaginationInput = z.infer<typeof basePaginationSchema>;
 
-export default basePaginationSchema;
-
 export type { BasePaginationInput };
+export default basePaginationSchema;
