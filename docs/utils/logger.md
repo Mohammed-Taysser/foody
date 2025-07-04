@@ -1,4 +1,4 @@
-# `winstonLogger` - Advanced Winston Logger with Daily Rotation
+# `logger` - Advanced Winston Logger with Daily Rotation
 
 A robust and flexible logging utility built on [winston](https://github.com/winstonjs/winston) with support for:
 
@@ -18,15 +18,15 @@ A robust and flexible logging utility built on [winston](https://github.com/wins
 ## Usage
 
 ```ts
-import { winstonLogger } from '@/utils/winston-logger';
+import { logger } from '@/utils/logger';
 
-winstonLogger.info('Application started');
-winstonLogger.error(new Error('Something went wrong'));
+logger.info('Application started');
+logger.error(new Error('Something went wrong'));
 ```
 
 ## API
 
-`winstonLogger`
+`logger`
 
 An instance of `winston.Logger` with the following configuration:
 

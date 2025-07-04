@@ -28,7 +28,9 @@ function logServerInfo(startTime: number, port: number) {
     chalk.gray('🖥️  Platform:  '),
     chalk.white(`${os.type()} ${os.arch()} (${os.platform()})`)
   );
-  console.log(`🔧 ${chalk.gray('ENV:')}        ${chalk.white(ennValidation.NODE_ENV)}`);
+  console.log(
+    `🔧 ${chalk.gray('ENV:')}        ${chalk.white(ennValidation.NODE_ENV.toUpperCase())}`
+  );
   console.log();
 
   console.log(chalk.green('➜') + '  Local:   ' + chalk.cyan(localUrl));

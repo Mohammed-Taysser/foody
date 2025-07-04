@@ -1,11 +1,10 @@
 import { Prisma } from '@prisma/client';
 
-import WINSTON_LOGGER from './winston-log.service';
-
 import CONFIG from '@/config/config';
 import prisma from '@/config/prisma';
 import { AuditLogParams, ErrorLogParams } from '@/types/import';
 import { formatDeepDiff } from '@/utils/deep-diff.utils';
+import logger from '@/utils/logger.utils';
 
 async function logAction(params: AuditLogParams) {
   const {
@@ -38,9 +37,8 @@ async function logAction(params: AuditLogParams) {
   });
 
   if (CONFIG.NODE_ENV !== 'test') {
-    WINSTON_LOGGER.info(
-      `Log: ${auditLog.id} | Action: ${action} | Actor: ${actorType} ${actorId} | Resource: ${resource} ${resourceId}`,
-      'audit_log'
+    logger.db(
+      `Log: ${auditLog.id} | Action: ${action} | Actor: ${actorType} ${actorId} | Resource: ${resource} ${resourceId}`
     );
   }
 }
@@ -60,9 +58,8 @@ async function logError(params: ErrorLogParams) {
   });
 
   if (CONFIG.NODE_ENV !== 'test') {
-    WINSTON_LOGGER.error(
-      `Error: ${errorLog.id} | Actor: ${params.actorType} ${params.actorId} | Resource: ${params.resource} ${params.resourceId}`,
-      'audit_log'
+    logger.db(
+      `Error: ${errorLog.id} | Actor: ${params.actorType} ${params.actorId} | Resource: ${params.resource} ${params.resourceId}`
     );
   }
 }
