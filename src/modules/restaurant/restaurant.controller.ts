@@ -1,13 +1,13 @@
 import { Request, Response } from 'express';
 
-import prisma from '@/config/prisma';
-import DATABASE_LOGGER from '@/services/database-log.service';
+import prisma from '@/apps/prisma';
+import databaseLogger from '@/services/database-log.service';
 import { AuthenticatedRequest } from '@/types/import';
 import { BadRequestError, NotFoundError } from '@/utils/errors.utils';
 import { deleteImage, uploadImage } from '@/utils/multer.utils';
+import { getRequestInfo } from '@/utils/request.utils';
 import { sendPaginatedResponse, sendSuccessResponse } from '@/utils/send-response';
 import { BasePaginationInput } from '@/validations/pagination.validation';
-import { getRequestInfo } from '@/utils/request.utils';
 
 async function getRestaurants(request: Request, response: Response) {
   const authenticatedRequest = request as unknown as AuthenticatedRequest<
@@ -109,13 +109,14 @@ async function createRestaurant(request: Request, response: Response) {
     },
   });
 
-  DATABASE_LOGGER.log({
+  databaseLogger.audit({
     requestInfo: getRequestInfo(request),
     actorId: owner.id,
     actorType: 'USER',
     action: 'CREATE',
     resource: 'RESTAURANT',
     resourceId: newRestaurant.id,
+    metadata: { data },
   });
 
   sendSuccessResponse({
@@ -156,7 +157,7 @@ async function updateRestaurant(request: Request, response: Response) {
     },
   });
 
-  DATABASE_LOGGER.log({
+  databaseLogger.audit({
     requestInfo: getRequestInfo(request),
     actorId: restaurant.ownerId,
     actorType: 'USER',
@@ -195,7 +196,7 @@ async function deleteRestaurant(request: Request, response: Response) {
     deleteImage(restaurant.image);
   }
 
-  DATABASE_LOGGER.log({
+  databaseLogger.audit({
     requestInfo: getRequestInfo(request),
     actorId: authenticatedRequest.user.id,
     actorType: 'USER',

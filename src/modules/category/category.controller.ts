@@ -6,14 +6,14 @@ import type {
   UpdateCategoryInput,
 } from './category.validator';
 
-import prisma from '@/config/prisma';
-import DATABASE_LOGGER from '@/services/database-log.service';
+import prisma from '@/apps/prisma';
+import databaseLogger from '@/services/database-log.service';
 import { AuthenticatedRequest } from '@/types/import';
 import { ConflictError, ForbiddenError, NotFoundError } from '@/utils/errors.utils';
 import { deleteImage, uploadImage } from '@/utils/multer.utils';
+import { getRequestInfo } from '@/utils/request.utils';
 import { sendPaginatedResponse, sendSuccessResponse } from '@/utils/send-response';
 import { BasePaginationInput } from '@/validations/pagination.validation';
-import { getRequestInfo } from '@/utils/request.utils';
 
 async function getCategories(request: Request, response: Response) {
   const authenticatedRequest = request as unknown as AuthenticatedRequest<
@@ -115,7 +115,7 @@ async function createCategory(request: Request, response: Response) {
     },
   });
 
-  DATABASE_LOGGER.log({
+  databaseLogger.audit({
     requestInfo: getRequestInfo(authenticatedRequest),
     actorId: user.id,
     actorType: 'USER',
@@ -173,7 +173,7 @@ async function updateCategory(request: Request, response: Response) {
     data: { ...authenticatedRequest.body, image: imageUrl },
   });
 
-  DATABASE_LOGGER.log({
+  databaseLogger.audit({
     requestInfo: getRequestInfo(authenticatedRequest),
     actorId: user.id,
     actorType: 'USER',
@@ -221,7 +221,7 @@ async function deleteCategory(request: Request, response: Response) {
     deleteImage(category.image);
   }
 
-  DATABASE_LOGGER.log({
+  databaseLogger.audit({
     requestInfo: getRequestInfo(authenticatedRequest),
     actorId: user.id,
     actorType: 'USER',

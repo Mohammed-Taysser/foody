@@ -6,7 +6,7 @@ import pkg from '../../package.json';
 
 import { getLocalIp } from './network';
 
-import ennValidation from '@/config/config';
+import ennValidation from '@/apps/config';
 
 function logServerInfo(startTime: number, port: number) {
   const duration = Date.now() - startTime;

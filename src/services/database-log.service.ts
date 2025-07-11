@@ -1,72 +1,89 @@
 import { Prisma } from '@prisma/client';
 
-import CONFIG from '@/config/config';
-import prisma from '@/config/prisma';
-import { AuditLogParams, ErrorLogParams } from '@/types/import';
+import prisma from '@/apps/prisma';
 import { formatDeepDiff } from '@/utils/deep-diff.utils';
+import { AuditLogParams } from '@/types/import';
+import CONFIG from '@/apps/config';
 import logger from '@/utils/logger.utils';
 
-async function logAction(params: AuditLogParams) {
-  const {
-    actorId,
-    action,
-    actorType,
-    resource,
-    resourceId,
-    oldData,
-    newData,
-    metadata,
-    requestInfo,
-  } = params;
+class DatabaseLogger {
+  prepareDifference(
+    oldData?: Record<string, unknown>,
+    newData?: Record<string, unknown>
+  ): Prisma.InputJsonObject {
+    if (oldData && newData) {
+      return formatDeepDiff(oldData, newData) as Prisma.InputJsonObject;
+    }
 
-  const diff = oldData && newData ? formatDeepDiff(oldData, newData) : {};
+    return {};
+  }
 
-  const auditLog = await prisma.auditLog.create({
-    data: {
-      actorType,
-      actorId,
-      action,
-      resource,
-      resourceId,
-      diff: diff as Prisma.InputJsonObject,
-      metadata: {
-        ...requestInfo,
-        ...metadata,
+  async audit(params: AuditLogParams) {
+    const diff = this.prepareDifference(params.oldData, params.newData);
+
+    const log = await prisma.auditLog.create({
+      data: {
+        actorType: params.actorType,
+        actorId: params.actorId,
+        action: params.action,
+        resource: params.resource,
+        resourceId: params.resourceId,
+        diff: diff,
+        metadata: {
+          ...params.requestInfo,
+          ...params.metadata,
+        },
       },
-    },
-  });
+    });
 
-  if (CONFIG.NODE_ENV !== 'test') {
-    logger.db(
-      `Log: ${auditLog.id} | Action: ${action} | Actor: ${actorType} ${actorId} | Resource: ${resource} ${resourceId}`
-    );
+    if (CONFIG.NODE_ENV !== 'test') {
+      logger.db(
+        `Log: ${log.id} | Action: ${log.action} | Actor: ${log.actorType} ${log.actorId} | Resource: ${log.resource} ${log.resourceId}`
+      );
+    }
+
+    return log;
+  }
+
+  async error(params: AuditLogParams) {
+    const log = await prisma.errorLog.create({
+      data: {
+        actorType: params.actorType,
+        actorId: params.actorId,
+        resource: params.resource,
+        resourceId: params.resourceId,
+        metadata: {
+          ...params.requestInfo,
+          ...params.metadata,
+        },
+      },
+    });
+
+    if (CONFIG.NODE_ENV !== 'test') {
+      logger.db(
+        `Error: ${log.id} | Actor: ${log.actorType} ${log.actorId} | Resource: ${log.resource} ${log.resourceId}`
+      );
+    }
+
+    return log;
+  }
+
+  async jobLog(data: Prisma.JobLogCreateInput) {
+    const log = await prisma.jobLog.create({
+      data,
+    });
+
+    if (CONFIG.NODE_ENV !== 'test') {
+      logger.task(
+        `Job Log: ${log.id} | Job: ${log.jobName} | Status: ${log.status} | Job ID: ${log.jobId}`
+      );
+    }
+
+    return log;
   }
 }
 
-async function logError(params: ErrorLogParams) {
-  const errorLog = await prisma.errorLog.create({
-    data: {
-      actorType: params.actorType,
-      actorId: params.actorId,
-      resource: params.resource,
-      resourceId: params.resourceId,
-      metadata: {
-        ...params.requestInfo,
-        ...params.metadata,
-      },
-    },
-  });
+const databaseLogger = new DatabaseLogger();
 
-  if (CONFIG.NODE_ENV !== 'test') {
-    logger.db(
-      `Error: ${errorLog.id} | Actor: ${params.actorType} ${params.actorId} | Resource: ${params.resource} ${params.resourceId}`
-    );
-  }
-}
-
-const DATABASE_LOGGER = {
-  log: logAction,
-  error: logError,
-};
-
-export default DATABASE_LOGGER;
+export { DatabaseLogger };
+export default databaseLogger;

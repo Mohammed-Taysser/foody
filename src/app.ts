@@ -6,8 +6,8 @@ import i18nextMiddleware from 'i18next-http-middleware';
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
 
-import CONFIG from '@/config/config';
-import i18n from '@/config/i18n';
+import CONFIG from '@/apps/config';
+import i18n from '@/apps/i18n';
 import apiLimiter from '@/middleware/api-rate-limit.middleware';
 import compressionMiddleware from '@/middleware/compression.middleware';
 import errorHandlerMiddleware from '@/middleware/error.middleware';

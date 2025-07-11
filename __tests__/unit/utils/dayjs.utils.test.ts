@@ -1,6 +1,6 @@
 import dayjsTZ, { extendedDayjs } from '@/utils/dayjs.utils';
 
-jest.mock('@/config/config', () => ({
+jest.mock('@/apps/config', () => ({
   __esModule: true,
   default: {
     DEFAULT_TIMEZONE: 'Asia/Dubai',

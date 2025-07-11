@@ -18,6 +18,15 @@ const config: Config = {
       statements: 90,
     },
   },
+  collectCoverage: true,
+  coveragePathIgnorePatterns: [
+    '/src/.*\\.d\\.ts$', // excludes all *.d.ts files in src
+    '/__tests__/.*\\.ts$', // excludes all test files
+    '/src/config.ts',
+    'src/apps/prisma.ts',
+    'src/utils/errors.utils.ts',
+  ],
+  watchPlugins: ['jest-watch-typeahead/filename', 'jest-watch-typeahead/testname'],
 };
 
 export default config;

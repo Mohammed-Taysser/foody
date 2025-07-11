@@ -4,7 +4,7 @@ generator client {
 
 generator dbml {
   provider = "prisma-dbml-generator"
-  output     = "./"
+  output   = "./"
 }
 
 datasource db {
@@ -13,12 +13,40 @@ datasource db {
 }
 
 model User {
-  id       String  @id @default(cuid())
+  id       String   @id @default(cuid())
   name     String
-  email    String  @unique
+  email    String   @unique
   password String
-  role     Role    @default(CUSTOMER)
-  image    String? @default("/avatar.jpg")
+  role     UserRole @default(CUSTOMER)
+  image    String?  @default("/avatar.jpg")
+
+  twoFactorSecret  String?
+  twoFactorEnabled Boolean @default(false)
+
+  failedLoginAttempts Int       @default(0)
+  lastFailedLogin     DateTime?
+
+  passwordResetToken   String?
+  passwordResetSentAt  DateTime?
+
+  isEmailVerified          Boolean   @default(false)
+  emailVerificationSentAt  DateTime?
+  emailVerificationToken   String?
+
+  isPhoneVerified          Boolean   @default(false)
+  phoneVerificationSentAt  DateTime?
+  phoneVerificationToken   String?
+  phoneVerificationExpires DateTime?
+
+  isActive  Boolean @default(true)
+  maxTokens Int     @default(5)
+
+  isBlocked   Boolean   @default(false)
+  blockedAt   DateTime?
+  blockedById String?
+  blockReason String?
+
+  preferredLanguage String @default("en")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -30,12 +58,43 @@ model User {
   AuditLog            AuditLog[]
   ErrorLog            ErrorLog[]
   Orders              Order[]
+  loginAttempts       UserLoginAttempt[]
+  tokens              UserToken[]
+}
+
+enum UserRole {
+  ADMIN
+  OWNER
+  CUSTOMER
+}
+
+model UserToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model UserLoginAttempt {
+  id        String   @id @default(cuid())
+  userId    String
+  ipAddress String
+  userAgent String
+  success   Boolean
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
 }
 
 model Restaurant {
   id          String  @id @default(cuid())
   name        String
-  description String? @default("")
+  description String  @default("")
   location    String
   ownerId     String
   image       String? @default("/avatar.jpg")
@@ -52,7 +111,7 @@ model Restaurant {
 model MenuItem {
   id           String  @id @default(cuid())
   name         String
-  description  String? @default("")
+  description  String  @default("")
   image        String? @default("/avatar.jpg")
   price        Float
   available    Boolean @default(true)
@@ -80,16 +139,10 @@ model Category {
   items      MenuItem[]
 }
 
-enum Role {
-  ADMIN
-  OWNER
-  CUSTOMER
-}
-
 model Permission {
-  id          String  @id @default(cuid())
-  key         String  @unique
-  description String? @default("")
+  id          String @id @default(cuid())
+  key         String @unique
+  description String @default("")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -100,9 +153,9 @@ model Permission {
 }
 
 model PermissionGroup {
-  id          String  @id @default(cuid())
-  name        String  @unique
-  description String? @default("")
+  id          String @id @default(cuid())
+  name        String @unique
+  description String @default("")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -136,39 +189,62 @@ model UserPermissionGroup {
 }
 
 model AuditLog {
-  id         String       @id @default(uuid())
+  id         String          @id @default(uuid())
   actorId    String?
-  actorType  ActorType
-  action     ActionType
-  resource   ResourceType
+  actorType  LogActorType
+  action     LogActionType
+  resource   LogResourceType
   resourceId String
   diff       Json?
   metadata   Json?
-  createdAt  DateTime     @default(now())
-  User       User?        @relation(fields: [actorId], references: [id])
+  createdAt  DateTime        @default(now())
+  User       User?           @relation(fields: [actorId], references: [id])
 
   @@index([action])
   @@index([resource])
   @@index([createdAt])
+  @@index([actorId])
   @@index([actorType])
 }
 
 model ErrorLog {
-  id         String       @id @default(uuid())
+  id         String          @id @default(uuid())
   actorId    String?
-  actorType  ActorType
-  resource   ResourceType
+  actorType  LogActorType
+  resource   LogResourceType
   resourceId String
   metadata   Json?
-  createdAt  DateTime     @default(now())
-  User       User?        @relation(fields: [actorId], references: [id])
+  createdAt  DateTime        @default(now())
+  User       User?           @relation(fields: [actorId], references: [id])
 
   @@index([resource])
   @@index([createdAt])
   @@index([actorType])
+  @@index([actorId])
 }
 
-enum ActorType {
+model JobLog {
+  id        String       @id @default(cuid())
+  jobId     String
+  jobName   String
+  status    JobLogStatus
+  data      Json
+  result    Json?
+  error     String?
+  createdAt DateTime     @default(now())
+
+  @@index([jobId])
+  @@index([jobName])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum JobLogStatus {
+  COMPLETED
+  FAILED
+}
+
+enum LogActorType {
   ADMIN
   USER
   CRON_JOB
@@ -176,12 +252,18 @@ enum ActorType {
   BOT
 }
 
-enum ActionType {
+enum LogActionType {
   CREATE
   UPDATE
   DELETE
 
-  PASSWORD_RESET
+  RESET_PASSWORD
+  SEND_RESET_PASSWORD_EMAIL
+  VERIFY_RESET_PASSWORD_TOKEN
+
+  SEND_VERIFICATION_EMAIL
+  VERIFY_EMAIL_TOKEN
+
   LOGIN
   REGISTER
 
@@ -199,7 +281,7 @@ enum ActionType {
   NOTIFY
 }
 
-enum ResourceType {
+enum LogResourceType {
   PERMISSION
   PERMISSION_GROUP
   CATEGORY
@@ -264,20 +346,4 @@ enum PaymentMethod {
   CASH
   CARD
   ONLINE
-}
-
-model JobLog {
-  id        String       @id @default(cuid())
-  jobId     String
-  jobName   String
-  status    JobLogStatus
-  data      Json
-  result    Json?
-  error     String?
-  createdAt DateTime     @default(now())
-}
-
-enum JobLogStatus {
-  COMPLETED
-  FAILED
 }

@@ -1,20 +1,18 @@
-import { faker } from '@faker-js/faker';
 import { OrderStatus } from '@prisma/client';
 import request from 'supertest';
 
 import app from '../../../src/app';
+import { ADMIN_EMAIL, ADMIN_PASSWORD } from '../../test.constants';
 
 describe('Dashboard Analytics', () => {
   let adminToken: string;
 
   beforeAll(async () => {
-    // Register ADMIN
-    const adminRes = await request(app).post('/api/auth/register').send({
-      name: faker.person.fullName(),
-      email: faker.internet.email(),
-      password: '123456789',
-      role: 'ADMIN',
+    const adminRes = await request(app).post('/api/auth/login').send({
+      email: ADMIN_EMAIL,
+      password: ADMIN_PASSWORD,
     });
+
     adminToken = adminRes.body.data.data.accessToken;
   });
 

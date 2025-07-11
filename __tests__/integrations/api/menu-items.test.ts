@@ -5,6 +5,14 @@ import { MenuItem } from '@prisma/client';
 import request from 'supertest';
 
 import app from '../../../src/app';
+import {
+  ADMIN_EMAIL,
+  ADMIN_PASSWORD,
+  OWNER_2_EMAIL,
+  OWNER_2_PASSWORD,
+  OWNER_EMAIL,
+  OWNER_PASSWORD,
+} from '../../test.constants';
 
 const mockImagePath = path.join(__dirname, '../../../public/avatar.jpg');
 
@@ -19,22 +27,19 @@ describe('Menu Items API', () => {
 
   beforeAll(async () => {
     // Register an OWNER
-    const ownerRes = await request(app).post('/api/auth/register').send({
-      name: faker.person.fullName(),
-      email: faker.internet.email(),
-      password: '123456789',
-      role: 'OWNER',
+    const ownerRes = await request(app).post('/api/auth/login').send({
+      email: OWNER_EMAIL,
+      password: OWNER_PASSWORD,
     });
+
     ownerToken = ownerRes.body.data.data.accessToken;
     ownerId = ownerRes.body.data.data.user.id;
 
-    // Register an ADMIN
-    const adminRes = await request(app).post('/api/auth/register').send({
-      name: faker.person.fullName(),
-      email: faker.internet.email(),
-      password: '123456789',
-      role: 'ADMIN',
+    const adminRes = await request(app).post('/api/auth/login').send({
+      email: ADMIN_EMAIL,
+      password: ADMIN_PASSWORD,
     });
+
     adminToken = adminRes.body.data.data.accessToken;
 
     // Create a restaurant
@@ -96,11 +101,9 @@ describe('Menu Items API', () => {
     });
 
     it("should forbid adding menu item to someone else's restaurant", async () => {
-      const otherOwnerRes = await request(app).post('/api/auth/register').send({
-        name: faker.person.fullName(),
-        email: faker.internet.email(),
-        password: '123456789',
-        role: 'OWNER',
+      const otherOwnerRes = await request(app).post('/api/auth/login').send({
+        email: OWNER_2_EMAIL,
+        password: OWNER_2_PASSWORD,
       });
 
       const token = otherOwnerRes.body.data.data.accessToken;
@@ -295,11 +298,9 @@ describe('Menu Items API', () => {
     });
 
     it('should return 403 if another owner tries to update the menu item', async () => {
-      const otherOwner = await request(app).post('/api/auth/register').send({
-        name: faker.person.fullName(),
-        email: faker.internet.email(),
-        password: '123456789',
-        role: 'OWNER',
+      const otherOwner = await request(app).post('/api/auth/login').send({
+        email: OWNER_2_EMAIL,
+        password: OWNER_2_PASSWORD,
       });
 
       const token = otherOwner.body.data.data.accessToken;
@@ -362,12 +363,12 @@ describe('Menu Items API', () => {
     });
 
     it('should return 403 if another owner tries to delete the menu item', async () => {
-      const otherOwner = await request(app).post('/api/auth/register').send({
-        name: faker.person.fullName(),
-        email: faker.internet.email(),
-        password: '123456789',
-        role: 'OWNER',
+      const otherOwner = await request(app).post('/api/auth/login').send({
+        email: OWNER_2_EMAIL,
+        password: OWNER_2_PASSWORD,
       });
+
+      const token = otherOwner.body.data.data.accessToken;
 
       const menuItemToDelete = await request(app)
         .post(`/api/menu-items`)
@@ -379,8 +380,6 @@ describe('Menu Items API', () => {
           restaurantId,
           categoryId,
         });
-
-      const token = otherOwner.body.data.data.accessToken;
 
       const res = await request(app)
         .delete(`/api/menu-items/${menuItemToDelete.body.data.data.id}`)

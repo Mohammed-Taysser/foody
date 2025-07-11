@@ -7,8 +7,28 @@ Table User {
   name String [not null]
   email String [unique, not null]
   password String [not null]
-  role Role [not null, default: 'CUSTOMER']
+  role UserRole [not null, default: 'CUSTOMER']
   image String [default: '/avatar.jpg']
+  twoFactorSecret String
+  twoFactorEnabled Boolean [not null, default: false]
+  failedLoginAttempts Int [not null, default: 0]
+  lastFailedLogin DateTime
+  passwordResetToken String
+  passwordResetSentAt DateTime
+  isEmailVerified Boolean [not null, default: false]
+  emailVerificationSentAt DateTime
+  emailVerificationToken String
+  isPhoneVerified Boolean [not null, default: false]
+  phoneVerificationSentAt DateTime
+  phoneVerificationToken String
+  phoneVerificationExpires DateTime
+  isActive Boolean [not null, default: true]
+  maxTokens Int [not null, default: 5]
+  isBlocked Boolean [not null, default: false]
+  blockedAt DateTime
+  blockedById String
+  blockReason String
+  preferredLanguage String [not null, default: 'en']
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   restaurants Restaurant [not null]
@@ -18,12 +38,34 @@ Table User {
   AuditLog AuditLog [not null]
   ErrorLog ErrorLog [not null]
   Orders Order [not null]
+  loginAttempts UserLoginAttempt [not null]
+  tokens UserToken [not null]
+}
+
+Table UserToken {
+  id String [pk]
+  userId String [not null]
+  token String [unique, not null]
+  expiresAt DateTime [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  user User [not null]
+}
+
+Table UserLoginAttempt {
+  id String [pk]
+  userId String [not null]
+  ipAddress String [not null]
+  userAgent String [not null]
+  success Boolean [not null]
+  createdAt DateTime [default: `now()`, not null]
+  user User [not null]
 }
 
 Table Restaurant {
   id String [pk]
   name String [not null]
-  description String [default: '']
+  description String [not null, default: '']
   location String [not null]
   ownerId String [not null]
   image String [default: '/avatar.jpg']
@@ -38,7 +80,7 @@ Table Restaurant {
 Table MenuItem {
   id String [pk]
   name String [not null]
-  description String [default: '']
+  description String [not null, default: '']
   image String [default: '/avatar.jpg']
   price Float [not null]
   available Boolean [not null, default: true]
@@ -65,7 +107,7 @@ Table Category {
 Table Permission {
   id String [pk]
   key String [unique, not null]
-  description String [default: '']
+  description String [not null, default: '']
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   groups PermissionGroup [not null]
@@ -76,7 +118,7 @@ Table Permission {
 Table PermissionGroup {
   id String [pk]
   name String [unique, not null]
-  description String [default: '']
+  description String [not null, default: '']
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   permissions Permission [not null]
@@ -112,9 +154,9 @@ Table UserPermissionGroup {
 Table AuditLog {
   id String [pk]
   actorId String
-  actorType ActorType [not null]
-  action ActionType [not null]
-  resource ResourceType [not null]
+  actorType LogActorType [not null]
+  action LogActionType [not null]
+  resource LogResourceType [not null]
   resourceId String [not null]
   diff Json
   metadata Json
@@ -125,12 +167,23 @@ Table AuditLog {
 Table ErrorLog {
   id String [pk]
   actorId String
-  actorType ActorType [not null]
-  resource ResourceType [not null]
+  actorType LogActorType [not null]
+  resource LogResourceType [not null]
   resourceId String [not null]
   metadata Json
   createdAt DateTime [default: `now()`, not null]
   User User
+}
+
+Table JobLog {
+  id String [pk]
+  jobId String [not null]
+  jobName String [not null]
+  status JobLogStatus [not null]
+  data Json [not null]
+  result Json
+  error String
+  createdAt DateTime [default: `now()`, not null]
 }
 
 Table Order {
@@ -165,17 +218,6 @@ Table OrderItem {
   menuItem MenuItem [not null]
 }
 
-Table JobLog {
-  id String [pk]
-  jobId String [not null]
-  jobName String [not null]
-  status JobLogStatus [not null]
-  data Json [not null]
-  result Json
-  error String
-  createdAt DateTime [default: `now()`, not null]
-}
-
 Table UserGroups {
   permissiongroupsId String [ref: > PermissionGroup.id]
   usersId String [ref: > User.id]
@@ -191,13 +233,18 @@ Table GroupPermissions {
   permissionsId String [ref: > Permission.id]
 }
 
-Enum Role {
+Enum UserRole {
   ADMIN
   OWNER
   CUSTOMER
 }
 
-Enum ActorType {
+Enum JobLogStatus {
+  COMPLETED
+  FAILED
+}
+
+Enum LogActorType {
   ADMIN
   USER
   CRON_JOB
@@ -205,11 +252,15 @@ Enum ActorType {
   BOT
 }
 
-Enum ActionType {
+Enum LogActionType {
   CREATE
   UPDATE
   DELETE
-  PASSWORD_RESET
+  RESET_PASSWORD
+  SEND_RESET_PASSWORD_EMAIL
+  VERIFY_RESET_PASSWORD_TOKEN
+  SEND_VERIFICATION_EMAIL
+  VERIFY_EMAIL_TOKEN
   LOGIN
   REGISTER
   PLACE_ORDER
@@ -223,7 +274,7 @@ Enum ActionType {
   NOTIFY
 }
 
-Enum ResourceType {
+Enum LogResourceType {
   PERMISSION
   PERMISSION_GROUP
   CATEGORY
@@ -252,10 +303,9 @@ Enum PaymentMethod {
   ONLINE
 }
 
-Enum JobLogStatus {
-  COMPLETED
-  FAILED
-}
+Ref: UserToken.userId > User.id
+
+Ref: UserLoginAttempt.userId > User.id
 
 Ref: Restaurant.ownerId > User.id
 

@@ -4,7 +4,7 @@ import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 
-import CONFIG from '@/config/config';
+import CONFIG from '@/apps/config';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);

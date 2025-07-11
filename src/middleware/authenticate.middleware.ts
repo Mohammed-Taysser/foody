@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 
-import prisma from '@/config/prisma';
+import prisma from '@/apps/prisma';
 import tokenService from '@/services/token.service';
 import { AuthenticatedRequest } from '@/types/import';
 import { UnauthorizedError } from '@/utils/errors.utils';
@@ -15,18 +15,18 @@ async function authenticateMiddleware(req: Request, _res: Response, next: NextFu
 
   const token = authHeader.split(' ')[1];
 
-  const decoded = tokenService.verifyToken(token);
+  const decodedUser = tokenService.verifyToken(token);
 
-  if (!decoded) {
+  if (!decodedUser) {
     throw new UnauthorizedError('errors:missing-or-invalid-token');
   }
 
-  if (typeof decoded === 'string') {
+  if (typeof decodedUser === 'string') {
     throw new UnauthorizedError('errors:invalid-token');
   }
 
   const user = await prisma.user.findUnique({
-    where: { id: decoded.id },
+    where: { id: decodedUser.id },
     include: {
       permissions: true,
       permissionGroups: { include: { permissions: true } },
@@ -35,6 +35,18 @@ async function authenticateMiddleware(req: Request, _res: Response, next: NextFu
 
   if (!user) {
     throw new UnauthorizedError('errors:resource-not-found');
+  }
+
+  if (!user.isActive) {
+    throw new UnauthorizedError('errors:user-is-not-active');
+  }
+
+  if (user.isBlocked) {
+    throw new UnauthorizedError('errors:user-is-blocked');
+  }
+
+  if (!user.isEmailVerified && !user.isPhoneVerified) {
+    throw new UnauthorizedError('errors:user-is-not-verified');
   }
 
   request.user = user;

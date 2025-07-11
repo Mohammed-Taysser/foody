@@ -8,13 +8,13 @@ import {
   UpdateMenuItemInput,
 } from './menu-items.validator';
 
-import prisma from '@/config/prisma';
-import DATABASE_LOGGER from '@/services/database-log.service';
+import prisma from '@/apps/prisma';
+import databaseLogger from '@/services/database-log.service';
 import { AuthenticatedRequest } from '@/types/import';
 import { ConflictError, ForbiddenError, NotFoundError } from '@/utils/errors.utils';
 import { deleteImage, uploadImage } from '@/utils/multer.utils';
-import { sendPaginatedResponse, sendSuccessResponse } from '@/utils/send-response';
 import { getRequestInfo } from '@/utils/request.utils';
+import { sendPaginatedResponse, sendSuccessResponse } from '@/utils/send-response';
 
 async function getMenuItems(req: Request, response: Response) {
   const authenticatedRequest = req as unknown as AuthenticatedRequest<
@@ -132,7 +132,7 @@ async function createMenuItem(
     },
   });
 
-  DATABASE_LOGGER.log({
+  databaseLogger.audit({
     requestInfo: getRequestInfo(authenticatedRequest),
     actorId: user.id,
     actorType: 'USER',
@@ -200,7 +200,7 @@ async function updateMenuItem(request: Request, response: Response) {
     },
   });
 
-  DATABASE_LOGGER.log({
+  databaseLogger.audit({
     requestInfo: getRequestInfo(authenticatedRequest),
     actorId: user.id,
     actorType: 'USER',
@@ -241,11 +241,7 @@ async function deleteMenuItem(request: Request, response: Response) {
     where: { id: itemId },
   });
 
-  if (item.image && request.file) {
-    deleteImage(item.image);
-  }
-
-  DATABASE_LOGGER.log({
+  databaseLogger.audit({
     requestInfo: getRequestInfo(authenticatedRequest),
     actorId: user.id,
     actorType: 'USER',

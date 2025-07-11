@@ -4,8 +4,8 @@ import { Request, Response } from 'express';
 import { VALID_TRANSITIONS } from './order.constant';
 import { CreateOrderInput, UpdateOrderInput } from './order.validation';
 
-import prisma from '@/config/prisma';
-import DATABASE_LOGGER from '@/services/database-log.service';
+import prisma from '@/apps/prisma';
+import databaseLogger from '@/services/database-log.service';
 import { AuthenticatedRequest } from '@/types/import';
 import { BadRequestError, ForbiddenError, NotFoundError } from '@/utils/errors.utils';
 import { getRequestInfo } from '@/utils/request.utils';
@@ -127,7 +127,7 @@ async function createOrder(request: Request, response: Response) {
     include: { items: true },
   });
 
-  DATABASE_LOGGER.log({
+  databaseLogger.audit({
     action: 'CREATE',
     resource: 'ORDER',
     resourceId: order.id,
@@ -156,7 +156,7 @@ async function updateOrder(request: Request, response: Response) {
     data: request.body,
   });
 
-  DATABASE_LOGGER.log({
+  databaseLogger.audit({
     action: 'UPDATE',
     resource: 'ORDER',
     resourceId: orderId,
@@ -189,9 +189,9 @@ async function updateOrderStatus(request: Request, response: Response) {
     throw new BadRequestError('Cannot update a finalized order');
   }
 
-  const validNext = VALID_TRANSITIONS[order.status];
+  const allowedTransitions = VALID_TRANSITIONS[order.status];
 
-  if (!validNext.includes(status)) {
+  if (!allowedTransitions.includes(status)) {
     throw new BadRequestError(`Invalid status transition from ${order.status} to ${status}`);
   }
 
@@ -200,7 +200,7 @@ async function updateOrderStatus(request: Request, response: Response) {
     data: { status },
   });
 
-  DATABASE_LOGGER.log({
+  databaseLogger.audit({
     action: 'UPDATE',
     resource: 'ORDER',
     resourceId: orderId,
@@ -243,7 +243,7 @@ async function payOrder(request: Request, response: Response) {
     },
   });
 
-  DATABASE_LOGGER.log({
+  databaseLogger.audit({
     action: 'UPDATE',
     resource: 'ORDER',
     resourceId: orderId,
@@ -303,7 +303,7 @@ async function deleteOrder(request: Request, response: Response) {
     where: { id: orderId },
   });
 
-  DATABASE_LOGGER.log({
+  databaseLogger.audit({
     action: 'DELETE',
     resource: 'ORDER',
     resourceId: orderId,

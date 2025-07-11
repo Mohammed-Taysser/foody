@@ -29,5 +29,9 @@
   "resource-already-exists": "Resource already exists",
   "you-are-not-authorized-to-access-this-resource": "You are not authorized to access this resource",
   "invalid-or-expired-refresh-token": "Invalid or expired refresh token",
-  "you-do-not-have-permission-to-access-this-resource": "You do not has permission to access this resource"
+  "you-do-not-have-permission-to-access-this-resource": "You do not has permission to access this resource",
+  "user-is-blocked": "User is blocked",
+  "user-is-not-verified": "User is not verified",
+  "user-is-not-active": "User is not active",
+  "user-is-not-found": "User is not found"
 }

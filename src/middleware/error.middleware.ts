@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 
-import CONFIG from '@/config/config';
+import CONFIG from '@/apps/config';
 import { ErrorMiddlewareResponse } from '@/types/import';
 import { BaseError } from '@/utils/errors.utils';
 
@@ -16,7 +16,7 @@ function errorHandlerMiddleware(
 
   const body: ErrorMiddlewareResponse = {
     success: false,
-    message: req.t(message) || message,
+    message: req.t(message),
     details,
   };
 

@@ -1,7 +1,7 @@
 import { OrderStatus } from '@prisma/client';
 import { Request, Response } from 'express';
 
-import prisma from '@/config/prisma';
+import prisma from '@/apps/prisma';
 import dayjsTZ from '@/utils/dayjs.utils';
 import { sendSuccessResponse } from '@/utils/send-response';
 
@@ -85,7 +85,10 @@ async function getAnalyticsMetrics(request: Request, response: Response) {
   ]);
 
   const calcGrowth = (current: number, previous: number) => {
-    if (previous === 0) return current > 0 ? 100 : 0;
+    if (previous === 0) {
+      return current > 0 ? 100 : 0;
+    }
+
     return Number((((current - previous) / previous) * 100).toFixed(2));
   };
 

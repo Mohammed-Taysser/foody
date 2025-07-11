@@ -1,26 +1,35 @@
+import path from 'path';
+
 import { faker } from '@faker-js/faker';
 import request from 'supertest';
 
 import app from '../../../src/app';
+import {
+  ADMIN_EMAIL,
+  ADMIN_PASSWORD,
+  CUSTOMER_EMAIL,
+  CUSTOMER_PASSWORD,
+  OWNER_EMAIL,
+  OWNER_PASSWORD,
+} from '../../test.constants';
+
+const mockImagePath = path.join(__dirname, '../../../public/avatar.jpg');
 
 describe('GET /users/me', () => {
   it('should get profile', async () => {
-    const dummyEmail = faker.internet.email();
-
-    const registerResponse = await request(app).post('/api/auth/register').send({
-      name: faker.person.fullName(),
-      email: dummyEmail,
-      password: '123456789',
+    const res = await request(app).post('/api/auth/login').send({
+      email: CUSTOMER_EMAIL,
+      password: CUSTOMER_PASSWORD,
     });
 
-    const accessToken = registerResponse.body.data.data.accessToken;
+    const accessToken = res.body.data.data.accessToken;
 
     const profileResponse = await request(app)
       .get('/api/users/me')
       .set('Authorization', `Bearer ${accessToken}`);
 
     expect(profileResponse.statusCode).toBe(200);
-    expect(profileResponse.body.data.data.email).toBe(dummyEmail);
+    expect(profileResponse.body.data.data.email).toBe(CUSTOMER_EMAIL);
   });
 
   it('should fail profile if not authenticated', async () => {
@@ -31,22 +40,33 @@ describe('GET /users/me', () => {
   });
 });
 
-describe('PATCH /api/users/me', () => {
-  let accessToken: string;
-  let originalName: string;
-
-  beforeAll(async () => {
-    const email = faker.internet.email();
-    originalName = faker.person.fullName();
-
-    const registerRes = await request(app).post('/api/auth/register').send({
-      name: originalName,
-      email,
-      password: '123456789',
-      role: 'CUSTOMER',
+describe('GET /me/permissions', () => {
+  it('should get permissions', async () => {
+    const res = await request(app).post('/api/auth/login').send({
+      email: CUSTOMER_EMAIL,
+      password: CUSTOMER_PASSWORD,
     });
 
-    accessToken = registerRes.body.data.data.accessToken;
+    const accessToken = res.body.data.data.accessToken;
+
+    const permissionResponse = await request(app)
+      .get('/api/users/me/permissions')
+      .set('Authorization', `Bearer ${accessToken}`);
+
+    expect(permissionResponse.statusCode).toBe(200);
+  });
+});
+
+describe('PATCH /api/users/me', () => {
+  let accessToken: string;
+
+  beforeAll(async () => {
+    const res = await request(app).post('/api/auth/login').send({
+      email: OWNER_EMAIL,
+      password: OWNER_PASSWORD,
+    });
+
+    accessToken = res.body.data.data.accessToken;
   });
 
   it('should update user profile successfully', async () => {
@@ -79,10 +99,9 @@ describe('PATCH /api/users/me', () => {
 
   it('should fail to update if email is already taken', async () => {
     // Register a second user to create an existing email conflict
-    const secondUserRes = await request(app).post('/api/auth/register').send({
-      name: faker.person.fullName(),
-      email: faker.internet.email(),
-      password: '123456789',
+    const secondUserRes = await request(app).post('/api/auth/login').send({
+      email: CUSTOMER_EMAIL,
+      password: CUSTOMER_PASSWORD,
     });
 
     const existingEmail = secondUserRes.body.data.data.user.email;
@@ -122,13 +141,11 @@ describe('GET /api/users/:id', () => {
   let adminToken: string;
 
   beforeAll(async () => {
-    // Register ADMIN
-    const adminRes = await request(app).post('/api/auth/register').send({
-      name: faker.person.fullName(),
-      email: faker.internet.email(),
-      password: '123456789',
-      role: 'ADMIN',
+    const adminRes = await request(app).post('/api/auth/login').send({
+      email: ADMIN_EMAIL,
+      password: ADMIN_PASSWORD,
     });
+
     adminToken = adminRes.body.data.data.accessToken;
   });
 
@@ -160,13 +177,11 @@ describe('POST /api/users', () => {
   let adminToken: string;
 
   beforeAll(async () => {
-    // Register ADMIN
-    const adminRes = await request(app).post('/api/auth/register').send({
-      name: faker.person.fullName(),
-      email: faker.internet.email(),
-      password: '123456789',
-      role: 'ADMIN',
+    const adminRes = await request(app).post('/api/auth/login').send({
+      email: ADMIN_EMAIL,
+      password: ADMIN_PASSWORD,
     });
+
     adminToken = adminRes.body.data.data.accessToken;
   });
 
@@ -183,6 +198,25 @@ describe('POST /api/users', () => {
         password: '123456789',
         role: 'CUSTOMER',
       });
+
+    expect(res.statusCode).toBe(201);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.data.email).toBe(email);
+    expect(res.body.data.data.name).toBe(name);
+  });
+
+  it('should create a user successfully with image', async () => {
+    const email = faker.internet.email();
+    const name = faker.person.fullName();
+
+    const res = await request(app)
+      .post('/api/users')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .field('name', name)
+      .field('email', email)
+      .field('password', '123456789')
+      .field('role', 'CUSTOMER')
+      .attach('image', mockImagePath);
 
     expect(res.statusCode).toBe(201);
     expect(res.body.success).toBe(true);
@@ -231,13 +265,11 @@ describe('PATCH /api/users/:id', () => {
   let adminToken: string;
 
   beforeAll(async () => {
-    // Register ADMIN
-    const adminRes = await request(app).post('/api/auth/register').send({
-      name: faker.person.fullName(),
-      email: faker.internet.email(),
-      password: '123456789',
-      role: 'ADMIN',
+    const adminRes = await request(app).post('/api/auth/login').send({
+      email: ADMIN_EMAIL,
+      password: ADMIN_PASSWORD,
     });
+
     adminToken = adminRes.body.data.data.accessToken;
   });
 
@@ -285,16 +317,11 @@ describe('DELETE /api/users/:id', () => {
   let adminToken: string;
 
   beforeAll(async () => {
-    // Register ADMIN
-    const adminRes = await request(app)
-      .post('/api/auth/register')
-      .set('Authorization', `Bearer ${adminToken}`)
-      .send({
-        name: faker.person.fullName(),
-        email: faker.internet.email(),
-        password: '123456789',
-        role: 'ADMIN',
-      });
+    const adminRes = await request(app).post('/api/auth/login').send({
+      email: ADMIN_EMAIL,
+      password: ADMIN_PASSWORD,
+    });
+
     adminToken = adminRes.body.data.data.accessToken;
   });
 

@@ -2,22 +2,18 @@ import { faker } from '@faker-js/faker';
 import request from 'supertest';
 
 import app from '../../../src/app';
+import { ADMIN_EMAIL, ADMIN_PASSWORD } from '../../test.constants';
 
 describe('Permission Group API', () => {
   let permissionGroupId: string;
   let adminToken: string;
 
   beforeAll(async () => {
-    // Register ADMIN
-    const adminRes = await request(app)
-      .post('/api/auth/register')
-      .set('Authorization', `Bearer ${adminToken}`)
-      .send({
-        name: faker.person.fullName(),
-        email: faker.internet.email(),
-        password: '123456789',
-        role: 'ADMIN',
-      });
+    const adminRes = await request(app).post('/api/auth/login').send({
+      email: ADMIN_EMAIL,
+      password: ADMIN_PASSWORD,
+    });
+
     adminToken = adminRes.body.data.data.accessToken;
   });
 

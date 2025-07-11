@@ -4,6 +4,12 @@ import { faker } from '@faker-js/faker';
 import request from 'supertest';
 
 import app from '../../../src/app';
+import {
+  CUSTOMER_EMAIL,
+  CUSTOMER_PASSWORD,
+  OWNER_EMAIL,
+  OWNER_PASSWORD,
+} from '../../test.constants';
 
 const mockImagePath = path.join(__dirname, '../../../public/avatar.jpg');
 
@@ -15,22 +21,16 @@ describe('Restaurant API', () => {
   let customerId: string;
 
   beforeAll(async () => {
-    // Register OWNER
-    const ownerRes = await request(app).post('/api/auth/register').send({
-      name: faker.person.fullName(),
-      email: faker.internet.email(),
-      password: '123456789',
-      role: 'OWNER',
+    const ownerRes = await request(app).post('/api/auth/login').send({
+      email: OWNER_EMAIL,
+      password: OWNER_PASSWORD,
     });
     ownerToken = ownerRes.body.data.data.accessToken;
     ownerId = ownerRes.body.data.data.user.id;
 
-    // Register CUSTOMER
-    const customerRes = await request(app).post('/api/auth/register').send({
-      name: faker.person.fullName(),
-      email: faker.internet.email(),
-      password: '123456789',
-      role: 'CUSTOMER',
+    const customerRes = await request(app).post('/api/auth/login').send({
+      email: CUSTOMER_EMAIL,
+      password: CUSTOMER_PASSWORD,
     });
     customerToken = customerRes.body.data.data.accessToken;
     customerId = customerRes.body.data.data.user.id;

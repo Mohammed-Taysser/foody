@@ -18,6 +18,7 @@ import authorizeMiddleware from '@/middleware/authorize.middleware';
 import requirePermission from '@/middleware/require-permission.middleware';
 import zodValidate from '@/middleware/zod-validate.middleware';
 import basePaginationSchema from '@/validations/pagination.validation';
+import { upload } from '@/utils/multer.utils';
 
 const router = Router();
 
@@ -39,6 +40,7 @@ router.post(
   authenticateMiddleware,
   authorizeMiddleware('ADMIN'),
   requirePermission(['add:user']),
+  upload.single('image'),
   zodValidate(createUserSchema),
   createUser
 );

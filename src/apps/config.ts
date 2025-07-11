@@ -59,6 +59,12 @@ const envSchema = z.object({
   JWT_REFRESH_EXPIRES_IN: z.string().regex(/^\d+[smhd]$/, {
     message: 'JWT_EXPIRES_IN must be a duration like "7d", "15m", "1h", or "30s"',
   }) as z.ZodType<SignOptions['expiresIn']>,
+  JWT_RESET_PASSWORD_EXPIRES_IN: z.string().regex(/^\d+[smhd]$/, {
+    message: 'JWT_EXPIRES_IN must be a duration like "7d", "15m", "1h", or "30s"',
+  }) as z.ZodType<SignOptions['expiresIn']>,
+  JWT_EMAIL_VERIFICATION_EXPIRES_IN: z.string().regex(/^\d+[smhd]$/, {
+    message: 'JWT_EXPIRES_IN must be a duration like "7d", "15m", "1h", or "30s"',
+  }) as z.ZodType<SignOptions['expiresIn']>,
 });
 
 // Validate and catch errors with friendly messages

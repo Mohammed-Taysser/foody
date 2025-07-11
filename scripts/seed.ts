@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import chalk from 'chalk';
 
-import prisma from '../src/config/prisma';
+import prisma from '../src/apps/prisma';
 import {
   DEFAULT_ROLE_PERMISSIONS,
   PERMISSION_GROUPS,
@@ -15,12 +15,12 @@ async function seedDummyData() {
 
   // 🧹 Clear existing data
   await prisma.category.deleteMany();
+  await prisma.order.deleteMany();
   await prisma.menuItem.deleteMany();
   await prisma.auditLog.deleteMany();
   await prisma.orderItem.deleteMany();
   await prisma.errorLog.deleteMany();
   await prisma.jobLog.deleteMany();
-  await prisma.order.deleteMany();
   await prisma.restaurant.deleteMany();
   await prisma.user.deleteMany();
   await prisma.permissionGroup.deleteMany();
@@ -69,6 +69,8 @@ async function seedDummyData() {
       email: 'admin@demo.com',
       password: hashedPassword,
       role: 'ADMIN',
+      isEmailVerified: true,
+      isPhoneVerified: true,
       permissionGroups: {
         connect: adminConfig.groups.map((name) => ({ name })),
       },
@@ -80,15 +82,41 @@ async function seedDummyData() {
 
   console.log(chalk.green(`Admin user created:`), chalk.whiteBright(admin.email));
 
+  // Seed customers
+  const customers = await Promise.all(
+    Array.from({ length: 5 }).map((_, index) => {
+      return prisma.user.create({
+        data: {
+          name: faker.person.fullName(),
+          email: `customer-${index}@demo.com`,
+          password: hashedPassword,
+          isEmailVerified: true,
+          isPhoneVerified: true,
+          role: 'CUSTOMER',
+          permissionGroups: {
+            connect: DEFAULT_ROLE_PERMISSIONS['CUSTOMER'].groups.map((name) => ({ name })),
+          },
+          permissions: {
+            connect: DEFAULT_ROLE_PERMISSIONS['CUSTOMER'].permissions.map((id) => ({ key: id })),
+          },
+        },
+      });
+    })
+  );
+
+  console.log(`\n${customers.length} customers created`);
+
   const owners = await Promise.all(
-    Array.from({ length: 3 }).map(() => {
+    Array.from({ length: 3 }).map((_, index) => {
       const ownerConfig = DEFAULT_ROLE_PERMISSIONS['OWNER'];
 
       return prisma.user.create({
         data: {
           name: faker.person.fullName(),
-          email: faker.internet.email(),
+          email: `owner-${index}@demo.com`,
           password: hashedPassword,
+          isEmailVerified: true,
+          isPhoneVerified: true,
           role: 'OWNER',
           permissionGroups: {
             connect: ownerConfig.groups.map((name) => ({ name })),

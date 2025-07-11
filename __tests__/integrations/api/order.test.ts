@@ -2,6 +2,16 @@ import { faker } from '@faker-js/faker';
 import request from 'supertest';
 
 import app from '../../../src/app';
+import {
+  ADMIN_EMAIL,
+  ADMIN_PASSWORD,
+  CUSTOMER_2_EMAIL,
+  CUSTOMER_2_PASSWORD,
+  CUSTOMER_EMAIL,
+  CUSTOMER_PASSWORD,
+  OWNER_EMAIL,
+  OWNER_PASSWORD,
+} from '../../test.constants';
 
 describe('Order API', () => {
   let ownerToken: string;
@@ -13,32 +23,24 @@ describe('Order API', () => {
   let adminToken: string;
 
   beforeAll(async () => {
-    // Register OWNER
-    const ownerRes = await request(app).post('/api/auth/register').send({
-      name: faker.person.fullName(),
-      email: faker.internet.email(),
-      password: '123456789',
-      role: 'OWNER',
+    const ownerRes = await request(app).post('/api/auth/login').send({
+      email: OWNER_EMAIL,
+      password: OWNER_PASSWORD,
     });
     ownerToken = ownerRes.body.data.data.accessToken;
 
-    // Register ADMIN
-    const adminRes = await request(app).post('/api/auth/register').send({
-      name: faker.person.fullName(),
-      email: faker.internet.email(),
-      password: '123456789',
-      role: 'ADMIN',
-    });
-    adminToken = adminRes.body.data.data.accessToken;
-
-    // Register CUSTOMER
-    const customerRes = await request(app).post('/api/auth/register').send({
-      name: faker.person.fullName(),
-      email: faker.internet.email(),
-      password: '123456789',
-      role: 'CUSTOMER',
+    const customerRes = await request(app).post('/api/auth/login').send({
+      email: CUSTOMER_EMAIL,
+      password: CUSTOMER_PASSWORD,
     });
     customerToken = customerRes.body.data.data.accessToken;
+
+    const adminRes = await request(app).post('/api/auth/login').send({
+      email: ADMIN_EMAIL,
+      password: ADMIN_PASSWORD,
+    });
+
+    adminToken = adminRes.body.data.data.accessToken;
 
     // Create restaurant
     const restaurantRes = await request(app)
@@ -147,12 +149,9 @@ describe('Order API', () => {
     });
 
     it("should return 403 when a user tries to access another user's order", async () => {
-      // Register a second customer
-      const anotherCustomerRes = await request(app).post('/api/auth/register').send({
-        name: faker.person.fullName(),
-        email: faker.internet.email(),
-        password: '123456789',
-        role: 'CUSTOMER',
+      const anotherCustomerRes = await request(app).post('/api/auth/login').send({
+        email: CUSTOMER_2_EMAIL,
+        password: CUSTOMER_2_PASSWORD,
       });
 
       const anotherCustomerToken = anotherCustomerRes.body.data.data.accessToken;
@@ -327,11 +326,9 @@ describe('Order API', () => {
     });
 
     it('should return 403 if user is not the owner of the order', async () => {
-      const anotherCustomer = await request(app).post('/api/auth/register').send({
-        name: faker.person.fullName(),
-        email: faker.internet.email(),
-        password: '123456789',
-        role: 'CUSTOMER',
+      const anotherCustomer = await request(app).post('/api/auth/login').send({
+        email: CUSTOMER_2_EMAIL,
+        password: CUSTOMER_2_PASSWORD,
       });
 
       const anotherToken = anotherCustomer.body.data.data.accessToken;

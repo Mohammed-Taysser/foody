@@ -1,19 +1,19 @@
-import { Role } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 import { Request, Response } from 'express';
 
 import { DEFAULT_ROLE_PERMISSIONS } from '../auth/auth.constant';
 
 import { GetByIdUserParams, UpdateUserInput } from './user.validator';
 
-import prisma from '@/config/prisma';
-import DATABASE_LOGGER from '@/services/database-log.service';
+import prisma from '@/apps/prisma';
+import databaseLogger from '@/services/database-log.service';
 import tokenService from '@/services/token.service';
 import { AuthenticatedRequest } from '@/types/import';
 import { ConflictError, NotFoundError } from '@/utils/errors.utils';
 import { deleteImage, uploadImage } from '@/utils/multer.utils';
+import { getRequestInfo } from '@/utils/request.utils';
 import { sendPaginatedResponse, sendSuccessResponse } from '@/utils/send-response';
 import { BasePaginationInput } from '@/validations/pagination.validation';
-import { getRequestInfo } from '@/utils/request.utils';
 
 async function getUserPermission(request: Request, response: Response) {
   const authenticatedRequest = request as AuthenticatedRequest;
@@ -124,7 +124,7 @@ async function createUser(request: Request, response: Response) {
 
   const hashed = await tokenService.hash(data.password);
 
-  const config = DEFAULT_ROLE_PERMISSIONS[data.role as Role];
+  const config = DEFAULT_ROLE_PERMISSIONS[data.role as UserRole];
 
   let imageUrl = undefined;
 
@@ -148,7 +148,7 @@ async function createUser(request: Request, response: Response) {
     },
   });
 
-  DATABASE_LOGGER.log({
+  databaseLogger.audit({
     requestInfo: getRequestInfo(request),
     actorId: newUser.id,
     actorType: 'USER',
@@ -156,6 +156,7 @@ async function createUser(request: Request, response: Response) {
     resource: 'USER',
     resourceId: newUser.id,
     metadata: { data },
+    newData: newUser,
   });
 
   sendSuccessResponse({
@@ -192,7 +193,7 @@ async function updateUser(request: Request, response: Response) {
     },
   });
 
-  DATABASE_LOGGER.log({
+  databaseLogger.audit({
     requestInfo: getRequestInfo(request),
     actorId: user.id,
     actorType: 'USER',
@@ -200,6 +201,8 @@ async function updateUser(request: Request, response: Response) {
     resource: 'USER',
     resourceId: user.id,
     metadata: { data },
+    oldData: user,
+    newData: updatedUser,
   });
 
   sendSuccessResponse({
@@ -245,19 +248,13 @@ async function updateMe(request: Request, response: Response) {
     },
   });
 
-  const oldUserData = {
-    name: user.name,
-    email: user.email,
-    role: user.role,
-  };
-
-  DATABASE_LOGGER.log({
+  databaseLogger.audit({
     actorId: user.id,
     action: 'UPDATE',
     actorType: 'USER',
     resource: 'USER',
     resourceId: user.id,
-    oldData: oldUserData,
+    oldData: user,
     newData: updatedUser,
     requestInfo: getRequestInfo(authenticatedRequest),
   });
@@ -295,7 +292,7 @@ async function deleteUser(request: Request, response: Response) {
     deleteImage(deletedUser.image);
   }
 
-  DATABASE_LOGGER.log({
+  databaseLogger.audit({
     requestInfo: getRequestInfo(authenticatedRequest),
     actorId: authenticatedRequest.user.id,
     actorType: 'USER',

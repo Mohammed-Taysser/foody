@@ -4,6 +4,14 @@ import { faker } from '@faker-js/faker';
 import request from 'supertest';
 
 import app from '../../../src/app';
+import {
+  ADMIN_EMAIL,
+  ADMIN_PASSWORD,
+  OWNER_2_EMAIL,
+  OWNER_2_PASSWORD,
+  OWNER_EMAIL,
+  OWNER_PASSWORD,
+} from '../../test.constants';
 
 const mockImagePath = path.join(__dirname, '../../../public/avatar.jpg');
 
@@ -14,12 +22,9 @@ describe('Category API', () => {
   let categoryId: string;
 
   beforeAll(async () => {
-    // Register OWNER
-    const ownerRes = await request(app).post('/api/auth/register').send({
-      name: faker.person.fullName(),
-      email: faker.internet.email(),
-      password: '123456789',
-      role: 'OWNER',
+    const ownerRes = await request(app).post('/api/auth/login').send({
+      email: OWNER_EMAIL,
+      password: OWNER_PASSWORD,
     });
     ownerToken = ownerRes.body.data.data.accessToken;
     const ownerId = ownerRes.body.data.data.user.id;
@@ -36,13 +41,11 @@ describe('Category API', () => {
 
     restaurantId = restaurantRes.body.data.data.id;
 
-    // Register ADMIN
-    const adminRes = await request(app).post('/api/auth/register').send({
-      name: faker.person.fullName(),
-      email: faker.internet.email(),
-      password: '123456789',
-      role: 'ADMIN',
+    const adminRes = await request(app).post('/api/auth/login').send({
+      email: ADMIN_EMAIL,
+      password: ADMIN_PASSWORD,
     });
+
     adminToken = adminRes.body.data.data.accessToken;
 
     // Seed 10 categories for pagination & filtering test
@@ -69,11 +72,9 @@ describe('Category API', () => {
     });
 
     it('should forbid another owner from creating a category', async () => {
-      const otherOwner = await request(app).post('/api/auth/register').send({
-        name: faker.person.fullName(),
-        email: faker.internet.email(),
-        password: '123456789',
-        role: 'OWNER',
+      const otherOwner = await request(app).post('/api/auth/login').send({
+        email: OWNER_2_EMAIL,
+        password: OWNER_2_PASSWORD,
       });
 
       const res = await request(app)
@@ -175,11 +176,9 @@ describe('Category API', () => {
     });
 
     it('should forbid another owner from updating category', async () => {
-      const otherOwner = await request(app).post('/api/auth/register').send({
-        name: faker.person.fullName(),
-        email: faker.internet.email(),
-        password: '123456789',
-        role: 'OWNER',
+      const otherOwner = await request(app).post('/api/auth/login').send({
+        email: OWNER_2_EMAIL,
+        password: OWNER_2_PASSWORD,
       });
 
       const res = await request(app)
@@ -233,12 +232,9 @@ describe('Category API', () => {
 
   describe('DELETE /api/categories/:categoryId', () => {
     it('should forbid owner who does not own the restaurant', async () => {
-      // Create a new owner
-      const anotherOwner = await request(app).post('/api/auth/register').send({
-        name: faker.person.fullName(),
-        email: faker.internet.email(),
-        password: '123456789',
-        role: 'OWNER',
+      const anotherOwner = await request(app).post('/api/auth/login').send({
+        email: OWNER_2_EMAIL,
+        password: OWNER_2_PASSWORD,
       });
 
       const res = await request(app)
