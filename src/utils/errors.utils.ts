@@ -1,3 +1,5 @@
+import { ErrorMiddlewareDetails } from '@/types/import';
+
 class BaseError extends Error {
   public statusCode: number;
   public isOperational: boolean;
@@ -15,39 +17,46 @@ class BaseError extends Error {
   }
 }
 
+// Derived error classes
 class BadRequestError extends BaseError {
-  constructor(message: ErrorMiddlewareDetails = 'Bad Request') {
-    super(message, 400);
+  constructor(details: ErrorMiddlewareDetails = 'errors:bad-request') {
+    super(details, 400);
   }
 }
 
 class UnauthorizedError extends BaseError {
-  constructor(message: ErrorMiddlewareDetails = 'Unauthorized') {
-    super(message, 401);
+  constructor(details: ErrorMiddlewareDetails = 'errors:unauthorized') {
+    super(details, 401);
   }
 }
 
 class NotFoundError extends BaseError {
-  constructor(message: ErrorMiddlewareDetails = 'Not Found') {
-    super(message, 404);
+  constructor(details: ErrorMiddlewareDetails = 'errors:not-found') {
+    super(details, 404);
   }
 }
 
 class ForbiddenError extends BaseError {
-  constructor(message: ErrorMiddlewareDetails = 'Forbidden') {
-    super(message, 403);
+  constructor(details: ErrorMiddlewareDetails = 'errors:forbidden') {
+    super(details, 403);
   }
 }
 
 class ConflictError extends BaseError {
-  constructor(message: ErrorMiddlewareDetails = 'Conflict') {
-    super(message, 409);
+  constructor(details: ErrorMiddlewareDetails = 'errors:conflict') {
+    super(details, 409);
   }
 }
 
 class InternalServerError extends BaseError {
-  constructor(message: ErrorMiddlewareDetails = 'Internal Server Error') {
-    super(message, 500);
+  constructor(details: ErrorMiddlewareDetails = 'errors:internal-server-error') {
+    super(details, 500);
+  }
+}
+
+class TooManyRequestsError extends BaseError {
+  constructor(details: ErrorMiddlewareDetails = 'errors:too-many-requests') {
+    super(details, 429);
   }
 }
 
@@ -58,5 +67,6 @@ export {
   ForbiddenError,
   InternalServerError,
   NotFoundError,
+  TooManyRequestsError,
   UnauthorizedError,
 };

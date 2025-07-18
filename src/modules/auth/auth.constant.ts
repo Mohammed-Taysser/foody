@@ -1,4 +1,4 @@
-import { Role } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 
 const PERMISSION_ACTIONS: PermittedAction[] = ['add', 'view', 'update', 'delete'];
 const PERMISSION_MODULES: PermittedModule[] = [
@@ -60,7 +60,7 @@ const PERMISSION_GROUPS: Record<string, PermittedId[]> = {
 };
 
 const DEFAULT_ROLE_PERMISSIONS: {
-  [key in Role]: {
+  [key in UserRole]: {
     groups: (keyof typeof PERMISSION_GROUPS)[];
     permissions: PermittedId[];
   };

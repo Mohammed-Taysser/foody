@@ -1,12 +1,12 @@
 import chalk from 'chalk';
 
-import WINSTON_LOGGER from './services/winston-log.service';
+import logger from './utils/logger.utils';
 import { isPortAvailable } from './utils/network';
 import { promptYesNo } from './utils/prompts';
 import { logServerInfo } from './utils/system-info-logs';
 
 import app from '@/app';
-import ennValidation from '@/config/config';
+import ennValidation from '@/apps/config';
 
 const startTime = Date.now();
 
@@ -34,6 +34,6 @@ startServer()
     logServerInfo(startTime, port);
   })
   .catch((error) => {
-    WINSTON_LOGGER.error('Error starting server:' + error);
+    logger.error('Error starting server:' + error);
     process.exit(1);
   });

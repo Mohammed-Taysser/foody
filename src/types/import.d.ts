@@ -1,5 +1,6 @@
-import { ActionType, ActorType, Prisma, ResourceType, User } from '@prisma/client';
+import { LogActionType, LogActorType, LogResourceType, Prisma, User } from '@prisma/client';
 import { Request } from 'express';
+import { ZodIssue } from 'zod';
 
 interface AuthenticatedRequest<
   Params = unknown,
@@ -36,15 +37,15 @@ interface ExtractedRequestInfo {
 interface BaseLogParams {
   requestInfo: ExtractedRequestInfo;
   actorId: string;
-  actorType: ActorType;
-  resource: ResourceType;
+  actorType: LogActorType;
+  resource: LogResourceType;
   resourceId: string;
   metadata?: Prisma.InputJsonObject;
 }
 
 interface AuditLogParams extends BaseLogParams {
-  action: ActionType;
-  actorType: ActorType;
+  action: LogActionType;
+  actorType: LogActorType;
   oldData?: Prisma.InputJsonObject;
   newData?: Prisma.InputJsonObject;
 }
@@ -53,4 +54,22 @@ interface ErrorLogParams extends BaseLogParams {
   metadata: Prisma.InputJsonObject;
 }
 
-export { AuditLogParams, AuthenticatedRequest, ErrorLogParams, ExtractedRequestInfo };
+type ErrorMiddlewareDetails = string | { message?: string; [key: string]: unknown } | ZodIssue[];
+
+interface ErrorMiddlewareResponse {
+  success: boolean;
+  message: string;
+  details?: ErrorMiddlewareDetails;
+  stack?: string;
+  path?: string;
+  method?: string;
+}
+
+export {
+  AuditLogParams,
+  AuthenticatedRequest,
+  ErrorLogParams,
+  ErrorMiddlewareDetails,
+  ErrorMiddlewareResponse,
+  ExtractedRequestInfo,
+};

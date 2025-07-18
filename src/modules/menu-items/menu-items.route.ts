@@ -1,64 +1,64 @@
 import { Router } from 'express';
 
-import {
-  createMenuItem,
-  deleteMenuItem,
-  getMenuItemById,
-  getMenuItems,
-  getMenuItemsList,
-  updateMenuItem,
-} from './menu-items.controller';
-import {
-  createMenuItemSchema,
-  menuItemQuerySchema,
-  updateMenuItemSchema,
-} from './menu-items.validator';
+import controller from './menu-items.controller';
+import validator from './menu-items.validator';
 
 import authenticate from '@/middleware/authenticate.middleware';
 import authorize from '@/middleware/authorize.middleware';
 import requirePermission from '@/middleware/require-permission.middleware';
-import ZodValidate from '@/middleware/zod-validate.middleware';
-import { upload } from '@/utils/multer.utils';
+import validateRequest from '@/middleware/validate-request.middleware';
+import { imageUploadMiddleware } from '@/utils/multer.utils';
 
 const router = Router();
 
 router.get(
   '/',
-  ZodValidate(menuItemQuerySchema, 'query'),
   requirePermission(['view:menuItem'], true),
-  getMenuItems
+  validateRequest(validator.getMenuItemsSchema),
+  controller.getMenuItems
 );
 
-router.get('/list', requirePermission(['view:menuItem'], true), getMenuItemsList);
+router.get(
+  '/list',
+  requirePermission(['view:menuItem'], true),
+  validateRequest(validator.getMenuItemsSchema),
+  controller.getMenuItemsList
+);
 
-router.get('/:itemId', requirePermission(['view:menuItem'], true), getMenuItemById);
+router.get(
+  '/:menuId',
+  requirePermission(['view:menuItem'], true),
+  validateRequest(validator.geyMenuItemByIdSchema),
+  controller.getMenuItemById
+);
 
 router.post(
   '/',
   authenticate,
   authorize('OWNER', 'ADMIN'),
   requirePermission(['add:menuItem']),
-  upload.single('image'),
-  ZodValidate(createMenuItemSchema),
-  createMenuItem
+  imageUploadMiddleware.single('image'),
+  validateRequest(validator.createMenuItemSchema),
+  controller.createMenuItem
 );
 
 router.patch(
-  '/:itemId',
+  '/:menuId',
   authenticate,
   authorize('OWNER', 'ADMIN'),
   requirePermission(['update:menuItem']),
-  upload.single('image'),
-  ZodValidate(updateMenuItemSchema),
-  updateMenuItem
+  imageUploadMiddleware.single('image'),
+  validateRequest(validator.updateMenuItemSchema),
+  controller.updateMenuItem
 );
 
 router.delete(
-  '/:itemId',
+  '/:menuId',
   authenticate,
   authorize('OWNER', 'ADMIN'),
   requirePermission(['delete:menuItem']),
-  deleteMenuItem
+  validateRequest(validator.geyMenuItemByIdSchema),
+  controller.deleteMenuItem
 );
 
 export default router;

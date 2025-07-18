@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 
-import ennValidation from '@/config/config';
+import ennValidation from '@/apps/config';
 
 class TokenService {
   private readonly SECRET = ennValidation.JWT_SECRET;
@@ -38,6 +38,18 @@ class TokenService {
 
   verifyToken<T extends JwtPayload = JwtPayload>(token: string): T {
     return jwt.verify(token, this.SECRET) as T;
+  }
+
+  signResetPasswordToken(payload: UserTokenPayload): string {
+    return jwt.sign(this.preparePayload(payload), this.SECRET, {
+      expiresIn: ennValidation.JWT_RESET_PASSWORD_EXPIRES_IN,
+    });
+  }
+
+  signEmailVerificationToken(payload: UserTokenPayload): string {
+    return jwt.sign(this.preparePayload(payload), this.SECRET, {
+      expiresIn: ennValidation.JWT_EMAIL_VERIFICATION_EXPIRES_IN,
+    });
   }
 }
 

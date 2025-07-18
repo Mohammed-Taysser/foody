@@ -1,3 +1,12 @@
 {
-  "cSpell.words": ["foody", "Taysser"]
+  "cSpell.words": [
+    "foody",
+    "Taysser"
+  ],
+  "i18n-ally.localesPaths": [
+    "src/i18n",
+    "src/i18n/locales",
+    "locales"
+  ],
+  "i18n-ally.keystyle": "flat"
 }

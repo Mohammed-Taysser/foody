@@ -5,24 +5,27 @@ import multer from 'multer';
 import sharp from 'sharp';
 
 import dayjsTZ from './dayjs.utils';
+import { BadRequestError } from './errors.utils';
 
 const ALLOWED_IMAGES_TYPE = ['image/jpeg', 'image/png', 'image/webp'];
 
-const upload = multer({
+const imageUploadMiddleware = multer({
   storage: multer.memoryStorage(), // Store in memory for further processing
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB
   },
   fileFilter: (req, file, callback) => {
     if (!ALLOWED_IMAGES_TYPE?.includes(file.mimetype)) {
-      return callback(new Error('Only image files are allowed'));
+      return callback(new BadRequestError('errors:only-image-files-are-allowed'));
     }
     callback(null, true);
   },
 });
 
 async function uploadImage(file: Express.Multer.File, module: AppModules) {
-  if (!file) throw new Error('No file provided');
+  if (!file) {
+    throw new BadRequestError('errors:no-file-provided');
+  }
 
   const formattedDateTime = dayjsTZ().format('YYYY-MM-DD-HH-mm-ss');
   const extension = 'png';
@@ -53,4 +56,4 @@ function deleteImage(filename: string) {
   }
 }
 
-export { deleteImage, upload, uploadImage };
+export { deleteImage, imageUploadMiddleware, uploadImage };

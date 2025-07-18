@@ -1,46 +1,53 @@
 import { Router } from 'express';
 
-import {
-  createUser,
-  deleteUser,
-  getProfile,
-  getUserById,
-  getUserPermission,
-  getUsers,
-  getUsersList,
-  updateMe,
-  updateUser,
-} from './user.controller';
-import { createUserSchema, updateUserSchema } from './user.validator';
+import controller from './user.controller';
+import validator from './user.validator';
 
 import authenticateMiddleware from '@/middleware/authenticate.middleware';
 import authorizeMiddleware from '@/middleware/authorize.middleware';
 import requirePermission from '@/middleware/require-permission.middleware';
-import zodValidate from '@/middleware/zod-validate.middleware';
-import basePaginationSchema from '@/validations/pagination.validation';
+import validateRequest from '@/middleware/validate-request.middleware';
+import { imageUploadMiddleware } from '@/utils/multer.utils';
 
 const router = Router();
 
-router.patch('/me', authenticateMiddleware, zodValidate(updateUserSchema), updateMe);
-router.get('/me', authenticateMiddleware, getProfile);
-router.get('/me/permissions', authenticateMiddleware, getUserPermission);
+router.patch(
+  '/me',
+  validateRequest(validator.updateMeSchema),
+  authenticateMiddleware,
+  imageUploadMiddleware.single('image'),
+  controller.updateMe
+);
+router.get('/me', authenticateMiddleware, controller.getProfile);
+router.get('/me/permissions', authenticateMiddleware, controller.getUserPermission);
 
-router.get('/list', requirePermission(['view:user'], true), getUsersList);
+router.get(
+  '/list',
+  requirePermission(['view:user'], true),
+  validateRequest(validator.getUsersListSchema),
+  controller.getUsersList
+);
 router.get(
   '/',
   requirePermission(['view:user'], true),
-  zodValidate(basePaginationSchema, 'query'),
-  getUsers
+  validateRequest(validator.getUsersListSchema),
+  controller.getUsers
 );
-router.get('/:userId', requirePermission(['view:user'], true), getUserById);
+router.get(
+  '/:userId',
+  requirePermission(['view:user'], true),
+  validateRequest(validator.getUserByIdSchema),
+  controller.getUserById
+);
 
 router.post(
   '/',
   authenticateMiddleware,
   authorizeMiddleware('ADMIN'),
   requirePermission(['add:user']),
-  zodValidate(createUserSchema),
-  createUser
+  imageUploadMiddleware.single('image'),
+  validateRequest(validator.createUserSchema),
+  controller.createUser
 );
 
 router.patch(
@@ -48,9 +55,15 @@ router.patch(
   authenticateMiddleware,
   authorizeMiddleware('ADMIN'),
   requirePermission(['update:user']),
-  zodValidate(updateUserSchema),
-  updateUser
+  imageUploadMiddleware.single('image'),
+  validateRequest(validator.updateUserSchema),
+  controller.updateUser
 );
-router.delete('/:userId', authenticateMiddleware, authorizeMiddleware('ADMIN'), deleteUser);
+router.delete(
+  '/:userId',
+  authenticateMiddleware,
+  authorizeMiddleware('ADMIN'),
+  controller.deleteUser
+);
 
 export default router;

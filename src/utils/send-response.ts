@@ -21,7 +21,7 @@ interface PaginatedResponseParams<T> {
 }
 
 function sendSuccessResponse<T>(params: SuccessResponseParams<T>) {
-  const { response, statusCode = 200, message = 'Request successful', data } = params;
+  const { response, statusCode = 200, message, data } = params;
 
   return response.status(statusCode).json({
     success: true,
@@ -33,13 +33,7 @@ function sendSuccessResponse<T>(params: SuccessResponseParams<T>) {
 }
 
 function sendPaginatedResponse<T>(params: PaginatedResponseParams<T>) {
-  const {
-    response,
-    statusCode = 200,
-    message = 'Paginated Request successful',
-    data,
-    metadata,
-  } = params;
+  const { response, statusCode = 200, message, data, metadata } = params;
 
   return response.status(statusCode).json({
     success: true,

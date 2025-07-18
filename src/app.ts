@@ -2,10 +2,12 @@ import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
 import hpp from 'hpp';
+import i18nextMiddleware from 'i18next-http-middleware';
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
 
-import CONFIG from '@/config/config';
+import CONFIG from '@/apps/config';
+import i18n from '@/apps/i18n';
 import apiLimiter from '@/middleware/api-rate-limit.middleware';
 import compressionMiddleware from '@/middleware/compression.middleware';
 import errorHandlerMiddleware from '@/middleware/error.middleware';
@@ -60,6 +62,9 @@ app.use(express.json({ limit: '30mb' }));
 // Compress all HTTP responses
 app.use(compressionMiddleware);
 
+// i18next Middleware for internationalization
+app.use(i18nextMiddleware.handle(i18n));
+
 // Serve static Files
 app.use(express.static('public'));
 app.use('/uploads', express.static('uploads'));
@@ -83,8 +88,8 @@ app.use('/api/categories', categoriesRoutes);
 app.use('/api/menu-items', menuItemsRoutes);
 
 // 404 Handler
-app.use((_req, _res, next) => {
-  next(new NotFoundError('Route not found'));
+app.use((req, _res, next) => {
+  next(new NotFoundError(req.t('errors:route-not-found')));
 });
 
 // Global Error Handler (last)

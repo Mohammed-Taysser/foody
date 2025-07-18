@@ -36,6 +36,7 @@ async function findAvailablePort(startPort: number, maxPort = 65535): Promise<nu
   for (let port = startPort; port <= maxPort; port++) {
     if (await isPortAvailable(port)) return port;
   }
+
   throw new Error('No available port found');
 }
 
@@ -64,6 +65,7 @@ function getMacAddresses(): string[] {
       }
     }
   }
+
   return macs;
 }
 

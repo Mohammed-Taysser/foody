@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 
-import CONFIG from '@/config/config';
+import CONFIG from '@/apps/config';
+import { ErrorMiddlewareResponse } from '@/types/import';
 import { BaseError } from '@/utils/errors.utils';
 
 function errorHandlerMiddleware(
@@ -10,12 +11,12 @@ function errorHandlerMiddleware(
   _next: NextFunction // eslint-disable-line @typescript-eslint/no-unused-vars
 ) {
   const status = err instanceof BaseError ? err.statusCode : 500;
-  const message = err.message || 'Something went wrong';
+  const message = err.message;
   const details = err instanceof BaseError ? err.details : undefined;
 
   const body: ErrorMiddlewareResponse = {
     success: false,
-    message,
+    message: req.t(message),
     details,
   };
 

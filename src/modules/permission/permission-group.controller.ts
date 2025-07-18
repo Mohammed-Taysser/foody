@@ -1,33 +1,49 @@
+import { Prisma } from '@prisma/client';
 import { Request, Response } from 'express';
 
-import type { CreatePermissionGroupInput } from './permission.validator';
+import type {
+  CreatePermissionGroupInput,
+  GetPermissionGroupByIdParams,
+  GetPermissionGroupListQuery,
+} from './permission.validator';
 
-import prisma from '@/config/prisma';
-import DATABASE_LOGGER from '@/services/database-log.service';
+import prisma from '@/apps/prisma';
+import databaseLogger from '@/services/database-log.service';
 import { AuthenticatedRequest } from '@/types/import';
 import { NotFoundError } from '@/utils/errors.utils';
-import { sendPaginatedResponse, sendSuccessResponse } from '@/utils/send-response';
-import { BasePaginationInput } from '@/validations/pagination.validation';
 import { getRequestInfo } from '@/utils/request.utils';
+import { sendPaginatedResponse, sendSuccessResponse } from '@/utils/send-response';
 
 async function getPermissionGroups(request: Request, response: Response) {
   const authenticatedRequest = request as unknown as AuthenticatedRequest<
     unknown,
     unknown,
     unknown,
-    BasePaginationInput
+    GetPermissionGroupListQuery
   >;
   const query = authenticatedRequest.parsedQuery;
 
   const skip = (query.page - 1) * query.limit;
+
+  const filters: Prisma.PermissionGroupWhereInput = {};
+
+  if (query.name) {
+    filters.name = {
+      contains: query.name,
+      mode: 'insensitive',
+    };
+  }
 
   const [data, total] = await Promise.all([
     prisma.permissionGroup.findMany({
       skip,
       take: query.limit,
       orderBy: { createdAt: 'desc' },
+      where: filters,
     }),
-    prisma.permissionGroup.count(),
+    prisma.permissionGroup.count({
+      where: filters,
+    }),
   ]);
 
   sendPaginatedResponse({
@@ -44,7 +60,13 @@ async function getPermissionGroups(request: Request, response: Response) {
 }
 
 async function getPermissionGroupList(request: Request, response: Response) {
-  const permissions = await prisma.permissionGroup.findMany();
+  const permissions = await prisma.permissionGroup.findMany({
+    select: {
+      id: true,
+      name: true,
+    },
+  });
+
   sendSuccessResponse({
     response,
     message: 'All permissions groups',
@@ -53,7 +75,14 @@ async function getPermissionGroupList(request: Request, response: Response) {
 }
 
 async function getPermissionGroupById(request: Request, response: Response) {
-  const { permissionGroupId } = request.params;
+  const authenticatedRequest = request as unknown as AuthenticatedRequest<
+    GetPermissionGroupByIdParams,
+    unknown,
+    unknown,
+    unknown
+  >;
+
+  const { permissionGroupId } = authenticatedRequest.params;
 
   const permission = await prisma.permissionGroup.findUnique({
     where: { id: permissionGroupId },
@@ -89,7 +118,7 @@ async function createPermissionGroup(request: Request, response: Response) {
     data: authenticatedRequest.body,
   });
 
-  DATABASE_LOGGER.log({
+  databaseLogger.audit({
     requestInfo: getRequestInfo(authenticatedRequest),
     actorId: authenticatedRequest.user.id,
     actorType: 'USER',
@@ -126,7 +155,7 @@ async function updatePermissionGroup(request: Request, response: Response) {
     data: { name, description },
   });
 
-  DATABASE_LOGGER.log({
+  databaseLogger.audit({
     requestInfo: getRequestInfo(authenticatedRequest),
     actorId: authenticatedRequest.user.id,
     actorType: 'USER',
@@ -162,7 +191,7 @@ async function deletePermissionGroup(request: Request, response: Response) {
     where: { id: permissionGroupId },
   });
 
-  DATABASE_LOGGER.log({
+  databaseLogger.audit({
     requestInfo: getRequestInfo(authenticatedRequest),
     actorId: authenticatedRequest.user.id,
     actorType: 'USER',
@@ -179,7 +208,7 @@ async function deletePermissionGroup(request: Request, response: Response) {
   });
 }
 
-export {
+const permissionGroupController = {
   createPermissionGroup,
   deletePermissionGroup,
   getPermissionGroupById,
@@ -187,3 +216,5 @@ export {
   getPermissionGroups,
   updatePermissionGroup,
 };
+
+export default permissionGroupController;

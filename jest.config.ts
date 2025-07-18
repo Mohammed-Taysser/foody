@@ -3,13 +3,13 @@ import type { Config } from 'jest';
 const config: Config = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  testMatch: ['**/__tests__/**/*.test.ts'],
+  testMatch: ['<rootDir>/__tests__/**/*.test.ts'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1', // 👈 this resolves "@/..."
   },
   clearMocks: true,
   verbose: true,
-  setupFilesAfterEnv: ['<rootDir>/src/__tests__/jest.setup.ts'],
+  setupFilesAfterEnv: ['<rootDir>/__tests__/jest.setup.ts'],
   coverageThreshold: {
     global: {
       branches: 70,
@@ -18,6 +18,15 @@ const config: Config = {
       statements: 90,
     },
   },
+  collectCoverage: true,
+  coveragePathIgnorePatterns: [
+    '/src/.*\\.d\\.ts$', // excludes all *.d.ts files in src
+    '/__tests__/.*\\.ts$', // excludes all test files
+    '/src/config.ts',
+    'src/apps/prisma.ts',
+    'src/utils/errors.utils.ts',
+  ],
+  watchPlugins: ['jest-watch-typeahead/filename', 'jest-watch-typeahead/testname'],
 };
 
 export default config;

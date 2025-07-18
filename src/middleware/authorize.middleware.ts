@@ -10,7 +10,7 @@ function authorizeMiddleware(...roles: User['role'][]) {
     const user = request.user;
 
     if (!user || !roles.includes(user.role)) {
-      throw new ForbiddenError('You are not authorized to access this resource');
+      throw new ForbiddenError('errors:you-are-not-authorized-to-access-this-resource');
     }
 
     next();
