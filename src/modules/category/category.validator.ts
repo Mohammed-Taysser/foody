@@ -1,21 +1,45 @@
 import { z } from 'zod';
 
-const baseCategorySchema = z.object({
-  name: z.string().min(2),
-  restaurantId: z.string(),
-});
+import basePaginationSchema from '@/validations/base.validation';
 
-const createCategorySchema = baseCategorySchema.extend({});
+const createCategorySchema = {
+  body: z.object({
+    name: z.string().trim().min(2).max(100),
+    restaurantId: z.string().trim().max(100),
+  }),
+};
 
-const updateCategorySchema = baseCategorySchema.partial();
+const updateCategorySchema = {
+  body: z.object({
+    name: z.string().trim().max(100).optional(),
+    restaurantId: z.string().trim().max(100).optional(),
+  }),
+};
 
-type CreateCategoryInput = z.infer<typeof createCategorySchema>;
-type UpdateCategoryInput = z.infer<typeof updateCategorySchema>;
+const getCategoryByIdSchema = {
+  params: z.object({
+    categoryId: z.string().trim().max(100),
+  }),
+};
 
-interface GetByIdCategoryParams {
-  categoryId: string;
-}
+const getCategoriesSchema = {
+  query: basePaginationSchema.extend({
+    name: z.string().trim().max(100).optional(),
+    restaurantId: z.string().trim().max(100).optional(),
+  }),
+};
 
-export { createCategorySchema, updateCategorySchema };
+type CreateCategoryInput = z.infer<typeof createCategorySchema.body>;
+type UpdateCategoryInput = z.infer<typeof updateCategorySchema.body>;
+type GetCategoryByIdParams = z.infer<typeof getCategoryByIdSchema.params>;
+type GetCategoriesQuery = z.infer<typeof getCategoriesSchema.query>;
 
-export type { CreateCategoryInput, GetByIdCategoryParams, UpdateCategoryInput };
+const categoryValidator = {
+  createCategorySchema,
+  getCategoriesSchema,
+  updateCategorySchema,
+  getCategoryByIdSchema,
+};
+
+export default categoryValidator;
+export type { CreateCategoryInput, GetCategoriesQuery, GetCategoryByIdParams, UpdateCategoryInput };

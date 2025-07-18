@@ -2,6 +2,7 @@ import path from 'path';
 
 import { faker } from '@faker-js/faker';
 import request from 'supertest';
+import { Category } from '@prisma/client';
 
 import app from '../../../src/app';
 import {
@@ -153,6 +154,28 @@ describe('Category API', () => {
       expect(Array.isArray(res.body.data.data)).toBe(true);
       expect(res.body.data).toHaveProperty('metadata');
     });
+
+    describe('Filters', () => {
+      it('should filter categories by name', async () => {
+        const res = await request(app).get(`/api/categories?name=Appetizers`);
+
+        expect(res.statusCode).toBe(200);
+
+        res.body.data.data.forEach((category: Category) => {
+          expect(category.name.toLowerCase()).toContain('appetizers');
+        });
+      });
+
+      it('should filter categories by restaurantId', async () => {
+        const res = await request(app).get(`/api/categories?restaurantId=${restaurantId}`);
+
+        expect(res.statusCode).toBe(200);
+
+        res.body.data.data.forEach((category: Category) => {
+          expect(category.restaurantId).toBe(restaurantId);
+        });
+      });
+    });
   });
 
   describe('GET /api/categories/list', () => {
@@ -161,6 +184,24 @@ describe('Category API', () => {
 
       expect(res.statusCode).toBe(200);
       expect(Array.isArray(res.body.data.data)).toBe(true);
+    });
+
+    describe('Filters', () => {
+      it('should filter categories by name', async () => {
+        const res = await request(app).get(`/api/categories/list?name=Appetizers`);
+
+        expect(res.statusCode).toBe(200);
+
+        expect(Array.isArray(res.body.data.data)).toBe(true);
+      });
+
+      it('should filter categories by restaurantId', async () => {
+        const res = await request(app).get(`/api/categories/list?restaurantId=${restaurantId}`);
+
+        expect(res.statusCode).toBe(200);
+
+        expect(Array.isArray(res.body.data.data)).toBe(true);
+      });
     });
   });
 
@@ -227,6 +268,15 @@ describe('Category API', () => {
 
       expect(updateRes.statusCode).toBe(200);
       expect(updateRes.body.data.data.image).toMatch(/\/uploads\/category\//);
+    });
+
+    it('should throw 400 if no data is provided', async () => {
+      const res = await request(app)
+        .patch(`/api/categories/${categoryId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({});
+
+      expect(res.statusCode).toBe(400);
     });
   });
 

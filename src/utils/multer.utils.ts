@@ -9,7 +9,7 @@ import { BadRequestError } from './errors.utils';
 
 const ALLOWED_IMAGES_TYPE = ['image/jpeg', 'image/png', 'image/webp'];
 
-const upload = multer({
+const imageUploadMiddleware = multer({
   storage: multer.memoryStorage(), // Store in memory for further processing
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB
@@ -56,4 +56,4 @@ function deleteImage(filename: string) {
   }
 }
 
-export { deleteImage, upload, uploadImage };
+export { deleteImage, imageUploadMiddleware, uploadImage };

@@ -1,28 +1,20 @@
 import { Router } from 'express';
 
-import {
-  createPermissionGroup,
-  deletePermissionGroup,
-  getPermissionGroupById,
-  getPermissionGroupList,
-  getPermissionGroups,
-  updatePermissionGroup,
-} from './permission-group.controller';
-import { createPermissionGroupSchema, updatePermissionGroupSchema } from './permission.validator';
+import controller from './permission-group.controller';
+import validator from './permission.validator';
 
 import authenticate from '@/middleware/authenticate.middleware';
 import authorize from '@/middleware/authorize.middleware';
 import requirePermission from '@/middleware/require-permission.middleware';
-import ZodValidate from '@/middleware/zod-validate.middleware';
-import basePaginationSchema from '@/validations/pagination.validation';
+import validateRequest from '@/middleware/validate-request.middleware';
 
 const router = Router();
 
 router.get(
   '/',
-  ZodValidate(basePaginationSchema, 'query'),
+  validateRequest(validator.getPermissionGroupListSchema),
   requirePermission(['view:permissionGroup'], true),
-  getPermissionGroups
+  controller.getPermissionGroups
 );
 
 router.post(
@@ -30,15 +22,19 @@ router.post(
   authenticate,
   authorize('ADMIN'),
   requirePermission(['add:permissionGroup']),
-  ZodValidate(createPermissionGroupSchema),
-  createPermissionGroup
+  validateRequest(validator.createPermissionGroupSchema),
+  controller.createPermissionGroup
 );
 
-router.get('/list', requirePermission(['view:permissionGroup'], true), getPermissionGroupList);
+router.get(
+  '/list',
+  requirePermission(['view:permissionGroup'], true),
+  controller.getPermissionGroupList
+);
 router.get(
   '/:permissionGroupId',
   requirePermission(['view:permissionGroup'], true),
-  getPermissionGroupById
+  controller.getPermissionGroupById
 );
 
 router.delete(
@@ -46,7 +42,7 @@ router.delete(
   authenticate,
   authorize('ADMIN'),
   requirePermission(['delete:permissionGroup']),
-  deletePermissionGroup
+  controller.deletePermissionGroup
 );
 
 router.patch(
@@ -54,8 +50,8 @@ router.patch(
   authenticate,
   authorize('ADMIN'),
   requirePermission(['update:permissionGroup']),
-  ZodValidate(updatePermissionGroupSchema),
-  updatePermissionGroup
+  validateRequest(validator.updatePermissionGroupSchema),
+  controller.updatePermissionGroup
 );
 
 export default router;

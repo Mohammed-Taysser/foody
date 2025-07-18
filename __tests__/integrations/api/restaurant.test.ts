@@ -1,6 +1,7 @@
 import path from 'path';
 
 import { faker } from '@faker-js/faker';
+import { Restaurant } from '@prisma/client';
 import request from 'supertest';
 
 import app from '../../../src/app';
@@ -49,6 +50,28 @@ describe('Restaurant API', () => {
       expect(res.statusCode).toBe(200);
       expect(res.body.data.metadata).toHaveProperty('page');
       expect(res.body.data.metadata).toHaveProperty('limit');
+    });
+
+    it('should filter restaurants by name', async () => {
+      const restaurantName = faker.company.name();
+
+      const createdRestaurant = await request(app)
+        .post('/api/restaurants')
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({
+          name: restaurantName,
+          ownerId: ownerId,
+          location: faker.location.city(),
+        });
+
+      expect(createdRestaurant.statusCode).toBe(201);
+
+      const res = await request(app).get('/api/restaurants').query({ name: restaurantName });
+
+      expect(res.status).toBe(200);
+
+      const names = res.body.data.data.map((p: Restaurant) => p.name);
+      expect(names).toEqual(expect.arrayContaining([restaurantName]));
     });
   });
 
@@ -253,6 +276,30 @@ describe('Restaurant API', () => {
 
       expect(updateRes.statusCode).toBe(200);
       expect(updateRes.body.data.data.image).toMatch(/restaurant/);
+    });
+
+    it('should not update restaurant if owner not exist', async () => {
+      const createRes = await request(app)
+        .post('/api/restaurants')
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({
+          name: faker.company.name(),
+          ownerId,
+          location: faker.location.city(),
+        });
+
+      const restaurantId = createRes.body.data.data.id;
+
+      const updateRes = await request(app)
+        .patch(`/api/restaurants/${restaurantId}`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({
+          name: faker.company.name(),
+          ownerId: 'invalid-id',
+          location: faker.location.city(),
+        });
+
+      expect(updateRes.statusCode).toBe(404);
     });
 
     it('should return 401 if update attempted without auth', async () => {

@@ -55,7 +55,7 @@ async function register(request: Request<unknown, unknown, RegisterInput>, respo
     action: 'REGISTER',
     resource: 'USER',
     resourceId: newUser.id,
-    metadata: { data: request.body },
+    metadata: { body: request.body },
   });
 
   sendSuccessResponse({
@@ -85,13 +85,34 @@ async function login(request: Request<unknown, unknown, LoginInput>, response: R
         where: { id: user.id },
         data: { isBlocked: true },
       });
+
+      databaseLogger.audit({
+        requestInfo: getRequestInfo(request),
+        actorId: user.id,
+        actorType: 'USER',
+        action: 'USER_BLOCKED',
+        resource: 'USER',
+        resourceId: user.id,
+      });
+
       throw new UnauthorizedError('errors:user-is-blocked');
     } else {
       await prisma.user.update({
         where: { id: user.id },
         data: { failedLoginAttempts: { increment: 1 } },
       });
+
+      databaseLogger.audit({
+        requestInfo: getRequestInfo(request),
+        actorId: user.id,
+        actorType: 'USER',
+        action: 'INVALID_LOGIN_ATTEMPT',
+        resource: 'USER',
+        resourceId: user.id,
+        metadata: { body: request.body },
+      });
     }
+
     throw new BadRequestError('errors:invalid-credentials');
   }
 
@@ -123,7 +144,7 @@ async function login(request: Request<unknown, unknown, LoginInput>, response: R
     action: 'LOGIN',
     resource: 'USER',
     resourceId: user.id,
-    metadata: { data: request.body },
+    metadata: { body: request.body },
   });
 
   sendSuccessResponse({
@@ -149,7 +170,7 @@ function refreshToken(request: Request<unknown, unknown, RefreshTokenInput>, res
       action: 'REFRESH_TOKEN',
       resource: 'USER',
       resourceId: payload.id,
-      metadata: { data: request.body },
+      metadata: { body: request.body },
     });
 
     sendSuccessResponse({
@@ -473,7 +494,7 @@ async function verifyEmailToken(request: Request, response: Response) {
   });
 }
 
-export {
+const authController = {
   login,
   refreshToken,
   register,
@@ -483,3 +504,5 @@ export {
   verifyEmailToken,
   verifyResetPasswordToken,
 };
+
+export default authController;

@@ -1,4 +1,5 @@
 import { faker } from '@faker-js/faker';
+import { PermissionGroup } from '@prisma/client';
 import request from 'supertest';
 
 import app from '../../../src/app';
@@ -128,6 +129,27 @@ describe('Permission Group API', () => {
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveProperty('metadata');
       expect(Array.isArray(res.body.data.data)).toBe(true);
+    });
+
+    describe('Filters', () => {
+      it('should filter by name', async () => {
+        const name = faker.company.name + Math.floor(Math.random() * 1000).toFixed(0);
+
+        const createRes = await request(app)
+          .post('/api/permissions/permission-groups')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({
+            name: name,
+            description: 'Filter test description',
+          });
+
+        expect(createRes.status).toBe(201);
+
+        const res = await request(app).get('/api/permissions/permission-groups').query({ name });
+
+        const names = res.body.data.data.map((p: PermissionGroup) => p.name);
+        expect(names).toEqual(expect.arrayContaining([name]));
+      });
     });
   });
 });

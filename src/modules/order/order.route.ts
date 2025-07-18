@@ -1,83 +1,78 @@
 import { Router } from 'express';
 
-import {
-  cancelOrder,
-  createOrder,
-  deleteOrder,
-  getOrderById,
-  getOrders,
-  getOrdersList,
-  payOrder,
-  updateOrder,
-  updateOrderStatus,
-} from './order.controller';
-import {
-  createOrderSchema,
-  payOrderSchema,
-  updateOrderSchema,
-  updateOrderStatusSchema,
-} from './order.validation';
+import controller from './order.controller';
+import validator from './order.validator';
 
 import authenticate from '@/middleware/authenticate.middleware';
-import authorize from '@/middleware/authorize.middleware';
 import requirePermission from '@/middleware/require-permission.middleware';
-import ZodValidate from '@/middleware/zod-validate.middleware';
-import basePaginationSchema from '@/validations/pagination.validation';
+import validateRequest from '@/middleware/validate-request.middleware';
 
 const router = Router();
 
 router.get(
   '/',
   authenticate,
-  ZodValidate(basePaginationSchema, 'query'),
+  validateRequest(validator.getOrdersListSchema),
   requirePermission(['view:order']),
-  getOrders
+  controller.getOrders
 );
 
 router.post(
   '/',
   authenticate,
   requirePermission(['add:order']),
-  ZodValidate(createOrderSchema),
-  createOrder
+  validateRequest(validator.createOrderSchema),
+  controller.createOrder
 );
 
-router.get('/list', authenticate, requirePermission(['view:order']), getOrdersList);
+router.get('/list', authenticate, requirePermission(['view:order']), controller.getOrdersList);
 
-router.get('/:orderId', authenticate, requirePermission(['view:order']), getOrderById);
+router.get(
+  '/:orderId',
+  authenticate,
+  requirePermission(['view:order']),
+  validateRequest(validator.getOrderByIdSchema),
+  controller.getOrderById
+);
 
-router.delete('/:orderId', authenticate, requirePermission(['delete:order']), deleteOrder);
+router.delete(
+  '/:orderId',
+  authenticate,
+  requirePermission(['delete:order']),
+  validateRequest(validator.getOrderByIdSchema),
+  controller.deleteOrder
+);
 
 router.patch(
   '/:orderId',
   authenticate,
-  authorize('ADMIN'),
   requirePermission(['update:order']),
-  ZodValidate(updateOrderSchema),
-  updateOrder
+  validateRequest(validator.updateOrderSchema),
+  controller.updateOrder
 );
 
 router.patch(
   '/:orderId/update-order-status',
   authenticate,
   requirePermission(['update:order']),
-  ZodValidate(updateOrderStatusSchema),
-  updateOrderStatus
+  validateRequest(validator.updateOrderStatusSchema),
+  controller.updateOrderStatus
 );
 
 router.patch(
   '/:orderId/pay-order',
   authenticate,
   requirePermission(['update:order']),
-  ZodValidate(payOrderSchema),
-  payOrder
+  validateRequest(validator.payOrderSchema),
+  controller.payOrder
 );
 
 router.patch(
   '/:orderId/cancel-order',
   authenticate,
   requirePermission(['update:order']),
-  cancelOrder
+  validateRequest(validator.getOrderByIdSchema),
+  controller.cancelOrder
 );
 
 export default router;

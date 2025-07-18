@@ -1,3 +1,5 @@
+import { faker } from '@faker-js/faker';
+import { Permission } from '@prisma/client';
 import request from 'supertest';
 
 import app from '../../../src/app';
@@ -99,6 +101,36 @@ describe('Permission API', () => {
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveProperty('data');
       expect(res.body.data).toHaveProperty('metadata');
+    });
+
+    it('should filter permissions by key', async () => {
+      const randomKey = `filter:${faker.food.dish()} ${Math.floor(Math.random() * 1000)}`;
+
+      // First, create a permission with a known key
+      const createRes = await request(app)
+        .post('/api/permissions')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          key: randomKey,
+          description: 'For filtering test',
+        });
+
+      // Create another permission with a different key
+      expect(createRes.status).toBe(201);
+
+      // Query with the filter
+      const res = await request(app).get('/api/permissions').query({ key: randomKey }); // Partial match
+      expect(res.status).toBe(200);
+
+      const keys = res.body.data.data.map((p: Permission) => p.key);
+      expect(keys).toEqual(expect.arrayContaining([randomKey]));
+
+      // Clean up by deleting the created permission
+      await request(app)
+        .delete(`/api/permissions/${createRes.body.data.data.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
     });
   });
 

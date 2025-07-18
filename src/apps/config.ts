@@ -37,7 +37,7 @@ try {
 // 🌟 STEP 2: Validate using Zod
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  PORT: z.string().transform(Number),
+  PORT: z.string().trim().transform(Number),
 
   ALLOWED_ORIGINS: z
     .string()
@@ -52,19 +52,31 @@ const envSchema = z.object({
 
   DEFAULT_TIMEZONE: z.enum(validTimezones as [string, ...string[]]).default('UTC'),
 
-  JWT_SECRET: z.string().min(10),
-  JWT_ACCESS_EXPIRES_IN: z.string().regex(/^\d+[smhd]$/, {
-    message: 'JWT_EXPIRES_IN must be a duration like "7d", "15m", "1h", or "30s"',
-  }) as z.ZodType<SignOptions['expiresIn']>,
-  JWT_REFRESH_EXPIRES_IN: z.string().regex(/^\d+[smhd]$/, {
-    message: 'JWT_EXPIRES_IN must be a duration like "7d", "15m", "1h", or "30s"',
-  }) as z.ZodType<SignOptions['expiresIn']>,
-  JWT_RESET_PASSWORD_EXPIRES_IN: z.string().regex(/^\d+[smhd]$/, {
-    message: 'JWT_EXPIRES_IN must be a duration like "7d", "15m", "1h", or "30s"',
-  }) as z.ZodType<SignOptions['expiresIn']>,
-  JWT_EMAIL_VERIFICATION_EXPIRES_IN: z.string().regex(/^\d+[smhd]$/, {
-    message: 'JWT_EXPIRES_IN must be a duration like "7d", "15m", "1h", or "30s"',
-  }) as z.ZodType<SignOptions['expiresIn']>,
+  JWT_SECRET: z.string().trim().min(10),
+  JWT_ACCESS_EXPIRES_IN: z
+    .string()
+    .trim()
+    .regex(/^\d+[smhd]$/, {
+      message: 'JWT_EXPIRES_IN must be a duration like "7d", "15m", "1h", or "30s"',
+    }) as z.ZodType<SignOptions['expiresIn']>,
+  JWT_REFRESH_EXPIRES_IN: z
+    .string()
+    .trim()
+    .regex(/^\d+[smhd]$/, {
+      message: 'JWT_EXPIRES_IN must be a duration like "7d", "15m", "1h", or "30s"',
+    }) as z.ZodType<SignOptions['expiresIn']>,
+  JWT_RESET_PASSWORD_EXPIRES_IN: z
+    .string()
+    .trim()
+    .regex(/^\d+[smhd]$/, {
+      message: 'JWT_EXPIRES_IN must be a duration like "7d", "15m", "1h", or "30s"',
+    }) as z.ZodType<SignOptions['expiresIn']>,
+  JWT_EMAIL_VERIFICATION_EXPIRES_IN: z
+    .string()
+    .trim()
+    .regex(/^\d+[smhd]$/, {
+      message: 'JWT_EXPIRES_IN must be a duration like "7d", "15m", "1h", or "30s"',
+    }) as z.ZodType<SignOptions['expiresIn']>,
 });
 
 // Validate and catch errors with friendly messages

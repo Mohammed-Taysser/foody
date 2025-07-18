@@ -1,8 +1,16 @@
 import { Prisma } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
 import { Request, Response } from 'express';
 
 import { VALID_TRANSITIONS } from './order.constant';
-import { CreateOrderInput, UpdateOrderInput } from './order.validation';
+import {
+  CreateOrderInput,
+  GetOrderByIdParams,
+  GetOrdersListQuery,
+  PayOrderInput,
+  UpdateOrderInput,
+  UpdateOrderStatusInput,
+} from './order.validator';
 
 import prisma from '@/apps/prisma';
 import databaseLogger from '@/services/database-log.service';
@@ -10,26 +18,96 @@ import { AuthenticatedRequest } from '@/types/import';
 import { BadRequestError, ForbiddenError, NotFoundError } from '@/utils/errors.utils';
 import { getRequestInfo } from '@/utils/request.utils';
 import { sendPaginatedResponse, sendSuccessResponse } from '@/utils/send-response';
-import { BasePaginationInput } from '@/validations/pagination.validation';
 
 async function getOrders(request: Request, response: Response) {
   const authenticatedRequest = request as unknown as AuthenticatedRequest<
     unknown,
     unknown,
     unknown,
-    BasePaginationInput
+    GetOrdersListQuery
   >;
   const query = authenticatedRequest.parsedQuery;
 
   const skip = (query.page - 1) * query.limit;
+
+  const filters: Prisma.OrderWhereInput = {};
+
+  if (query.restaurantId) {
+    filters.restaurantId = {
+      equals: query.restaurantId,
+    };
+  }
+
+  if (query.userId) {
+    filters.userId = {
+      equals: query.userId,
+    };
+  }
+
+  if (query.status?.length) {
+    filters.status = {
+      in: query.status,
+    };
+  }
+
+  if (query.paymentStatus?.length) {
+    filters.paymentStatus = {
+      in: query.paymentStatus,
+    };
+  }
+
+  if (query.paymentMethod?.length) {
+    filters.paymentMethod = {
+      in: query.paymentMethod,
+    };
+  }
+
+  if (query.fromDate || query.toDate) {
+    filters.createdAt = {};
+
+    if (query.fromDate) {
+      // Start of day
+      filters.createdAt.gte = new Date(query.fromDate.setHours(0, 0, 0, 0));
+    }
+
+    if (query.toDate) {
+      // End of day
+      filters.createdAt.lte = new Date(query.toDate.setHours(23, 59, 59, 999));
+    }
+  }
+
+  if (query.tableNumber) {
+    filters.tableNumber = {
+      equals: query.tableNumber,
+    };
+  }
 
   const [data, total] = await Promise.all([
     prisma.order.findMany({
       skip,
       take: query.limit,
       orderBy: { createdAt: 'desc' },
+      include: {
+        restaurant: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+          },
+        },
+      },
+      where: filters,
     }),
-    prisma.order.count(),
+    prisma.order.count({
+      where: filters,
+    }),
   ]);
 
   sendPaginatedResponse({
@@ -49,13 +127,12 @@ async function getOrdersList(request: Request, response: Response) {
   const orders = await prisma.order.findMany({
     select: {
       id: true,
-      invoiceNumber: true,
     },
   });
 
-  const renamed = orders.map(({ id, invoiceNumber }) => ({
+  const renamed = orders.map(({ id }) => ({
     id,
-    name: invoiceNumber,
+    name: id,
   }));
 
   sendSuccessResponse({ response, message: 'Orders list', data: renamed });
@@ -72,6 +149,33 @@ async function getOrderById(request: Request, response: Response) {
 
   const order = await prisma.order.findUnique({
     where: { id: orderId },
+    include: {
+      items: {
+        include: {
+          menuItem: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+            },
+          },
+        },
+      },
+      restaurant: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        },
+      },
+      user: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        },
+      },
+    },
   });
 
   if (!order) {
@@ -90,6 +194,14 @@ async function createOrder(request: Request, response: Response) {
 
   const { restaurantId, items, discount } = authenticatedRequest.body;
 
+  const restaurant = await prisma.restaurant.findUnique({
+    where: { id: restaurantId },
+  });
+
+  if (!restaurant) {
+    throw new BadRequestError('Restaurant not found');
+  }
+
   const menuItems = await prisma.menuItem.findMany({
     where: {
       id: { in: items.map((i) => i.menuItemId) },
@@ -101,30 +213,62 @@ async function createOrder(request: Request, response: Response) {
 
   if (unExistingItems.length > 0) {
     throw new BadRequestError(
-      'Some items not found or not in restaurant ' + JSON.stringify(unExistingItems)
+      'Some items not found or not in restaurant ' +
+        unExistingItems.map((i) => i.menuItemId).join(', ')
     );
   }
 
-  let total = 0;
+  let total: Decimal = new Decimal(0);
 
   const orderItems: Prisma.OrderItemCreateManyOrderInput[] = items.map((i) => {
     const menuItem = menuItems.find((m) => m.id === i.menuItemId)!;
-    total += menuItem.price * i.quantity;
+    const itemTotal = new Decimal(menuItem.price).mul(i.quantity);
+    total = total.plus(itemTotal);
+
     return {
       menuItemId: i.menuItemId,
       quantity: i.quantity,
+      notes: i.notes,
     };
   });
 
+  const subtotal = total.minus(new Decimal(discount));
+
   const order = await prisma.order.create({
     data: {
+      ...authenticatedRequest.body,
       userId: authenticatedRequest.user.id,
-      restaurantId,
       total,
-      subtotal: total - discount,
+      subtotal,
       items: { create: orderItems },
     },
-    include: { items: true },
+    include: {
+      items: {
+        include: {
+          menuItem: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+            },
+          },
+        },
+      },
+      restaurant: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        },
+      },
+      user: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        },
+      },
+    },
   });
 
   databaseLogger.audit({
@@ -141,26 +285,145 @@ async function createOrder(request: Request, response: Response) {
 }
 
 async function updateOrder(request: Request, response: Response) {
-  const orderId = request.params.orderId;
+  const authenticatedRequest = request as AuthenticatedRequest<
+    GetOrderByIdParams,
+    object,
+    UpdateOrderInput
+  >;
+
+  const { params, body, user } = authenticatedRequest;
 
   const order = await prisma.order.findUnique({
-    where: { id: orderId },
+    where: { id: params.orderId },
   });
 
   if (!order) {
     throw new NotFoundError('Order not found');
   }
 
+  if (user.role !== 'ADMIN' && order.userId !== user.id) {
+    throw new ForbiddenError('Not your order');
+  }
+
+  if (order.status !== 'PENDING') {
+    throw new BadRequestError('Only orders in PENDING status can be updated');
+  }
+
+  if (body.restaurantId) {
+    const restaurant = await prisma.restaurant.findUnique({
+      where: { id: body.restaurantId },
+    });
+
+    if (!restaurant) {
+      throw new BadRequestError('Restaurant not found');
+    }
+  }
+
+  const menuItems = await prisma.menuItem.findMany({
+    where: {
+      id: { in: body.items.map((i) => i.menuItemId) },
+      restaurantId: body.restaurantId,
+    },
+  });
+
+  const unExistingMenuItems = body.items.filter(
+    (item) => !menuItems.some((menuItem) => menuItem.id === item.menuItemId)
+  );
+  if (unExistingMenuItems.length > 0) {
+    throw new BadRequestError(
+      'Some menu items not found or not in restaurant: ' +
+        unExistingMenuItems.map((i) => i.menuItemId).join(', ')
+    );
+  }
+
+  const existingOrderItems = await prisma.orderItem.findMany({
+    where: { orderId: params.orderId },
+  });
+
+  const unExistingOrderItems = body.items
+    .filter((item) => item.id) // only check items that claim to exist
+    .filter((item) => !existingOrderItems.some((orderItem) => orderItem.id === item.id));
+
+  if (unExistingOrderItems.length > 0) {
+    throw new BadRequestError(
+      'Some order items not found or not in order: ' +
+        unExistingOrderItems.map((i) => i.id).join(', ')
+    );
+  }
+
+  const itemsToCreate = body.items.filter((item) => !item.id);
+  const itemToUpdate = body.items.filter((item) => item.id);
+  const incomingItemsIds = itemToUpdate.map((item) => item.id);
+  const itemsToDelete = existingOrderItems.filter((item) => !incomingItemsIds.includes(item.id));
+
+  let total: Decimal = new Decimal(0);
+
+  body.items.forEach((item) => {
+    const menuItem = menuItems.find((menuItem) => menuItem.id === item.menuItemId)!;
+    total = total.plus(new Decimal(menuItem.price).mul(item.quantity));
+  });
+
+  const subtotal = total.minus(new Decimal(body.discount));
+
   const updatedOrder = await prisma.order.update({
-    where: { id: orderId },
-    data: request.body,
+    where: { id: order.id },
+    data: {
+      ...body,
+      total,
+      subtotal,
+      items: {
+        update: itemToUpdate.map((item) => ({
+          where: { id: item.id },
+          data: {
+            menuItemId: item.menuItemId,
+            quantity: item.quantity,
+            notes: item.notes,
+          },
+        })),
+        deleteMany: {
+          id: { in: itemsToDelete.map((item) => item.id) },
+        },
+        create: itemsToCreate.map((item) => ({
+          menuItemId: item.menuItemId,
+          quantity: item.quantity,
+          notes: item.notes,
+        })),
+      },
+    },
+    include: {
+      items: {
+        include: {
+          menuItem: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+            },
+          },
+        },
+      },
+      restaurant: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        },
+      },
+      user: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        },
+      },
+    },
   });
 
   databaseLogger.audit({
     action: 'UPDATE',
     resource: 'ORDER',
-    resourceId: orderId,
-    metadata: { data: request.body },
+    resourceId: order.id,
+    metadata: { body },
     requestInfo: getRequestInfo(request),
     actorId: order.userId,
     actorType: 'USER',
@@ -168,13 +431,23 @@ async function updateOrder(request: Request, response: Response) {
     newData: updatedOrder,
   });
 
-  sendSuccessResponse({ response, message: 'Order updated', data: updatedOrder });
+  sendSuccessResponse({
+    response,
+    message: 'Order updated',
+    data: updatedOrder,
+  });
 }
 
 async function updateOrderStatus(request: Request, response: Response) {
-  const { status } = request.body;
+  const authenticatedRequest = request as AuthenticatedRequest<
+    GetOrderByIdParams,
+    object,
+    UpdateOrderStatusInput
+  >;
 
-  const orderId = request.params.orderId;
+  const { status } = authenticatedRequest.body;
+
+  const orderId = authenticatedRequest.params.orderId;
 
   const order = await prisma.order.findUnique({
     where: { id: orderId },
@@ -184,7 +457,10 @@ async function updateOrderStatus(request: Request, response: Response) {
     throw new NotFoundError('Order not found');
   }
 
-  // Final state check
+  if (authenticatedRequest.user.role !== 'ADMIN' && order.userId !== authenticatedRequest.user.id) {
+    throw new ForbiddenError('Not your order');
+  }
+
   if (['COMPLETED', 'CANCELLED'].includes(order.status)) {
     throw new BadRequestError('Cannot update a finalized order');
   }
@@ -198,6 +474,23 @@ async function updateOrderStatus(request: Request, response: Response) {
   const updatedOrder = await prisma.order.update({
     where: { id: orderId },
     data: { status },
+    include: {
+      items: true,
+      restaurant: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        },
+      },
+      user: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        },
+      },
+    },
   });
 
   databaseLogger.audit({
@@ -216,8 +509,14 @@ async function updateOrderStatus(request: Request, response: Response) {
 }
 
 async function payOrder(request: Request, response: Response) {
-  const { orderId } = request.params;
-  const { method } = request.body;
+  const authenticatedRequest = request as AuthenticatedRequest<
+    GetOrderByIdParams,
+    object,
+    PayOrderInput
+  >;
+
+  const { orderId } = authenticatedRequest.params;
+  const { paymentMethod } = authenticatedRequest.body;
 
   const existOrder = await prisma.order.findUnique({
     where: { id: orderId },
@@ -227,8 +526,16 @@ async function payOrder(request: Request, response: Response) {
     throw new NotFoundError('Order not found');
   }
 
+  if (existOrder.userId !== authenticatedRequest.user.id) {
+    throw new ForbiddenError('Not your order');
+  }
+
   if (existOrder.paymentStatus === 'PAID') {
     throw new BadRequestError('Order is already paid');
+  }
+
+  if (existOrder.paymentStatus === 'REFUNDED') {
+    throw new BadRequestError('Order is already refunded');
   }
 
   if (!['PENDING', 'PREPARING'].includes(existOrder.status)) {
@@ -239,7 +546,24 @@ async function payOrder(request: Request, response: Response) {
     where: { id: orderId },
     data: {
       paymentStatus: 'PAID',
-      paymentMethod: method,
+      paymentMethod,
+    },
+    include: {
+      items: true,
+      restaurant: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        },
+      },
+      user: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        },
+      },
     },
   });
 
@@ -247,7 +571,7 @@ async function payOrder(request: Request, response: Response) {
     action: 'UPDATE',
     resource: 'ORDER',
     resourceId: orderId,
-    metadata: { data: { paymentStatus: 'PAID', paymentMethod: method } },
+    metadata: { data: { paymentStatus: 'PAID', paymentMethod } },
     requestInfo: getRequestInfo(request),
     actorId: order.userId,
     actorType: 'USER',
@@ -271,6 +595,10 @@ async function cancelOrder(request: Request, response: Response) {
     throw new NotFoundError('Order not found');
   }
 
+  if (order.status === 'CANCELLED') {
+    throw new BadRequestError('Order already cancelled');
+  }
+
   if (order.userId !== authenticatedRequest.user.id) {
     throw new ForbiddenError('Not your order');
   }
@@ -282,6 +610,23 @@ async function cancelOrder(request: Request, response: Response) {
   const cancelled = await prisma.order.update({
     where: { id: orderId },
     data: { status: 'CANCELLED' },
+    include: {
+      items: true,
+      restaurant: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        },
+      },
+      user: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        },
+      },
+    },
   });
 
   sendSuccessResponse({ response, message: 'Order cancelled', data: cancelled });
@@ -301,6 +646,23 @@ async function deleteOrder(request: Request, response: Response) {
 
   const order = await prisma.order.delete({
     where: { id: orderId },
+    include: {
+      items: true,
+      restaurant: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        },
+      },
+      user: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        },
+      },
+    },
   });
 
   databaseLogger.audit({
@@ -315,7 +677,7 @@ async function deleteOrder(request: Request, response: Response) {
   sendSuccessResponse({ response, message: 'Order deleted', data: order });
 }
 
-export {
+const orderController = {
   cancelOrder,
   createOrder,
   deleteOrder,
@@ -326,3 +688,5 @@ export {
   updateOrder,
   updateOrderStatus,
 };
+
+export default orderController;

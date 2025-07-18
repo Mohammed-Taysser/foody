@@ -1,9 +1,15 @@
-import { UserRole } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { Request, Response } from 'express';
 
 import { DEFAULT_ROLE_PERMISSIONS } from '../auth/auth.constant';
 
-import { GetByIdUserParams, UpdateUserInput } from './user.validator';
+import {
+  CreateUserInput,
+  GetUserByIdParams,
+  GetUsersListQuery,
+  UpdateMeInput,
+  UpdateUserInput,
+} from './user.validator';
 
 import prisma from '@/apps/prisma';
 import databaseLogger from '@/services/database-log.service';
@@ -13,7 +19,6 @@ import { ConflictError, NotFoundError } from '@/utils/errors.utils';
 import { deleteImage, uploadImage } from '@/utils/multer.utils';
 import { getRequestInfo } from '@/utils/request.utils';
 import { sendPaginatedResponse, sendSuccessResponse } from '@/utils/send-response';
-import { BasePaginationInput } from '@/validations/pagination.validation';
 
 async function getUserPermission(request: Request, response: Response) {
   const authenticatedRequest = request as AuthenticatedRequest;
@@ -41,20 +46,120 @@ async function getUsers(request: Request, response: Response) {
     unknown,
     unknown,
     unknown,
-    BasePaginationInput
+    GetUsersListQuery
   >;
 
   const query = authenticatedRequest.parsedQuery;
 
   const skip = (query.page - 1) * query.limit;
 
+  const filters: Prisma.UserWhereInput = {};
+
+  if (query.role) {
+    filters.role = {
+      in: query.role,
+    };
+  }
+
+  if (query.name) {
+    filters.name = {
+      contains: query.name,
+      mode: 'insensitive',
+    };
+  }
+
+  if (query.email) {
+    filters.email = {
+      contains: query.email,
+      mode: 'insensitive',
+    };
+  }
+
+  if (query.failedLoginAttempts) {
+    filters.failedLoginAttempts = {
+      equals: query.failedLoginAttempts,
+    };
+  }
+
+  if (query.lastFailedLogin) {
+    const date = new Date(query.lastFailedLogin);
+    const nextDate = new Date(date);
+    nextDate.setDate(date.getDate() + 1);
+
+    filters.lastFailedLogin = {
+      gte: date,
+      lt: nextDate,
+    };
+  }
+
+  if (query.isEmailVerified) {
+    filters.isEmailVerified = {
+      equals: query.isEmailVerified,
+    };
+  }
+
+  if (query.isPhoneVerified) {
+    filters.isPhoneVerified = {
+      equals: query.isPhoneVerified,
+    };
+  }
+
+  if (query.isActive) {
+    filters.isActive = {
+      equals: query.isActive,
+    };
+  }
+
+  if (query.isBlocked) {
+    filters.isBlocked = {
+      equals: query.isBlocked,
+    };
+  }
+
+  if (query.maxTokens) {
+    filters.maxTokens = {
+      equals: query.maxTokens,
+    };
+  }
+
+  if (query.blockedAt) {
+    const date = new Date(query.blockedAt);
+    const nextDate = new Date(date);
+    nextDate.setDate(date.getDate() + 1);
+
+    filters.blockedAt = {
+      gte: date,
+      lt: nextDate,
+    };
+  }
+
+  if (query.blockedById) {
+    filters.blockedById = {
+      equals: query.blockedById,
+    };
+  }
+
+  if (query.createdAt) {
+    const date = new Date(query.createdAt);
+    const nextDate = new Date(date);
+    nextDate.setDate(date.getDate() + 1);
+
+    filters.createdAt = {
+      gte: date,
+      lt: nextDate,
+    };
+  }
+
   const [data, total] = await Promise.all([
     prisma.user.findMany({
       skip,
       take: query.limit,
       orderBy: { createdAt: 'desc' },
+      where: filters,
     }),
-    prisma.user.count(),
+    prisma.user.count({
+      where: filters,
+    }),
   ]);
 
   sendPaginatedResponse({
@@ -71,21 +176,84 @@ async function getUsers(request: Request, response: Response) {
 }
 
 async function getUsersList(request: Request, response: Response) {
+  const authenticatedRequest = request as unknown as AuthenticatedRequest<
+    unknown,
+    unknown,
+    unknown,
+    GetUsersListQuery
+  >;
+
+  const query = authenticatedRequest.parsedQuery;
+
+  const filters: Prisma.UserWhereInput = {};
+
+  if (query.role) {
+    filters.role = {
+      in: query.role,
+    };
+  }
+
+  if (query.name) {
+    filters.name = {
+      contains: query.name,
+      mode: 'insensitive',
+    };
+  }
+
+  if (query.email) {
+    filters.email = {
+      contains: query.email,
+      mode: 'insensitive',
+    };
+  }
+
+  if (query.isEmailVerified) {
+    filters.isEmailVerified = {
+      equals: query.isEmailVerified,
+    };
+  }
+
+  if (query.isPhoneVerified) {
+    filters.isPhoneVerified = {
+      equals: query.isPhoneVerified,
+    };
+  }
+
+  if (query.isActive) {
+    filters.isActive = {
+      equals: query.isActive,
+    };
+  }
+
+  if (query.isBlocked) {
+    filters.isBlocked = {
+      equals: query.isBlocked,
+    };
+  }
+
   const users = await prisma.user.findMany({
     select: {
       id: true,
       name: true,
     },
+    where: filters,
   });
 
   sendSuccessResponse({ response, message: 'Users list', data: users });
 }
 
 async function getUserById(request: Request, response: Response) {
-  const userId = request.params.userId;
+  const authenticatedRequest = request as unknown as AuthenticatedRequest<
+    GetUserByIdParams,
+    unknown,
+    unknown,
+    unknown
+  >;
+
+  const { params } = authenticatedRequest;
 
   const user = await prisma.user.findUnique({
-    where: { id: userId },
+    where: { id: params.userId },
   });
 
   if (!user) {
@@ -112,32 +280,37 @@ async function getProfile(request: Request, response: Response) {
 }
 
 async function createUser(request: Request, response: Response) {
-  const data = request.body;
+  const authenticatedRequest = request as unknown as AuthenticatedRequest<
+    unknown,
+    unknown,
+    CreateUserInput,
+    unknown
+  >;
+
+  const { body, file: image } = authenticatedRequest;
 
   const user = await prisma.user.findUnique({
-    where: { email: data.email },
+    where: { email: body.email },
   });
 
   if (user) {
     throw new ConflictError('Email already registered');
   }
 
-  const hashed = await tokenService.hash(data.password);
+  const hashed = await tokenService.hash(body.password);
 
-  const config = DEFAULT_ROLE_PERMISSIONS[data.role as UserRole];
+  const config = DEFAULT_ROLE_PERMISSIONS[body.role];
 
   let imageUrl = undefined;
 
-  if (data.image) {
-    imageUrl = await uploadImage(data.image, 'user');
+  if (image) {
+    imageUrl = await uploadImage(image, 'user');
   }
 
   const newUser = await prisma.user.create({
     data: {
-      name: data.name,
-      email: data.email,
+      ...body,
       password: hashed,
-      role: data.role,
       permissionGroups: {
         connect: config.groups.map((name) => ({ name })),
       },
@@ -155,7 +328,7 @@ async function createUser(request: Request, response: Response) {
     action: 'CREATE',
     resource: 'USER',
     resourceId: newUser.id,
-    metadata: { data },
+    metadata: { body },
     newData: newUser,
   });
 
@@ -168,11 +341,17 @@ async function createUser(request: Request, response: Response) {
 }
 
 async function updateUser(request: Request, response: Response) {
-  const userId = request.params.userId;
-  const data = request.body;
+  const authenticatedRequest = request as unknown as AuthenticatedRequest<
+    GetUserByIdParams,
+    unknown,
+    UpdateUserInput,
+    unknown
+  >;
+
+  const { body, params, file: image } = authenticatedRequest;
 
   const user = await prisma.user.findUnique({
-    where: { id: userId },
+    where: { id: params.userId },
   });
 
   if (!user) {
@@ -181,14 +360,14 @@ async function updateUser(request: Request, response: Response) {
 
   let imageUrl = undefined;
 
-  if (data.image) {
-    imageUrl = await uploadImage(data.image, 'user');
+  if (image) {
+    imageUrl = await uploadImage(image, 'user');
   }
 
   const updatedUser = await prisma.user.update({
-    where: { id: userId },
+    where: { id: params.userId },
     data: {
-      ...data,
+      ...body,
       image: imageUrl,
     },
   });
@@ -200,7 +379,7 @@ async function updateUser(request: Request, response: Response) {
     action: 'UPDATE',
     resource: 'USER',
     resourceId: user.id,
-    metadata: { data },
+    metadata: { body },
     oldData: user,
     newData: updatedUser,
   });
@@ -216,7 +395,7 @@ async function updateMe(request: Request, response: Response) {
   const authenticatedRequest = request as unknown as AuthenticatedRequest<
     unknown,
     unknown,
-    UpdateUserInput
+    UpdateMeInput
   >;
   const user = authenticatedRequest.user;
 
@@ -268,7 +447,7 @@ async function updateMe(request: Request, response: Response) {
 
 async function deleteUser(request: Request, response: Response) {
   const authenticatedRequest = request as unknown as AuthenticatedRequest<
-    GetByIdUserParams,
+    GetUserByIdParams,
     unknown,
     unknown,
     unknown
@@ -308,7 +487,7 @@ async function deleteUser(request: Request, response: Response) {
   });
 }
 
-export {
+const userController = {
   createUser,
   deleteUser,
   getProfile,
@@ -319,3 +498,5 @@ export {
   updateMe,
   updateUser,
 };
+
+export default userController;

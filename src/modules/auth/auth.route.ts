@@ -1,49 +1,49 @@
 import { Router } from 'express';
 
-import {
-  login,
-  refreshToken,
-  register,
-  resetUserPassword,
-  sendResetPasswordCode,
-  sendVerificationEmail,
-  verifyEmailToken,
-  verifyResetPasswordToken,
-} from './auth.controller';
-import {
-  loginSchema,
-  refreshTokenSchema,
-  registerSchema,
-  resetPasswordSchema,
-  sendResetPasswordCodeSchema,
-  sendVerificationEmailSchema,
-  verifyEmailTokenSchema,
-  verifyResetPasswordTokenSchema,
-} from './auth.validator';
+import controller from './auth.controller';
+import validator from './auth.validator';
 
-import ZodValidate from '@/middleware/zod-validate.middleware';
+import validateRequest from '@/middleware/validate-request.middleware';
+import requirePermission from '@/middleware/require-permission.middleware';
+import authorizeMiddleware from '@/middleware/authorize.middleware';
+import authenticateMiddleware from '@/middleware/authenticate.middleware';
 
 const router = Router();
 
-router.post('/register', ZodValidate(registerSchema), register);
-router.post('/login', ZodValidate(loginSchema), login);
-router.post('/refresh-token', ZodValidate(refreshTokenSchema), refreshToken);
-router.post('/reset-password', ZodValidate(resetPasswordSchema), resetUserPassword);
+router.post('/register', validateRequest(validator.registerSchema), controller.register);
+router.post('/login', validateRequest(validator.loginSchema), controller.login);
+router.post(
+  '/refresh-token',
+  validateRequest(validator.refreshTokenSchema),
+  controller.refreshToken
+);
+router.post(
+  '/reset-password',
+  authenticateMiddleware,
+  authorizeMiddleware('ADMIN'),
+  requirePermission(['update:user']),
+  validateRequest(validator.resetPasswordSchema),
+  controller.resetUserPassword
+);
 router.post(
   '/send-reset-password-code',
-  ZodValidate(sendResetPasswordCodeSchema),
-  sendResetPasswordCode
+  validateRequest(validator.sendResetPasswordCodeSchema),
+  controller.sendResetPasswordCode
 );
 router.post(
   '/verify-reset-password',
-  ZodValidate(verifyResetPasswordTokenSchema),
-  verifyResetPasswordToken
+  validateRequest(validator.verifyResetPasswordTokenSchema),
+  controller.verifyResetPasswordToken
 );
 router.post(
   '/send-verification-email',
-  ZodValidate(sendVerificationEmailSchema),
-  sendVerificationEmail
+  validateRequest(validator.sendVerificationEmailSchema),
+  controller.sendVerificationEmail
 );
-router.post('/verify-email', ZodValidate(verifyEmailTokenSchema), verifyEmailToken);
+router.post(
+  '/verify-email',
+  validateRequest(validator.verifyEmailTokenSchema),
+  controller.verifyEmailToken
+);
 
 export default router;

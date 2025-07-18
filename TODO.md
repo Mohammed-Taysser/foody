@@ -1,5 +1,8 @@
 # TODO
 
+- OAuth / Social login (Google, Facebook, GitHub)
+- Multi-factor authentication (MFA)
+
 ## Research
 
 ### Performance Testing

@@ -8,7 +8,7 @@ Table User {
   email String [unique, not null]
   password String [not null]
   role UserRole [not null, default: 'CUSTOMER']
-  image String [default: '/avatar.jpg']
+  image String [not null, default: '/avatar.jpg']
   twoFactorSecret String
   twoFactorEnabled Boolean [not null, default: false]
   failedLoginAttempts Int [not null, default: 0]
@@ -68,7 +68,7 @@ Table Restaurant {
   description String [not null, default: '']
   location String [not null]
   ownerId String [not null]
-  image String [default: '/avatar.jpg']
+  image String [not null, default: '/avatar.jpg']
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   Category Category [not null]
@@ -81,14 +81,14 @@ Table MenuItem {
   id String [pk]
   name String [not null]
   description String [not null, default: '']
-  image String [default: '/avatar.jpg']
-  price Float [not null]
+  image String [not null, default: '/avatar.jpg']
+  price Decimal [not null]
   available Boolean [not null, default: true]
   restaurantId String [not null]
-  categoryId String
+  categoryId String [not null]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
-  category Category
+  category Category [not null]
   restaurant Restaurant [not null]
   orders OrderItem [not null]
 }
@@ -97,7 +97,7 @@ Table Category {
   id String [pk]
   name String [not null]
   restaurantId String [not null]
-  image String [default: '/avatar.jpg']
+  image String [not null, default: '/avatar.jpg']
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   restaurant Restaurant [not null]
@@ -192,14 +192,13 @@ Table Order {
   restaurantId String [not null]
   items OrderItem [not null]
   status OrderStatus [not null, default: 'PENDING']
-  total Float [not null]
-  subtotal Float [not null]
-  discount Float [default: 0]
-  notes String [default: '']
+  total Decimal [not null]
+  subtotal Decimal [not null]
+  discount Decimal [not null, default: 0]
+  notes String [not null, default: '']
   paymentStatus PaymentStatus [not null, default: 'UNPAID']
-  paymentMethod PaymentMethod
+  paymentMethod PaymentMethod [not null, default: 'CASH']
   tableNumber Int
-  invoiceNumber String [unique]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   user User [not null]
@@ -211,7 +210,7 @@ Table OrderItem {
   orderId String [not null]
   menuItemId String [not null]
   quantity Int [not null]
-  notes String [default: '']
+  notes String [not null, default: '']
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   order Order [not null]
@@ -263,6 +262,8 @@ Enum LogActionType {
   VERIFY_EMAIL_TOKEN
   LOGIN
   REGISTER
+  USER_BLOCKED
+  INVALID_LOGIN_ATTEMPT
   PLACE_ORDER
   CANCEL_ORDER
   EXPORT

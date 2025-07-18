@@ -198,15 +198,6 @@ describe('Menu Items API', () => {
       });
     });
 
-    it('should filter menu items by restaurantId', async () => {
-      const res = await request(app).get(`/api/menu-items?restaurantId=${restaurantId}`);
-
-      expect(res.statusCode).toBe(200);
-      res.body.data.data.forEach((item: MenuItem) => {
-        expect(item.restaurantId).toBe(restaurantId);
-      });
-    });
-
     it('should return paginated results (default limit 10)', async () => {
       const res = await request(app).get(`/api/menu-items`);
       expect(res.statusCode).toBe(200);
@@ -235,6 +226,93 @@ describe('Menu Items API', () => {
       expect(res.statusCode).toBe(200);
       expect(res.body.data.data.length).toBe(0);
     });
+
+    describe('Filters', () => {
+      it('should filter by name', async () => {
+        const res = await request(app).get(`/api/menu-items?name=Pizza`);
+
+        expect(res.statusCode).toBe(200);
+
+        res.body.data.data.forEach((item: MenuItem) => {
+          expect(item.name.toLowerCase()).toContain('pizza');
+        });
+      });
+
+      it('should filter by restaurantId', async () => {
+        const res = await request(app).get(`/api/menu-items?restaurantId=${restaurantId}`);
+
+        expect(res.statusCode).toBe(200);
+
+        res.body.data.data.forEach((item: MenuItem) => {
+          expect(item.restaurantId).toBe(restaurantId);
+        });
+      });
+
+      it('should filter by available status=true', async () => {
+        const res = await request(app).get(`/api/menu-items?available=true`);
+
+        expect(res.statusCode).toBe(200);
+
+        res.body.data.data.forEach((item: MenuItem) => {
+          expect(item.available).toBe(true);
+        });
+      });
+
+      it('should filter by available status=false', async () => {
+        const res = await request(app).get(`/api/menu-items?available=false`);
+
+        expect(res.statusCode).toBe(200);
+
+        res.body.data.data.forEach((item: MenuItem) => {
+          expect(item.available).toBe(false);
+        });
+      });
+    });
+  });
+
+  describe('Get /api/menu-items/list', () => {
+    it('should fetch all menu items', async () => {
+      const res = await request(app).get(`/api/menu-items/list`);
+
+      expect(res.statusCode).toBe(200);
+      expect(Array.isArray(res.body.data.data)).toBe(true);
+    });
+
+    describe('Filters', () => {
+      it('should filter by name', async () => {
+        const res = await request(app).get(`/api/menu-items/list?name=Pizza`);
+
+        expect(res.statusCode).toBe(200);
+
+        res.body.data.data.forEach((item: MenuItem) => {
+          expect(item.name.toLowerCase()).toContain('pizza');
+        });
+      });
+
+      it('should filter by restaurantId', async () => {
+        const res = await request(app).get(`/api/menu-items/list?restaurantId=${restaurantId}`);
+
+        expect(res.statusCode).toBe(200);
+
+        expect(Array.isArray(res.body.data.data)).toBe(true);
+      });
+
+      it('should filter by available status=true', async () => {
+        const res = await request(app).get(`/api/menu-items/list?available=true`);
+
+        expect(res.statusCode).toBe(200);
+
+        expect(Array.isArray(res.body.data.data)).toBe(true);
+      });
+
+      it('should filter by available status=false', async () => {
+        const res = await request(app).get(`/api/menu-items/list?available=false`);
+
+        expect(res.statusCode).toBe(200);
+
+        expect(Array.isArray(res.body.data.data)).toBe(true);
+      });
+    });
   });
 
   describe('GET /api/menu-items/:itemId', () => {
@@ -259,15 +337,6 @@ describe('Menu Items API', () => {
     });
   });
 
-  describe('Get /api/menu-items/list', () => {
-    it('should fetch all menu items', async () => {
-      const res = await request(app).get(`/api/menu-items/list`);
-
-      expect(res.statusCode).toBe(200);
-      expect(Array.isArray(res.body.data.data)).toBe(true);
-    });
-  });
-
   describe('PATCH /api/menu/:itemId', () => {
     it('should allow owner to update a menu item', async () => {
       const res = await request(app)
@@ -276,10 +345,10 @@ describe('Menu Items API', () => {
         .send({ price: 12.99 });
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.data.data.price).toBe(12.99);
+      expect(parseFloat(res.body.data.data.price)).toBe(12.99);
     });
 
-    it('should return 409 when updating with non-existent restaurantId', async () => {
+    it('should return 404 when updating with non-existent restaurantId', async () => {
       const res = await request(app)
         .patch(`/api/menu-items/${menuItemId}`)
         .set('Authorization', `Bearer ${ownerToken}`)

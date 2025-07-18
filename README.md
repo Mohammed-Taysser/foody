@@ -161,4 +161,5 @@ Before setting up the Foody Platform, ensure you have the following prerequisite
 - [Project DB Docs](https://dbdocs.io/mohammed-taysser/Foody)
 - [Jest Documentation](https://jestjs.io/docs/getting-started)
 - [Cypress Documentation](https://docs.cypress.io)
-- [Testing Best Practices](https://jestjs.io/docs/jest-object#jestspyonobject-methodname) 
+- [Testing Best Practices](https://jestjs.io/docs/jest-object#jestspyonobject-methodname)
+- [NPM dotenv-flow](https://www.npmjs.com/package/dotenv-flow)

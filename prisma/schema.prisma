@@ -18,7 +18,7 @@ model User {
   email    String   @unique
   password String
   role     UserRole @default(CUSTOMER)
-  image    String?  @default("/avatar.jpg")
+  image    String  @default("/avatar.jpg")
 
   twoFactorSecret  String?
   twoFactorEnabled Boolean @default(false)
@@ -36,7 +36,6 @@ model User {
   isPhoneVerified          Boolean   @default(false)
   phoneVerificationSentAt  DateTime?
   phoneVerificationToken   String?
-  phoneVerificationExpires DateTime?
 
   isActive  Boolean @default(true)
   maxTokens Int     @default(5)
@@ -97,7 +96,7 @@ model Restaurant {
   description String  @default("")
   location    String
   ownerId     String
-  image       String? @default("/avatar.jpg")
+  image       String @default("/avatar.jpg")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -112,16 +111,16 @@ model MenuItem {
   id           String  @id @default(cuid())
   name         String
   description  String  @default("")
-  image        String? @default("/avatar.jpg")
-  price        Float
+  image        String @default("/avatar.jpg")
+  price        Decimal @db.Decimal(10, 2)
   available    Boolean @default(true)
   restaurantId String
-  categoryId   String?
+  categoryId   String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  category   Category?   @relation(fields: [categoryId], references: [id])
+  category   Category   @relation(fields: [categoryId], references: [id])
   restaurant Restaurant  @relation(fields: [restaurantId], references: [id])
   orders     OrderItem[]
 }
@@ -130,7 +129,7 @@ model Category {
   id           String  @id @default(cuid())
   name         String
   restaurantId String
-  image        String? @default("/avatar.jpg")
+  image        String @default("/avatar.jpg")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -266,6 +265,8 @@ enum LogActionType {
 
   LOGIN
   REGISTER
+  USER_BLOCKED
+  INVALID_LOGIN_ATTEMPT
 
   PLACE_ORDER
   CANCEL_ORDER
@@ -297,16 +298,15 @@ model Order {
   restaurantId String
   items        OrderItem[]
   status       OrderStatus @default(PENDING)
-  total        Float
-  subtotal     Float
-  discount     Float?      @default(0)
-  notes        String?     @default("")
+  total        Decimal @db.Decimal(10, 2)
+  subtotal     Decimal @db.Decimal(10, 2)
+  discount     Decimal @db.Decimal(10, 2)      @default(0)
+  notes        String     @default("")
 
   paymentStatus PaymentStatus  @default(UNPAID)
-  paymentMethod PaymentMethod?
+  paymentMethod PaymentMethod @default(CASH)
 
   tableNumber   Int?
-  invoiceNumber String? @unique
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -320,7 +320,7 @@ model OrderItem {
   orderId    String
   menuItemId String
   quantity   Int
-  notes      String? @default("")
+  notes      String @default("")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -3,32 +3,54 @@ import request from 'supertest';
 
 import app from '../../../../src/app';
 import prisma from '../../../../src/apps/prisma';
+import { ADMIN_EMAIL, ADMIN_PASSWORD } from '../../../test.constants';
 
 const endpoint = '/api/auth/reset-password';
+const loginEndpoint = '/api/auth/login';
 
 describe('reset-password - Failure Cases', () => {
-  it('should return 400 if user not found', async () => {
-    const res = await request(app).post(endpoint).send({
-      email: faker.internet.email(),
-      password: 'new-password',
+  let adminToken: string;
+
+  beforeAll(async () => {
+    const adminRes = await request(app).post(loginEndpoint).send({
+      email: ADMIN_EMAIL,
+      password: ADMIN_PASSWORD,
     });
+
+    adminToken = adminRes.body.data.data.accessToken;
+  });
+
+  it('should return 400 if user not found', async () => {
+    const res = await request(app)
+      .post(endpoint)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        email: faker.internet.email(),
+        password: 'new-password',
+      });
 
     expect(res.statusCode).toBe(400);
     expect(res.body.success).toBe(false);
   });
 
   it('should return 400 if email is not provided', async () => {
-    const res = await request(app).post(endpoint).send({
-      password: 'new-password',
-    });
+    const res = await request(app)
+      .post(endpoint)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        password: 'new-password',
+      });
 
     expect(res.statusCode).toBe(400);
   });
 
   it('should return 400 if password is not provided', async () => {
-    const res = await request(app).post(endpoint).send({
-      email: faker.internet.email(),
-    });
+    const res = await request(app)
+      .post(endpoint)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        email: faker.internet.email(),
+      });
 
     expect(res.statusCode).toBe(400);
   });
@@ -46,10 +68,13 @@ describe('reset-password - Failure Cases', () => {
       },
     });
 
-    const res = await request(app).post(endpoint).send({
-      email,
-      password: 'new-password',
-    });
+    const res = await request(app)
+      .post(endpoint)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        email,
+        password: 'new-password',
+      });
 
     expect(res.statusCode).toBe(401);
     expect(res.body.success).toBe(false);
@@ -68,10 +93,13 @@ describe('reset-password - Failure Cases', () => {
       },
     });
 
-    const res = await request(app).post(endpoint).send({
-      email,
-      password: 'new-password',
-    });
+    const res = await request(app)
+      .post(endpoint)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        email,
+        password: 'new-password',
+      });
 
     expect(res.statusCode).toBe(401);
     expect(res.body.success).toBe(false);
@@ -90,10 +118,13 @@ describe('reset-password - Failure Cases', () => {
       },
     });
 
-    const res = await request(app).post(endpoint).send({
-      email,
-      password: 'new-password',
-    });
+    const res = await request(app)
+      .post(endpoint)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        email,
+        password: 'new-password',
+      });
 
     expect(res.statusCode).toBe(401);
     expect(res.body.success).toBe(false);
@@ -112,16 +143,30 @@ describe('reset-password - Failure Cases', () => {
       },
     });
 
-    const res = await request(app).post(endpoint).send({
-      email,
-      password: '123',
-    });
+    const res = await request(app)
+      .post(endpoint)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        email,
+        password: '123',
+      });
 
     expect(res.statusCode).toBe(400);
   });
 });
 
 describe('reset-password - Success Case', () => {
+  let adminToken: string;
+
+  beforeAll(async () => {
+    const adminRes = await request(app).post(loginEndpoint).send({
+      email: ADMIN_EMAIL,
+      password: ADMIN_PASSWORD,
+    });
+
+    adminToken = adminRes.body.data.data.accessToken;
+  });
+
   it('should reset password successfully', async () => {
     const email = faker.internet.email();
     await prisma.user.create({
@@ -135,10 +180,13 @@ describe('reset-password - Success Case', () => {
       },
     });
 
-    const res = await request(app).post(endpoint).send({
-      email,
-      password: 'new-password',
-    });
+    const res = await request(app)
+      .post(endpoint)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        email,
+        password: 'new-password',
+      });
 
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);

@@ -2,8 +2,10 @@ import path from 'path';
 
 import { faker } from '@faker-js/faker';
 import request from 'supertest';
+import { User } from '@prisma/client';
 
 import app from '../../../src/app';
+import prisma from '../../../src/apps/prisma';
 import {
   ADMIN_EMAIL,
   ADMIN_PASSWORD,
@@ -57,7 +59,7 @@ describe('GET /me/permissions', () => {
   });
 });
 
-describe('PATCH /api/users/me', () => {
+describe('PATCH /users/me', () => {
   let accessToken: string;
 
   beforeAll(async () => {
@@ -116,6 +118,26 @@ describe('PATCH /api/users/me', () => {
     expect(res.body.success).toBe(false);
     expect(res.body.message).toMatch(/email.*already/i);
   });
+
+  it('should update user profile with image', async () => {
+    const newName = faker.person.fullName();
+
+    const meResponse = await request(app)
+      .get('/api/users/me')
+      .set('Authorization', `Bearer ${accessToken}`);
+
+    const me = meResponse.body.data.data;
+
+    const res = await request(app)
+      .patch('/api/users/me')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .field('name', newName)
+      .attach('image', mockImagePath);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.data.data.name).toBe(newName);
+    expect(res.body.data.data.image).not.toBe(me.image); // Ensure image has changed
+  });
 });
 
 describe('GET /users', () => {
@@ -126,6 +148,173 @@ describe('GET /users', () => {
     expect(Array.isArray(res.body.data.data)).toBe(true);
     expect(res.body.data).toHaveProperty('metadata');
   });
+
+  describe('Filters', () => {
+    it('should filter users by role', async () => {
+      const res = await request(app).get('/api/users').query({ role: 'CUSTOMER' });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data.data.every((user: User) => user.role === 'CUSTOMER')).toBe(true);
+    });
+
+    it('should filter users by name', async () => {
+      const name = faker.person.fullName();
+      const res = await request(app).get(`/api/users`).query({ name });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data.data.every((user: User) => user.name.includes(name))).toBe(true);
+    });
+
+    it('should filter users by email', async () => {
+      const email = faker.internet.email();
+      const res = await request(app).get(`/api/users`).query({ email });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data.data.every((user: User) => user.email.includes(email))).toBe(true);
+    });
+
+    it('should filter by failedLoginAttempts', async () => {
+      const attempts = Math.ceil(Math.random() * 5); // Random number between 1 and 5
+      const res = await request(app).get('/api/users').query({ failedLoginAttempts: attempts });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data.data.every((user: User) => user.failedLoginAttempts === attempts)).toBe(
+        true
+      );
+    });
+
+    it('should filter by lastFailedLogin', async () => {
+      await prisma.user.create({
+        data: {
+          name: faker.person.fullName(),
+          email: faker.internet.email(),
+          password: '123456789',
+          role: 'CUSTOMER',
+          lastFailedLogin: new Date(), // Set lastFailedLogin to today
+          failedLoginAttempts: 1,
+        },
+      });
+
+      // Assuming the lastFailedLogin is set to today for the test user
+      const today = new Date().toISOString().slice(0, 10);
+      const res = await request(app).get('/api/users').query({ lastFailedLogin: today });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data.data.length).toBeGreaterThan(0);
+      expect(
+        res.body.data.data.every((user: User) => {
+          if (!user.lastFailedLogin) {
+            return false;
+          }
+
+          return new Date(user.lastFailedLogin).toISOString().slice(0, 10) === today;
+        })
+      ).toBe(true);
+    });
+
+    it('should filter by createdAt', async () => {
+      await request(app).post('/api/auth/register').send({
+        name: faker.person.fullName(),
+        email: faker.internet.email(),
+        password: '123456789',
+        role: 'CUSTOMER',
+      });
+
+      const today = new Date().toISOString().slice(0, 10);
+      const res = await request(app).get('/api/users').query({ createdAt: today });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data.data.length).toBeGreaterThan(0);
+      expect(
+        res.body.data.data.every((user: User) => {
+          return new Date(user.createdAt).toISOString().slice(0, 10) === today;
+        })
+      ).toBe(true);
+    });
+
+    it('should filter by isEmailVerified', async () => {
+      const res = await request(app).get('/api/users').query({ isEmailVerified: true });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data.data.every((user: User) => user.isEmailVerified)).toBe(true);
+    });
+
+    it('should filter by isBlocked', async () => {
+      const res = await request(app).get('/api/users').query({ isBlocked: true });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data.data.every((user: User) => user.isBlocked)).toBe(true);
+    });
+
+    it('should filter by isActive', async () => {
+      const res = await request(app).get('/api/users').query({ isActive: true });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data.data.every((user: User) => user.isActive)).toBe(true);
+    });
+
+    it('should filter by isPhoneVerified', async () => {
+      const res = await request(app).get('/api/users').query({ isPhoneVerified: true });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data.data.every((user: User) => user.isPhoneVerified)).toBe(true);
+    });
+
+    it('should filter by maxTokens', async () => {
+      const res = await request(app).get('/api/users').query({ maxTokens: 100 });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data.data.every((user: User) => user.maxTokens <= 100)).toBe(true);
+    });
+
+    it('should filter by blockedAt', async () => {
+      await prisma.user.create({
+        data: {
+          name: faker.person.fullName(),
+          email: faker.internet.email(),
+          password: '123456789',
+          role: 'CUSTOMER',
+          isBlocked: true,
+          blockedAt: new Date(),
+          blockedById: 'some-id',
+        },
+      });
+
+      const today = new Date().toISOString().slice(0, 10);
+      const res = await request(app).get('/api/users').query({ blockedAt: today });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data.data.length).toBeGreaterThan(0);
+      expect(
+        res.body.data.data.every((user: User) => {
+          if (!user.blockedAt) {
+            return false;
+          }
+
+          return new Date(user.blockedAt).toISOString().slice(0, 10) === today;
+        })
+      ).toBe(true);
+    });
+
+    it('should filter by blockedById', async () => {
+      await prisma.user.create({
+        data: {
+          name: faker.person.fullName(),
+          email: faker.internet.email(),
+          password: '123456789',
+          role: 'CUSTOMER',
+          isBlocked: true,
+          blockedAt: new Date(),
+          blockedById: 'some-id',
+        },
+      });
+
+      const res = await request(app).get('/api/users').query({ blockedById: 'some-id' });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data.data.every((user: User) => user.blockedById === 'some-id')).toBe(true);
+    });
+  });
 });
 
 describe('GET /users/list', () => {
@@ -135,9 +324,62 @@ describe('GET /users/list', () => {
     expect(res.statusCode).toBe(200);
     expect(Array.isArray(res.body.data.data)).toBe(true);
   });
+
+  describe('Filters', () => {
+    it('should filter by role', async () => {
+      const res = await request(app).get('/api/users/list').query({ role: 'CUSTOMER' });
+
+      expect(res.statusCode).toBe(200);
+      expect(Array.isArray(res.body.data.data)).toBe(true);
+    });
+
+    it('should filter by name', async () => {
+      const name = faker.person.fullName();
+      const res = await request(app).get(`/api/users/list`).query({ name });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data.data.every((user: User) => user.name.includes(name))).toBe(true);
+    });
+
+    it('should filter by email', async () => {
+      const email = faker.internet.email();
+      const res = await request(app).get(`/api/users/list`).query({ email });
+
+      expect(res.statusCode).toBe(200);
+      expect(Array.isArray(res.body.data.data)).toBe(true);
+    });
+
+    it('should filter by isActive', async () => {
+      const res = await request(app).get('/api/users/list').query({ isActive: true });
+
+      expect(res.statusCode).toBe(200);
+      expect(Array.isArray(res.body.data.data)).toBe(true);
+    });
+
+    it('should filter by isBlocked', async () => {
+      const res = await request(app).get('/api/users/list').query({ isBlocked: true });
+
+      expect(res.statusCode).toBe(200);
+      expect(Array.isArray(res.body.data.data)).toBe(true);
+    });
+
+    it('should filter by isEmailVerified', async () => {
+      const res = await request(app).get('/api/users/list').query({ isEmailVerified: true });
+
+      expect(res.statusCode).toBe(200);
+      expect(Array.isArray(res.body.data.data)).toBe(true);
+    });
+
+    it('should filter by isPhoneVerified', async () => {
+      const res = await request(app).get('/api/users/list').query({ isPhoneVerified: true });
+
+      expect(res.statusCode).toBe(200);
+      expect(Array.isArray(res.body.data.data)).toBe(true);
+    });
+  });
 });
 
-describe('GET /api/users/:id', () => {
+describe('GET /users/:id', () => {
   let adminToken: string;
 
   beforeAll(async () => {
@@ -173,7 +415,7 @@ describe('GET /api/users/:id', () => {
   });
 });
 
-describe('POST /api/users', () => {
+describe('POST /users', () => {
   let adminToken: string;
 
   beforeAll(async () => {
@@ -261,7 +503,7 @@ describe('POST /api/users', () => {
   });
 });
 
-describe('PATCH /api/users/:id', () => {
+describe('PATCH /users/:id', () => {
   let adminToken: string;
 
   beforeAll(async () => {
@@ -311,9 +553,33 @@ describe('PATCH /api/users/:id', () => {
 
     expect(res.statusCode).toBe(404);
   });
+
+  it('should update user with image', async () => {
+    const email = faker.internet.email();
+    const name = faker.person.fullName();
+
+    const user = await request(app)
+      .post('/api/users')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        name,
+        email,
+        password: '123456789',
+        role: 'CUSTOMER',
+      });
+
+    const res = await request(app)
+      .patch(`/api/users/${user.body.data.data.id}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .field('name', name)
+      .attach('image', mockImagePath);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.data.data.name).toBe(name);
+  });
 });
 
-describe('DELETE /api/users/:id', () => {
+describe('DELETE /users/:id', () => {
   let adminToken: string;
 
   beforeAll(async () => {

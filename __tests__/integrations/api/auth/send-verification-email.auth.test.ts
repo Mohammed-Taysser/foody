@@ -22,13 +22,6 @@ describe('POST /auth/send-verification-email - Success', () => {
       },
     });
 
-    const loginResponse = await request(app).post(loginEndpoint).send({
-      email,
-      password: 'pass-123456',
-    });
-
-    const token = loginResponse.body.data.data.accessToken;
-
     await prisma.user.update({
       where: {
         email,
@@ -38,7 +31,7 @@ describe('POST /auth/send-verification-email - Success', () => {
       },
     });
 
-    const res = await request(app).post(endpoint).set('Authorization', `Bearer ${token}`).send({
+    const res = await request(app).post(endpoint).send({
       email,
     });
 

@@ -1,10 +1,11 @@
 import { Prisma } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
 import { Request, Response } from 'express';
 
 import {
   CreateMenuItemInput,
-  GetByIdMenuItemParams,
-  MenuItemQueryInput,
+  GetMenuItemByIdParams,
+  GetMenuItemQuery,
   UpdateMenuItemInput,
 } from './menu-items.validator';
 
@@ -21,31 +22,58 @@ async function getMenuItems(req: Request, response: Response) {
     unknown,
     unknown,
     unknown,
-    MenuItemQueryInput
+    GetMenuItemQuery
   >;
 
   const query = authenticatedRequest.parsedQuery;
 
   const skip = (query.page - 1) * query.limit;
 
-  const where: Prisma.MenuItemWhereInput = {};
+  const filters: Prisma.MenuItemWhereInput = {};
+
+  if (query.name) {
+    filters.name = {
+      contains: query.name,
+      mode: 'insensitive',
+    };
+  }
 
   if (query.restaurantId) {
-    where.restaurantId = query.restaurantId;
+    filters.restaurantId = {
+      equals: query.restaurantId,
+    };
   }
 
   if (query.available !== undefined) {
-    where.available = query.available;
+    filters.available = {
+      equals: query.available,
+    };
   }
 
   const [data, total] = await Promise.all([
     prisma.menuItem.findMany({
-      where,
+      where: filters,
       skip,
       take: query.limit,
       orderBy: { createdAt: 'desc' },
+      include: {
+        restaurant: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+          },
+        },
+        category: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+          },
+        },
+      },
     }),
-    prisma.menuItem.count({ where }),
+    prisma.menuItem.count({ where: filters }),
   ]);
 
   sendPaginatedResponse({
@@ -63,11 +91,42 @@ async function getMenuItems(req: Request, response: Response) {
 }
 
 async function getMenuItemsList(request: Request, response: Response) {
+  const authenticatedRequest = request as unknown as AuthenticatedRequest<
+    unknown,
+    unknown,
+    unknown,
+    GetMenuItemQuery
+  >;
+
+  const query = authenticatedRequest.parsedQuery;
+
+  const filters: Prisma.MenuItemWhereInput = {};
+
+  if (query.name) {
+    filters.name = {
+      contains: query.name,
+      mode: 'insensitive',
+    };
+  }
+
+  if (query.restaurantId) {
+    filters.restaurantId = {
+      equals: query.restaurantId,
+    };
+  }
+
+  if (query.available !== undefined) {
+    filters.available = {
+      equals: query.available,
+    };
+  }
+
   const data = await prisma.menuItem.findMany({
     select: {
       id: true,
       name: true,
     },
+    where: filters,
   });
 
   sendSuccessResponse({ response, message: 'Menu items list', data });
@@ -75,19 +134,37 @@ async function getMenuItemsList(request: Request, response: Response) {
 
 async function getMenuItemById(request: Request, response: Response) {
   const authenticatedRequest = request as unknown as AuthenticatedRequest<
-    GetByIdMenuItemParams,
+    GetMenuItemByIdParams,
     unknown,
     unknown,
     unknown
   >;
 
-  const itemId = authenticatedRequest.params.itemId;
+  const itemId = authenticatedRequest.params.menuId;
 
   const item = await prisma.menuItem.findUnique({
     where: { id: itemId },
+    include: {
+      restaurant: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        },
+      },
+      category: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        },
+      },
+    },
   });
 
-  if (!item) throw new NotFoundError('Menu item not found');
+  if (!item) {
+    throw new NotFoundError('Menu item not found');
+  }
 
   sendSuccessResponse({ response, message: 'Menu item found', data: item });
 }
@@ -103,12 +180,10 @@ async function createMenuItem(
     unknown
   >;
 
-  const user = authenticatedRequest.user;
-  const image = authenticatedRequest.file;
-  const data = request.body;
+  const { user, body, file: image } = authenticatedRequest;
 
   const restaurant = await prisma.restaurant.findUnique({
-    where: { id: authenticatedRequest.body.restaurantId },
+    where: { id: body.restaurantId },
   });
 
   if (!restaurant) {
@@ -127,8 +202,25 @@ async function createMenuItem(
 
   const newItem = await prisma.menuItem.create({
     data: {
-      ...data,
+      ...body,
+      price: new Decimal(body.price),
       image: imageUrl,
+    },
+    include: {
+      restaurant: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        },
+      },
+      category: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        },
+      },
     },
   });
 
@@ -139,7 +231,7 @@ async function createMenuItem(
     action: 'CREATE',
     resource: 'MENU_ITEM',
     resourceId: newItem.id,
-    metadata: { data: authenticatedRequest.body },
+    metadata: { body },
   });
 
   sendSuccessResponse({
@@ -151,35 +243,35 @@ async function createMenuItem(
 
 async function updateMenuItem(request: Request, response: Response) {
   const authenticatedRequest = request as unknown as AuthenticatedRequest<
-    GetByIdMenuItemParams,
+    GetMenuItemByIdParams,
     unknown,
     UpdateMenuItemInput,
     unknown
   >;
 
-  const itemId = authenticatedRequest.params.itemId;
-  const user = authenticatedRequest.user;
-  const data = authenticatedRequest.body;
+  const { body, user, params } = authenticatedRequest;
 
-  if (authenticatedRequest.body.restaurantId) {
+  const item = await prisma.menuItem.findUnique({
+    where: { id: params.menuId },
+    include: { restaurant: true },
+  });
+
+  if (!item) {
+    throw new NotFoundError('Menu item not found');
+  }
+
+  if (user.role !== 'ADMIN' && item.restaurant.ownerId !== user.id) {
+    throw new ForbiddenError('You do not have permission to update this item');
+  }
+
+  if (body.restaurantId) {
     const restaurant = await prisma.restaurant.findUnique({
-      where: { id: authenticatedRequest.body.restaurantId },
+      where: { id: body.restaurantId },
     });
 
     if (!restaurant) {
       throw new ConflictError('Restaurant not found');
     }
-  }
-
-  const item = await prisma.menuItem.findUnique({
-    where: { id: itemId, restaurantId: authenticatedRequest.body.restaurantId },
-    include: { restaurant: true },
-  });
-
-  if (!item) throw new NotFoundError('Menu item not found');
-
-  if (user.role !== 'ADMIN' && item.restaurant.ownerId !== user.id) {
-    throw new ForbiddenError('You do not have permission to update this item');
   }
 
   let imageUrl = item.image;
@@ -193,10 +285,27 @@ async function updateMenuItem(request: Request, response: Response) {
   }
 
   const updatedItem = await prisma.menuItem.update({
-    where: { id: itemId },
+    where: { id: item.id },
     data: {
-      ...data,
+      ...body,
+      price: body.price ? new Decimal(body.price) : item.price,
       image: imageUrl,
+    },
+    include: {
+      restaurant: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        },
+      },
+      category: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        },
+      },
     },
   });
 
@@ -209,7 +318,7 @@ async function updateMenuItem(request: Request, response: Response) {
     resourceId: updatedItem.id,
     oldData: item,
     newData: updatedItem,
-    metadata: { data },
+    metadata: { body },
   });
 
   sendSuccessResponse({ response, message: 'Menu item updated', data: updatedItem });
@@ -217,28 +326,45 @@ async function updateMenuItem(request: Request, response: Response) {
 
 async function deleteMenuItem(request: Request, response: Response) {
   const authenticatedRequest = request as unknown as AuthenticatedRequest<
-    GetByIdMenuItemParams,
+    GetMenuItemByIdParams,
     unknown,
     unknown,
     unknown
   >;
 
-  const itemId = authenticatedRequest.params.itemId;
-  const user = authenticatedRequest.user;
+  const { user, params } = authenticatedRequest;
 
   const item = await prisma.menuItem.findUnique({
-    where: { id: itemId },
+    where: { id: params.menuId },
     include: { restaurant: true },
   });
 
-  if (!item) throw new NotFoundError('Menu item not found');
+  if (!item) {
+    throw new NotFoundError('Menu item not found');
+  }
 
   if (user.role !== 'ADMIN' && item.restaurant.ownerId !== user.id) {
     throw new ForbiddenError('You do not have permission to delete this item');
   }
 
   const deletedMenu = await prisma.menuItem.delete({
-    where: { id: itemId },
+    where: { id: item.id },
+    include: {
+      restaurant: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        },
+      },
+      category: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        },
+      },
+    },
   });
 
   databaseLogger.audit({
@@ -253,7 +379,7 @@ async function deleteMenuItem(request: Request, response: Response) {
   sendSuccessResponse({ response, message: 'Menu item deleted', data: deletedMenu });
 }
 
-export {
+const menuItemsController = {
   createMenuItem,
   deleteMenuItem,
   getMenuItemById,
@@ -261,3 +387,5 @@ export {
   getMenuItemsList,
   updateMenuItem,
 };
+
+export default menuItemsController;

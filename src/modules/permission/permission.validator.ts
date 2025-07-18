@@ -1,41 +1,93 @@
 import { z } from 'zod';
 
-const basePermissionSchema = z.object({
-  key: z.string().min(2),
-  description: z.string().default(''),
-});
+import basePaginationSchema from '@/validations/base.validation';
 
-const basePermissionGroupSchema = z.object({
-  name: z.string().min(2),
-  description: z.string().default(''),
-});
+const getPermissionListSchema = {
+  query: basePaginationSchema.extend({
+    key: z.string().trim().max(100).optional(),
+  }),
+};
 
-const createPermissionSchema = basePermissionSchema.extend({});
-const updatePermissionSchema = basePermissionSchema.partial();
+const getPermissionByIdSchema = {
+  params: z.object({
+    permissionId: z.string().trim().max(100),
+  }),
+};
 
-const createPermissionGroupSchema = basePermissionGroupSchema.extend({});
-const updatePermissionGroupSchema = basePermissionGroupSchema.partial();
+const createPermissionSchema = {
+  body: z.object({
+    key: z.string().trim().min(2).max(100),
+    description: z.string().trim().max(200).default(''),
+  }),
+};
+const updatePermissionSchema = {
+  params: z.object({
+    permissionId: z.string().trim().max(100),
+  }),
+  body: z.object({
+    key: z.string().trim().min(2).max(100),
+    description: z.string().trim().max(200).default(''),
+  }),
+};
 
-type CreatePermissionInput = z.infer<typeof createPermissionSchema>;
-type UpdatePermissionInput = z.infer<typeof updatePermissionSchema>;
-type CreatePermissionGroupInput = z.infer<typeof createPermissionGroupSchema>;
-type UpdatePermissionGroupInput = z.infer<typeof updatePermissionGroupSchema>;
+const getPermissionGroupListSchema = {
+  query: basePaginationSchema.extend({
+    name: z.string().trim().max(100).optional(),
+  }),
+};
 
-interface GetByIdPermissionParams {
-  permissionId: string;
-}
+const getPermissionGroupByIdSchema = {
+  params: z.object({
+    permissionGroupId: z.string().trim().max(100),
+  }),
+};
 
-export {
+const createPermissionGroupSchema = {
+  body: z.object({
+    name: z.string().trim().min(2).max(100),
+    description: z.string().trim().max(200).default(''),
+  }),
+};
+const updatePermissionGroupSchema = {
+  params: z.object({
+    permissionGroupId: z.string().trim().max(100),
+  }),
+  body: z.object({
+    name: z.string().trim().min(2).max(100),
+    description: z.string().trim().max(200).default(''),
+  }),
+};
+
+type CreatePermissionInput = z.infer<typeof createPermissionSchema.body>;
+type UpdatePermissionInput = z.infer<typeof updatePermissionSchema.body>;
+type GetPermissionListQuery = z.infer<typeof getPermissionListSchema.query>;
+type GetPermissionByIdParams = z.infer<typeof getPermissionByIdSchema.params>;
+
+type CreatePermissionGroupInput = z.infer<typeof createPermissionGroupSchema.body>;
+type UpdatePermissionGroupInput = z.infer<typeof updatePermissionGroupSchema.body>;
+type GetPermissionGroupListQuery = z.infer<typeof getPermissionGroupListSchema.query>;
+type GetPermissionGroupByIdParams = z.infer<typeof getPermissionGroupByIdSchema.params>;
+
+const permissionValidator = {
   createPermissionGroupSchema,
   createPermissionSchema,
   updatePermissionGroupSchema,
   updatePermissionSchema,
+  getPermissionListSchema,
+  getPermissionByIdSchema,
+  getPermissionGroupListSchema,
+  getPermissionGroupByIdSchema,
 };
 
 export type {
   CreatePermissionGroupInput,
   CreatePermissionInput,
-  GetByIdPermissionParams,
+  GetPermissionByIdParams,
+  GetPermissionGroupByIdParams,
+  GetPermissionGroupListQuery,
+  GetPermissionListQuery,
   UpdatePermissionGroupInput,
   UpdatePermissionInput,
 };
+
+export default permissionValidator;

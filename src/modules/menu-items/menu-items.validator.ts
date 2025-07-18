@@ -1,32 +1,55 @@
 import { z } from 'zod';
 
-import basePaginationSchema from '@/validations/pagination.validation';
+import { zodBoolean } from '@/utils/zod-utils';
+import basePaginationSchema from '@/validations/base.validation';
 
-const baseMenuItemSchema = z.object({
-  name: z.string().min(5),
-  description: z.string().default(''),
-  price: z.coerce.number().min(0.01),
-  available: z.coerce.boolean().optional(),
-  categoryId: z.string(),
-  restaurantId: z.string(),
-});
+const createMenuItemSchema = {
+  body: z.object({
+    name: z.string().trim().min(5).max(100),
+    description: z.string().trim().max(2200).default(''),
+    price: z.coerce.number().min(0.01),
+    available: z.coerce.boolean(),
+    categoryId: z.string().trim().max(100),
+    restaurantId: z.string().trim().max(100),
+  }),
+};
 
-const createMenuItemSchema = baseMenuItemSchema.extend({});
+const updateMenuItemSchema = {
+  body: z.object({
+    name: z.string().trim().min(5).max(100).optional(),
+    description: z.string().trim().max(2200).default('').optional(),
+    price: z.coerce.number().min(0.01).optional(),
+    available: z.coerce.boolean().optional(),
+    categoryId: z.string().trim().max(100).optional(),
+    restaurantId: z.string().trim().max(100).optional(),
+  }),
+};
 
-const updateMenuItemSchema = baseMenuItemSchema.partial();
+const geyMenuItemByIdSchema = {
+  params: z.object({
+    menuId: z.string().trim().max(100),
+  }),
+};
 
-const menuItemQuerySchema = basePaginationSchema.extend({
-  available: z.coerce.boolean().optional(),
-  restaurantId: z.string().optional(),
-});
+const getMenuItemsSchema = {
+  query: basePaginationSchema.extend({
+    name: z.string().trim().max(100).optional(),
+    available: zodBoolean().optional(),
+    restaurantId: z.string().trim().max(100).optional(),
+  }),
+};
 
-type CreateMenuItemInput = z.infer<typeof createMenuItemSchema>;
-type UpdateMenuItemInput = z.infer<typeof updateMenuItemSchema>;
-type MenuItemQueryInput = z.infer<typeof menuItemQuerySchema>;
+type CreateMenuItemInput = z.infer<typeof createMenuItemSchema.body>;
+type UpdateMenuItemInput = z.infer<typeof updateMenuItemSchema.body>;
+type GetMenuItemByIdParams = z.infer<typeof geyMenuItemByIdSchema.params>;
+type GetMenuItemQuery = z.infer<typeof getMenuItemsSchema.query>;
 
-interface GetByIdMenuItemParams {
-  itemId: string;
-}
+const menuItemValidator = {
+  createMenuItemSchema,
+  getMenuItemsSchema,
+  updateMenuItemSchema,
+  geyMenuItemByIdSchema,
+};
 
-export { createMenuItemSchema, menuItemQuerySchema, updateMenuItemSchema };
-export type { CreateMenuItemInput, UpdateMenuItemInput, MenuItemQueryInput, GetByIdMenuItemParams };
+export default menuItemValidator;
+export type { CreateMenuItemInput, GetMenuItemByIdParams, GetMenuItemQuery, UpdateMenuItemInput };
