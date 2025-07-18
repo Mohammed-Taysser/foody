@@ -2,7 +2,7 @@ import { OrderStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
 import { z } from 'zod';
 
 import { zodParseEnumList } from '@/utils/zod-utils';
-import basePaginationSchema from '@/validations/base.validation';
+import { basePaginationSchema, dateRangeSchema } from '@/validations/base.validation';
 
 const getOrdersListSchema = {
   query: basePaginationSchema.extend({
@@ -17,8 +17,7 @@ const getOrdersListSchema = {
     paymentStatus: zodParseEnumList<PaymentStatus>(['REFUNDED', 'PAID', 'UNPAID']).optional(),
     paymentMethod: zodParseEnumList<PaymentMethod>(['CASH', 'CARD', 'ONLINE']).optional(),
     tableNumber: z.coerce.number().optional(),
-    fromDate: z.coerce.date().optional(),
-    toDate: z.coerce.date().optional(),
+    createdAt: dateRangeSchema.optional(),
   }),
 };
 

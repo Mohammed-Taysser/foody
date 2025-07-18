@@ -2,7 +2,7 @@ import { UserRole } from '@prisma/client';
 import { z } from 'zod';
 
 import { zodBoolean, zodParseEnumList } from '@/utils/zod-utils';
-import basePaginationSchema from '@/validations/base.validation';
+import { basePaginationSchema, dateRangeSchema } from '@/validations/base.validation';
 
 const getUsersListSchema = {
   query: basePaginationSchema.extend({
@@ -10,15 +10,15 @@ const getUsersListSchema = {
     role: zodParseEnumList<UserRole>(['ADMIN', 'OWNER', 'CUSTOMER']).optional(),
     email: z.string().trim().max(100).optional(),
     failedLoginAttempts: z.coerce.number().min(0).max(50).optional(),
-    lastFailedLogin: z.coerce.date().optional(),
+    lastFailedLogin: dateRangeSchema.optional(),
     isEmailVerified: zodBoolean().optional(),
     isPhoneVerified: zodBoolean().optional(),
     isActive: zodBoolean().optional(),
     maxTokens: z.coerce.number().min(0).max(100).optional(),
     isBlocked: zodBoolean().optional(),
-    blockedAt: z.coerce.date().optional(),
+    blockedAt: dateRangeSchema.optional(),
     blockedById: z.string().min(5).max(100).optional(),
-    createdAt: z.coerce.date().optional(),
+    createdAt: dateRangeSchema.optional(),
   }),
 };
 

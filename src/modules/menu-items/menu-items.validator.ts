@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { zodBoolean } from '@/utils/zod-utils';
-import basePaginationSchema from '@/validations/base.validation';
+import { basePaginationSchema } from '@/validations/base.validation';
 
 const createMenuItemSchema = {
   body: z.object({

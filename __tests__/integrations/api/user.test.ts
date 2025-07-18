@@ -6,6 +6,7 @@ import { User } from '@prisma/client';
 
 import app from '../../../src/app';
 import prisma from '../../../src/apps/prisma';
+import dayjsTZ from '../../../src/utils/dayjs.utils';
 import {
   ADMIN_EMAIL,
   ADMIN_PASSWORD,
@@ -183,7 +184,7 @@ describe('GET /users', () => {
       );
     });
 
-    it('should filter by lastFailedLogin', async () => {
+    it('should filter by lastFailedLogin[startDate]', async () => {
       await prisma.user.create({
         data: {
           name: faker.person.fullName(),
@@ -196,8 +197,14 @@ describe('GET /users', () => {
       });
 
       // Assuming the lastFailedLogin is set to today for the test user
-      const today = new Date().toISOString().slice(0, 10);
-      const res = await request(app).get('/api/users').query({ lastFailedLogin: today });
+      const today = dayjsTZ().format('YYYY-MM-DD');
+      const res = await request(app)
+        .get('/api/users')
+        .query({
+          lastFailedLogin: {
+            startDate: today,
+          },
+        });
 
       expect(res.statusCode).toBe(200);
       expect(res.body.data.data.length).toBeGreaterThan(0);
@@ -210,9 +217,76 @@ describe('GET /users', () => {
           return new Date(user.lastFailedLogin).toISOString().slice(0, 10) === today;
         })
       ).toBe(true);
+
+      res.body.data.data.forEach((user: User) => {
+        const lastFailedLogin = dayjsTZ(user.lastFailedLogin);
+        expect(lastFailedLogin.isSameOrAfter(today, 'day')).toBe(true);
+      });
     });
 
-    it('should filter by createdAt', async () => {
+    it('should filter by lastFailedLogin[endDate]', async () => {
+      await prisma.user.create({
+        data: {
+          name: faker.person.fullName(),
+          email: faker.internet.email(),
+          password: '123456789',
+          role: 'CUSTOMER',
+          lastFailedLogin: new Date(), // Set lastFailedLogin to today
+          failedLoginAttempts: 1,
+        },
+      });
+
+      // Assuming the lastFailedLogin is set to today for the test user
+      const today = dayjsTZ().format('YYYY-MM-DD');
+      const res = await request(app)
+        .get('/api/users')
+        .query({
+          lastFailedLogin: {
+            endDate: today,
+          },
+        });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data.data.length).toBeGreaterThan(0);
+
+      res.body.data.data.forEach((user: User) => {
+        const lastFailedLogin = dayjsTZ(user.lastFailedLogin);
+        expect(lastFailedLogin.isSameOrBefore(today, 'day')).toBe(true);
+      });
+    });
+
+    it('should filter by lastFailedLogin[startDate, endDate]', async () => {
+      await prisma.user.create({
+        data: {
+          name: faker.person.fullName(),
+          email: faker.internet.email(),
+          password: '123456789',
+          role: 'CUSTOMER',
+          lastFailedLogin: new Date(), // Set lastFailedLogin to today
+          failedLoginAttempts: 1,
+        },
+      });
+
+      // Assuming the lastFailedLogin is set to today for the test user
+      const today = dayjsTZ().format('YYYY-MM-DD');
+      const res = await request(app)
+        .get('/api/users')
+        .query({
+          lastFailedLogin: {
+            startDate: today,
+            endDate: today,
+          },
+        });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data.data.length).toBeGreaterThan(0);
+      res.body.data.data.forEach((user: User) => {
+        expect(user.lastFailedLogin).toBeTruthy();
+        expect(dayjsTZ(user.lastFailedLogin).isSame(today, 'day')).toBe(true);
+      });
+    });
+
+    it('should filter by createdAt[startDate]', async () => {
       await request(app).post('/api/auth/register').send({
         name: faker.person.fullName(),
         email: faker.internet.email(),
@@ -220,16 +294,75 @@ describe('GET /users', () => {
         role: 'CUSTOMER',
       });
 
-      const today = new Date().toISOString().slice(0, 10);
-      const res = await request(app).get('/api/users').query({ createdAt: today });
+      const today = dayjsTZ().format('YYYY-MM-DD');
+      const res = await request(app)
+        .get('/api/users')
+        .query({
+          createdAt: {
+            startDate: today,
+          },
+        });
 
       expect(res.statusCode).toBe(200);
       expect(res.body.data.data.length).toBeGreaterThan(0);
-      expect(
-        res.body.data.data.every((user: User) => {
-          return new Date(user.createdAt).toISOString().slice(0, 10) === today;
-        })
-      ).toBe(true);
+
+      res.body.data.data.forEach((user: User) => {
+        const createdAt = dayjsTZ(user.createdAt);
+        expect(createdAt.isSameOrAfter(today, 'day')).toBe(true);
+      });
+    });
+
+    it('should filter by createdAt[endDate]', async () => {
+      await request(app).post('/api/auth/register').send({
+        name: faker.person.fullName(),
+        email: faker.internet.email(),
+        password: '123456789',
+        role: 'CUSTOMER',
+      });
+
+      const today = dayjsTZ().format('YYYY-MM-DD');
+      const res = await request(app)
+        .get('/api/users')
+        .query({
+          createdAt: {
+            endDate: today,
+          },
+        });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data.data.length).toBeGreaterThan(0);
+
+      res.body.data.data.forEach((user: User) => {
+        const created = dayjsTZ(user.createdAt);
+        expect(created.isSameOrBefore(today, 'day')).toBe(true);
+      });
+    });
+
+    it('should filter by createdAt[startDate, endDate]', async () => {
+      await request(app).post('/api/auth/register').send({
+        name: faker.person.fullName(),
+        email: faker.internet.email(),
+        password: '123456789',
+        role: 'CUSTOMER',
+      });
+
+      const today = dayjsTZ().format('YYYY-MM-DD');
+      const res = await request(app)
+        .get('/api/users')
+        .query({
+          createdAt: {
+            startDate: today,
+            endDate: today,
+          },
+        });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data.data.length).toBeGreaterThan(0);
+
+      res.body.data.data.forEach((user: User) => {
+        const created = dayjsTZ(user.createdAt);
+        expect(created.isBetween(today, today, 'day', '[]')).toBe(true);
+      });
     });
 
     it('should filter by isEmailVerified', async () => {
@@ -267,7 +400,7 @@ describe('GET /users', () => {
       expect(res.body.data.data.every((user: User) => user.maxTokens <= 100)).toBe(true);
     });
 
-    it('should filter by blockedAt', async () => {
+    it('should filter by blockedAt[startDate]', async () => {
       await prisma.user.create({
         data: {
           name: faker.person.fullName(),
@@ -280,20 +413,85 @@ describe('GET /users', () => {
         },
       });
 
-      const today = new Date().toISOString().slice(0, 10);
-      const res = await request(app).get('/api/users').query({ blockedAt: today });
+      const today = dayjsTZ().format('YYYY-MM-DD');
+      const res = await request(app)
+        .get('/api/users')
+        .query({
+          blockedAt: {
+            startDate: today,
+          },
+        });
 
       expect(res.statusCode).toBe(200);
       expect(res.body.data.data.length).toBeGreaterThan(0);
-      expect(
-        res.body.data.data.every((user: User) => {
-          if (!user.blockedAt) {
-            return false;
-          }
 
-          return new Date(user.blockedAt).toISOString().slice(0, 10) === today;
-        })
-      ).toBe(true);
+      res.body.data.data.forEach((user: User) => {
+        const blockedAt = dayjsTZ(user.blockedAt);
+        expect(blockedAt.isSameOrAfter(today, 'day')).toBe(true);
+      });
+    });
+
+    it('should filter by blockedAt[endDate]', async () => {
+      await prisma.user.create({
+        data: {
+          name: faker.person.fullName(),
+          email: faker.internet.email(),
+          password: '123456789',
+          role: 'CUSTOMER',
+          isBlocked: true,
+          blockedAt: new Date(),
+          blockedById: 'some-id',
+        },
+      });
+
+      const today = dayjsTZ().format('YYYY-MM-DD');
+      const res = await request(app)
+        .get('/api/users')
+        .query({
+          blockedAt: {
+            startDate: today,
+          },
+        });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data.data.length).toBeGreaterThan(0);
+
+      res.body.data.data.forEach((user: User) => {
+        const blockedAt = dayjsTZ(user.blockedAt);
+        expect(blockedAt.isSameOrBefore(today, 'day')).toBe(true);
+      });
+    });
+
+    it('should filter by blockedAt[startDate, endDate]', async () => {
+      await prisma.user.create({
+        data: {
+          name: faker.person.fullName(),
+          email: faker.internet.email(),
+          password: '123456789',
+          role: 'CUSTOMER',
+          isBlocked: true,
+          blockedAt: new Date(),
+          blockedById: 'some-id',
+        },
+      });
+
+      const today = dayjsTZ().format('YYYY-MM-DD');
+      const res = await request(app)
+        .get('/api/users')
+        .query({
+          blockedAt: {
+            startDate: today,
+            endDate: today,
+          },
+        });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data.data.length).toBeGreaterThan(0);
+
+      res.body.data.data.forEach((user: User) => {
+        const blockedAt = dayjsTZ(user.blockedAt);
+        expect(blockedAt.isBetween(today, today, 'day', '[]')).toBe(true);
+      });
     });
 
     it('should filter by blockedById', async () => {

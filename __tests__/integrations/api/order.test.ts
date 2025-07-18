@@ -14,6 +14,7 @@ import {
   OWNER_EMAIL,
   OWNER_PASSWORD,
 } from '../../test.constants';
+import dayjsTZ from '../../../src/utils/dayjs.utils';
 
 describe('Order API', () => {
   let ownerToken: string;
@@ -250,24 +251,60 @@ describe('Order API', () => {
         expect(data.every((o: Order) => o.paymentMethod === 'CARD')).toBe(true);
       });
 
-      it('should filter by fromDate and toDate', async () => {
-        const today = new Date();
-        const fromDate = new Date(today.setHours(0, 0, 0, 0)).toISOString();
-        const toDate = new Date(today.setHours(23, 59, 59, 999)).toISOString();
+      it('should filter by createdAt[startDate, endDate]', async () => {
+        const today = dayjsTZ().format('YYYY-MM-DD');
 
         const res = await request(app)
           .get('/api/orders')
           .set('Authorization', `Bearer ${customerToken}`)
-          .query({ fromDate, toDate });
+          .query({
+            createdAt: {
+              startDate: today,
+              endDate: today,
+            },
+          });
 
         expect(res.status).toBe(200);
-        expect(
-          res.body.data.data.every(
-            (o: Order) =>
-              new Date(o.createdAt) >= new Date(fromDate) &&
-              new Date(o.createdAt) <= new Date(toDate)
-          )
-        ).toBe(true);
+        res.body.data.data.forEach((order: Order) => {
+          const created = dayjsTZ(order.createdAt);
+          expect(created.isBetween(today, today, 'day', '[]')).toBe(true);
+        });
+      });
+
+      it('should filter by createdAt[startDate]', async () => {
+        const today = dayjsTZ().format('YYYY-MM-DD');
+        const res = await request(app)
+          .get('/api/orders')
+          .set('Authorization', `Bearer ${customerToken}`)
+          .query({
+            createdAt: {
+              startDate: today,
+            },
+          });
+
+        expect(res.status).toBe(200);
+        res.body.data.data.forEach((user: Order) => {
+          const createdAt = dayjsTZ(user.createdAt);
+          expect(createdAt.isSameOrAfter(today, 'day')).toBe(true);
+        });
+      });
+
+      it('should filter by createdAt[endDate]', async () => {
+        const today = dayjsTZ().format('YYYY-MM-DD');
+        const res = await request(app)
+          .get('/api/orders')
+          .set('Authorization', `Bearer ${customerToken}`)
+          .query({
+            createdAt: {
+              endDate: today,
+            },
+          });
+
+        expect(res.status).toBe(200);
+        res.body.data.data.forEach((user: Order) => {
+          const created = dayjsTZ(user.createdAt);
+          expect(created.isSameOrBefore(today, 'day')).toBe(true);
+        });
       });
 
       it('should filter by tableNumber', async () => {

@@ -5,7 +5,13 @@ const basePaginationSchema = z.object({
   limit: z.coerce.number().min(1).max(500).default(10),
 });
 
-type BasePaginationInput = z.infer<typeof basePaginationSchema>;
+const dateRangeSchema = z.object({
+  startDate: z.coerce.date().optional(),
+  endDate: z.coerce.date().optional(),
+});
 
-export type { BasePaginationInput };
-export default basePaginationSchema;
+type BasePaginationInput = z.infer<typeof basePaginationSchema>;
+type DateRangeInput = z.infer<typeof dateRangeSchema>;
+
+export type { BasePaginationInput, DateRangeInput };
+export { basePaginationSchema, dateRangeSchema };

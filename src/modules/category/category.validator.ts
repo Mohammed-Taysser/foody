@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import basePaginationSchema from '@/validations/base.validation';
+import { basePaginationSchema } from '@/validations/base.validation';
 
 const createCategorySchema = {
   body: z.object({

@@ -19,6 +19,7 @@ import { ConflictError, NotFoundError } from '@/utils/errors.utils';
 import { deleteImage, uploadImage } from '@/utils/multer.utils';
 import { getRequestInfo } from '@/utils/request.utils';
 import { sendPaginatedResponse, sendSuccessResponse } from '@/utils/send-response';
+import { buildDateRangeFilter } from '@/utils/dayjs.utils';
 
 async function getUserPermission(request: Request, response: Response) {
   const authenticatedRequest = request as AuthenticatedRequest;
@@ -82,13 +83,9 @@ async function getUsers(request: Request, response: Response) {
   }
 
   if (query.lastFailedLogin) {
-    const date = new Date(query.lastFailedLogin);
-    const nextDate = new Date(date);
-    nextDate.setDate(date.getDate() + 1);
-
     filters.lastFailedLogin = {
-      gte: date,
-      lt: nextDate,
+      ...buildDateRangeFilter(query.lastFailedLogin),
+      not: null, // Exclude nulls explicitly
     };
   }
 
@@ -123,13 +120,9 @@ async function getUsers(request: Request, response: Response) {
   }
 
   if (query.blockedAt) {
-    const date = new Date(query.blockedAt);
-    const nextDate = new Date(date);
-    nextDate.setDate(date.getDate() + 1);
-
     filters.blockedAt = {
-      gte: date,
-      lt: nextDate,
+      ...buildDateRangeFilter(query.blockedAt),
+      not: null, // Exclude nulls explicitly
     };
   }
 
@@ -140,14 +133,7 @@ async function getUsers(request: Request, response: Response) {
   }
 
   if (query.createdAt) {
-    const date = new Date(query.createdAt);
-    const nextDate = new Date(date);
-    nextDate.setDate(date.getDate() + 1);
-
-    filters.createdAt = {
-      gte: date,
-      lt: nextDate,
-    };
+    filters.createdAt = buildDateRangeFilter(query.createdAt);
   }
 
   const [data, total] = await Promise.all([

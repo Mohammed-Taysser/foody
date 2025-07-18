@@ -18,6 +18,7 @@ import { AuthenticatedRequest } from '@/types/import';
 import { BadRequestError, ForbiddenError, NotFoundError } from '@/utils/errors.utils';
 import { getRequestInfo } from '@/utils/request.utils';
 import { sendPaginatedResponse, sendSuccessResponse } from '@/utils/send-response';
+import { buildDateRangeFilter } from '@/utils/dayjs.utils';
 
 async function getOrders(request: Request, response: Response) {
   const authenticatedRequest = request as unknown as AuthenticatedRequest<
@@ -62,18 +63,8 @@ async function getOrders(request: Request, response: Response) {
     };
   }
 
-  if (query.fromDate || query.toDate) {
-    filters.createdAt = {};
-
-    if (query.fromDate) {
-      // Start of day
-      filters.createdAt.gte = new Date(query.fromDate.setHours(0, 0, 0, 0));
-    }
-
-    if (query.toDate) {
-      // End of day
-      filters.createdAt.lte = new Date(query.toDate.setHours(23, 59, 59, 999));
-    }
+  if (query.createdAt) {
+    filters.createdAt = buildDateRangeFilter(query.createdAt);
   }
 
   if (query.tableNumber) {

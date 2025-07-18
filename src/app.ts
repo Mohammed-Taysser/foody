@@ -5,6 +5,7 @@ import hpp from 'hpp';
 import i18nextMiddleware from 'i18next-http-middleware';
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
+import qs from 'qs';
 
 import CONFIG from '@/apps/config';
 import i18n from '@/apps/i18n';
@@ -64,6 +65,9 @@ app.use(compressionMiddleware);
 
 // i18next Middleware for internationalization
 app.use(i18nextMiddleware.handle(i18n));
+
+// Parse query strings using qs library
+app.set('query parser', (str: string) => qs.parse(str));
 
 // Serve static Files
 app.use(express.static('public'));
