@@ -1,5 +1,4 @@
 import { Prisma } from '@prisma/client';
-import { Decimal } from '@prisma/client/runtime/library';
 import { Request, Response } from 'express';
 
 import {
@@ -203,7 +202,7 @@ async function createMenuItem(
   const newItem = await prisma.menuItem.create({
     data: {
       ...body,
-      price: new Decimal(body.price),
+      price: new Prisma.Decimal(body.price),
       image: imageUrl,
     },
     include: {
@@ -288,7 +287,7 @@ async function updateMenuItem(request: Request, response: Response) {
     where: { id: item.id },
     data: {
       ...body,
-      price: body.price ? new Decimal(body.price) : item.price,
+      price: body.price ? new Prisma.Decimal(body.price) : item.price,
       image: imageUrl,
     },
     include: {
