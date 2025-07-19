@@ -1,3 +1,6 @@
+type ReportFormat = 'pdf' | 'csv' | 'json';
+type ReportType = 'daily' | 'weekly' | 'monthly';
+
 interface UserTokenPayload {
   id: string;
   email: string;

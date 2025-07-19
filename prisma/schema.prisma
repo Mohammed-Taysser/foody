@@ -18,7 +18,7 @@ model User {
   email    String   @unique
   password String
   role     UserRole @default(CUSTOMER)
-  image    String  @default("/avatar.jpg")
+  image    String   @default("/avatar.jpg")
 
   twoFactorSecret  String?
   twoFactorEnabled Boolean @default(false)
@@ -26,16 +26,16 @@ model User {
   failedLoginAttempts Int       @default(0)
   lastFailedLogin     DateTime?
 
-  passwordResetToken   String?
-  passwordResetSentAt  DateTime?
+  passwordResetToken  String?
+  passwordResetSentAt DateTime?
 
-  isEmailVerified          Boolean   @default(false)
-  emailVerificationSentAt  DateTime?
-  emailVerificationToken   String?
+  isEmailVerified         Boolean   @default(false)
+  emailVerificationSentAt DateTime?
+  emailVerificationToken  String?
 
-  isPhoneVerified          Boolean   @default(false)
-  phoneVerificationSentAt  DateTime?
-  phoneVerificationToken   String?
+  isPhoneVerified         Boolean   @default(false)
+  phoneVerificationSentAt DateTime?
+  phoneVerificationToken  String?
 
   isActive  Boolean @default(true)
   maxTokens Int     @default(5)
@@ -45,7 +45,8 @@ model User {
   blockedById String?
   blockReason String?
 
-  preferredLanguage String @default("en")
+  preferredLanguage String  @default("en")
+  timezone          String? @default("UTC")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -91,9 +92,9 @@ model UserLoginAttempt {
 }
 
 model Restaurant {
-  id          String  @id @default(cuid())
+  id          String @id @default(cuid())
   name        String
-  description String  @default("")
+  description String @default("")
   location    String
   ownerId     String
   image       String @default("/avatar.jpg")
@@ -111,7 +112,7 @@ model MenuItem {
   id           String  @id @default(cuid())
   name         String
   description  String  @default("")
-  image        String @default("/avatar.jpg")
+  image        String  @default("/avatar.jpg")
   price        Decimal @db.Decimal(10, 2)
   available    Boolean @default(true)
   restaurantId String
@@ -120,13 +121,13 @@ model MenuItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  category   Category   @relation(fields: [categoryId], references: [id])
+  category   Category    @relation(fields: [categoryId], references: [id])
   restaurant Restaurant  @relation(fields: [restaurantId], references: [id])
   orders     OrderItem[]
 }
 
 model Category {
-  id           String  @id @default(cuid())
+  id           String @id @default(cuid())
   name         String
   restaurantId String
   image        String @default("/avatar.jpg")
@@ -298,15 +299,15 @@ model Order {
   restaurantId String
   items        OrderItem[]
   status       OrderStatus @default(PENDING)
-  total        Decimal @db.Decimal(10, 2)
-  subtotal     Decimal @db.Decimal(10, 2)
-  discount     Decimal @db.Decimal(10, 2)      @default(0)
-  notes        String     @default("")
+  total        Decimal     @db.Decimal(10, 2)
+  subtotal     Decimal     @db.Decimal(10, 2)
+  discount     Decimal     @default(0) @db.Decimal(10, 2)
+  notes        String      @default("")
 
-  paymentStatus PaymentStatus  @default(UNPAID)
+  paymentStatus PaymentStatus @default(UNPAID)
   paymentMethod PaymentMethod @default(CASH)
 
-  tableNumber   Int?
+  tableNumber Int?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -316,7 +317,7 @@ model Order {
 }
 
 model OrderItem {
-  id         String  @id @default(cuid())
+  id         String @id @default(cuid())
   orderId    String
   menuItemId String
   quantity   Int

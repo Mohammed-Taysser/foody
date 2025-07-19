@@ -3,7 +3,7 @@ import { config as loadEnvSafe } from 'dotenv-safe';
 import { SignOptions } from 'jsonwebtoken';
 import { z } from 'zod';
 
-import timezones from '../../public/timezones.json';
+import timezones from '../constants/timezones.json';
 
 // Extract the list of valid timezone names
 const validTimezones = timezones.map((tz) => tz.tzCode);

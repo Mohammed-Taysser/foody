@@ -1,5 +1,4 @@
 import { Prisma } from '@prisma/client';
-import { Decimal } from '@prisma/client/runtime/library';
 import { Request, Response } from 'express';
 
 import { VALID_TRANSITIONS } from './order.constant';
@@ -18,6 +17,7 @@ import { AuthenticatedRequest } from '@/types/import';
 import { BadRequestError, ForbiddenError, NotFoundError } from '@/utils/errors.utils';
 import { getRequestInfo } from '@/utils/request.utils';
 import { sendPaginatedResponse, sendSuccessResponse } from '@/utils/send-response';
+import { buildDateRangeFilter } from '@/utils/dayjs.utils';
 
 async function getOrders(request: Request, response: Response) {
   const authenticatedRequest = request as unknown as AuthenticatedRequest<
@@ -62,18 +62,8 @@ async function getOrders(request: Request, response: Response) {
     };
   }
 
-  if (query.fromDate || query.toDate) {
-    filters.createdAt = {};
-
-    if (query.fromDate) {
-      // Start of day
-      filters.createdAt.gte = new Date(query.fromDate.setHours(0, 0, 0, 0));
-    }
-
-    if (query.toDate) {
-      // End of day
-      filters.createdAt.lte = new Date(query.toDate.setHours(23, 59, 59, 999));
-    }
+  if (query.createdAt) {
+    filters.createdAt = buildDateRangeFilter(query.createdAt);
   }
 
   if (query.tableNumber) {
@@ -218,11 +208,11 @@ async function createOrder(request: Request, response: Response) {
     );
   }
 
-  let total: Decimal = new Decimal(0);
+  let total: Prisma.Decimal = new Prisma.Decimal(0);
 
   const orderItems: Prisma.OrderItemCreateManyOrderInput[] = items.map((i) => {
     const menuItem = menuItems.find((m) => m.id === i.menuItemId)!;
-    const itemTotal = new Decimal(menuItem.price).mul(i.quantity);
+    const itemTotal = new Prisma.Decimal(menuItem.price).mul(i.quantity);
     total = total.plus(itemTotal);
 
     return {
@@ -232,7 +222,7 @@ async function createOrder(request: Request, response: Response) {
     };
   });
 
-  const subtotal = total.minus(new Decimal(discount));
+  const subtotal = total.minus(new Prisma.Decimal(discount));
 
   const order = await prisma.order.create({
     data: {
@@ -356,14 +346,14 @@ async function updateOrder(request: Request, response: Response) {
   const incomingItemsIds = itemToUpdate.map((item) => item.id);
   const itemsToDelete = existingOrderItems.filter((item) => !incomingItemsIds.includes(item.id));
 
-  let total: Decimal = new Decimal(0);
+  let total: Prisma.Decimal = new Prisma.Decimal(0);
 
   body.items.forEach((item) => {
     const menuItem = menuItems.find((menuItem) => menuItem.id === item.menuItemId)!;
-    total = total.plus(new Decimal(menuItem.price).mul(item.quantity));
+    total = total.plus(new Prisma.Decimal(menuItem.price).mul(item.quantity));
   });
 
-  const subtotal = total.minus(new Decimal(body.discount));
+  const subtotal = total.minus(new Prisma.Decimal(body.discount));
 
   const updatedOrder = await prisma.order.update({
     where: { id: order.id },
