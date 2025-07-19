@@ -19,6 +19,7 @@ import categoriesRoutes from '@/modules/category/category.route';
 import menuItemsRoutes from '@/modules/menu-items/menu-items.route';
 import orderRoutes from '@/modules/order/order.route';
 import permissionRoutes from '@/modules/permission/permission.route';
+import systemRoutes from '@/modules/system/system.route';
 import restaurantRoutes from '@/modules/restaurant/restaurant.route';
 import userRoutes from '@/modules/user/user.route';
 import { ForbiddenError, NotFoundError } from '@/utils/errors.utils';
@@ -73,15 +74,11 @@ app.set('query parser', (str: string) => qs.parse(str));
 app.use(express.static('public'));
 app.use('/uploads', express.static('uploads'));
 
-// Health check route
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', message: 'Server is healthy 🚀' });
-});
-
 // API rate limiter
 app.use('/api', apiLimiter);
 
 // Routes
+app.use('/', systemRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/permissions', permissionRoutes);
