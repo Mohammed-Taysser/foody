@@ -7,6 +7,8 @@ import isoWeek from 'dayjs/plugin/isoWeek';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import duration from 'dayjs/plugin/duration';
 
 import CONFIG from '@/apps/config';
 import { DateRangeInput } from '@/validations/base.validation';
@@ -17,6 +19,8 @@ dayjs.extend(timezone);
 dayjs.extend(isoWeek);
 dayjs.extend(weekOfYear);
 dayjs.extend(isSameOrAfter);
+dayjs.extend(relativeTime);
+dayjs.extend(duration);
 dayjs.extend(isSameOrBefore);
 
 const appTimezone: string = CONFIG.DEFAULT_TIMEZONE ?? dayjs.tz.guess() ?? 'UTC';
