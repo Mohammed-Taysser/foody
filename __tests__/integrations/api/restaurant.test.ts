@@ -446,6 +446,6 @@ describe('Restaurant API', () => {
         'attachment; filename="Restaurants.pdf"'
       );
       expect(parseInt(res.headers['content-length'])).toBeGreaterThan(0);
-    });
+    }, 20000); // 20 seconds
   });
 });

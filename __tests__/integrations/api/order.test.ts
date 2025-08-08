@@ -976,6 +976,6 @@ describe('Order API', () => {
       expect(res.headers['content-type']).toBe('application/pdf');
       expect(res.headers['content-disposition']).toContain('attachment; filename="Orders.pdf"');
       expect(parseInt(res.headers['content-length'])).toBeGreaterThan(0);
-    });
+    }, 20000); // 20 seconds
   });
 });

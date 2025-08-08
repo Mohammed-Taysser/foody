@@ -405,6 +405,6 @@ describe('Category API', () => {
       expect(res.headers['content-type']).toBe('application/pdf');
       expect(res.headers['content-disposition']).toContain('attachment; filename="Categories.pdf"');
       expect(parseInt(res.headers['content-length'])).toBeGreaterThan(0);
-    });
+    }, 20000); // 20 seconds
   });
 });

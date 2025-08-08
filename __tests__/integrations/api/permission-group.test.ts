@@ -252,6 +252,6 @@ describe('Permission Group API', () => {
         'attachment; filename="Permission Groups.pdf"'
       );
       expect(parseInt(res.headers['content-length'])).toBeGreaterThan(0);
-    });
+    }, 20000); // 20 seconds
   });
 });

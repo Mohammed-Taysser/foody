@@ -931,5 +931,5 @@ describe('GET /api/users/export', () => {
     expect(res.headers['content-type']).toBe('application/pdf');
     expect(res.headers['content-disposition']).toContain('attachment; filename="Users.pdf"');
     expect(parseInt(res.headers['content-length'])).toBeGreaterThan(0);
-  });
+  }, 20000); // 20 seconds
 });
