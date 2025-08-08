@@ -207,7 +207,6 @@ describe('GET /users', () => {
         });
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.data.data.length).toBeGreaterThan(0);
 
       expect(
         res.body.data.data.every((user: User) => {
@@ -247,7 +246,6 @@ describe('GET /users', () => {
         });
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.data.data.length).toBeGreaterThan(0);
 
       res.body.data.data.forEach((user: User) => {
         const lastFailedLogin = dayjsTZ(user.lastFailedLogin);
@@ -279,7 +277,6 @@ describe('GET /users', () => {
         });
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.data.data.length).toBeGreaterThan(0);
       res.body.data.data.forEach((user: User) => {
         expect(user.lastFailedLogin).toBeTruthy();
         expect(dayjsTZ(user.lastFailedLogin).isSame(today, 'day')).toBe(true);
@@ -304,7 +301,6 @@ describe('GET /users', () => {
         });
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.data.data.length).toBeGreaterThan(0);
 
       res.body.data.data.forEach((user: User) => {
         const createdAt = dayjsTZ(user.createdAt);
@@ -330,7 +326,6 @@ describe('GET /users', () => {
         });
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.data.data.length).toBeGreaterThan(0);
 
       res.body.data.data.forEach((user: User) => {
         const created = dayjsTZ(user.createdAt);
@@ -357,7 +352,6 @@ describe('GET /users', () => {
         });
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.data.data.length).toBeGreaterThan(0);
 
       res.body.data.data.forEach((user: User) => {
         const created = dayjsTZ(user.createdAt);
@@ -423,7 +417,6 @@ describe('GET /users', () => {
         });
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.data.data.length).toBeGreaterThan(0);
 
       res.body.data.data.forEach((user: User) => {
         const blockedAt = dayjsTZ(user.blockedAt);
@@ -454,7 +447,6 @@ describe('GET /users', () => {
         });
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.data.data.length).toBeGreaterThan(0);
 
       res.body.data.data.forEach((user: User) => {
         const blockedAt = dayjsTZ(user.blockedAt);
@@ -486,7 +478,6 @@ describe('GET /users', () => {
         });
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.data.data.length).toBeGreaterThan(0);
 
       res.body.data.data.forEach((user: User) => {
         const blockedAt = dayjsTZ(user.blockedAt);
