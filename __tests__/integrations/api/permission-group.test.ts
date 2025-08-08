@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { PermissionGroup } from '@prisma/client';
 import request from 'supertest';
+import ExcelJS from 'exceljs';
 
 import app from '../../../src/app';
 import { ADMIN_EMAIL, ADMIN_PASSWORD } from '../../test.constants';
@@ -133,7 +134,7 @@ describe('Permission Group API', () => {
 
     describe('Filters', () => {
       it('should filter by name', async () => {
-        const name = faker.company.name + Math.floor(Math.random() * 1000).toFixed(0);
+        const name = faker.company.name + faker.number.hex({ min: 0, max: 65535 });
 
         const createRes = await request(app)
           .post('/api/permissions/permission-groups')
@@ -150,6 +151,107 @@ describe('Permission Group API', () => {
         const names = res.body.data.data.map((p: PermissionGroup) => p.name);
         expect(names).toEqual(expect.arrayContaining([name]));
       });
+    });
+  });
+
+  describe('GET /api/permissions/permission-groups/export', () => {
+    it('should export Permission Group in CSV format', async () => {
+      const res = await request(app)
+        .get(`/api/permissions/permission-groups/export`)
+        .query({
+          format: 'csv',
+        })
+        .set('Authorization', `Bearer ${adminToken}`)
+        .buffer()
+        .parse((res, callback) => {
+          const chunks: Uint8Array<ArrayBufferLike>[] = [];
+          res.setEncoding('utf8');
+          res.on('data', (chunk) => chunks.push(chunk));
+          res.on('end', () => callback(null, chunks.join('')));
+        });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.headers['content-type']).toBe('text/csv; charset=utf-8');
+      expect(res.headers['content-disposition']).toContain(
+        'attachment; filename="Permission Groups.csv"'
+      );
+
+      expect(typeof res.body).toBe('string');
+      expect(res.body).toContain('#');
+    });
+
+    it('should export permission Group in Excel format (xlsx)', async () => {
+      const res = await request(app)
+        .get(`/api/permissions/permission-groups/export?format=xlsx`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .query({
+          name: 'Test Group',
+        })
+        .buffer()
+        .parse((res, callback) => {
+          const chunks: Uint8Array<ArrayBufferLike>[] = [];
+          res.on('data', (chunk) => chunks.push(chunk));
+          res.on('end', () => callback(null, Buffer.concat(chunks)));
+        });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.headers['content-type']).toBe(
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      );
+      expect(res.headers['content-disposition']).toContain(
+        'attachment; filename="Permission Groups.xlsx"'
+      );
+
+      expect(res.body).toBeInstanceOf(Buffer); // xlsx returns a buffer
+
+      // Load the workbook from buffer
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(res.body);
+
+      const worksheet = workbook.worksheets[0];
+
+      const map: Record<string, number> = {};
+      worksheet.getRow(1).eachCell((cell, colNumber) => {
+        map[cell.text.trim()] = colNumber;
+      });
+
+      // Basic validation
+      expect(worksheet).toBeDefined();
+
+      // Confirm data rows match expected content
+      worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber === 1) return; // Skip header
+
+        const name = row.getCell(map['name'])?.text?.toLowerCase() ?? '';
+
+        expect(name).toContain(name);
+      });
+    });
+
+    it('should export permission Group in PDF format', async () => {
+      const res = await request(app)
+        .get(`/api/permissions/permission-groups/export`)
+        .query({
+          format: 'pdf',
+          name: 'Test Group',
+        })
+        .set('Authorization', `Bearer ${adminToken}`)
+        .buffer()
+        .parse((res, callback) => {
+          const chunks: Uint8Array<ArrayBufferLike>[] = [];
+          res.on('data', (chunk) => chunks.push(chunk));
+          res.on('end', () => callback(null, Buffer.concat(chunks)));
+        });
+
+      expect(res.statusCode).toBe(200);
+
+      expect(res.body.slice(0, 4).toString()).toBe('%PDF');
+
+      expect(res.headers['content-type']).toBe('application/pdf');
+      expect(res.headers['content-disposition']).toContain(
+        'attachment; filename="Permission Groups.pdf"'
+      );
+      expect(parseInt(res.headers['content-length'])).toBeGreaterThan(0);
     });
   });
 });

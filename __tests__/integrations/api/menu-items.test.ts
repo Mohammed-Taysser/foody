@@ -3,6 +3,7 @@ import path from 'path';
 import { faker } from '@faker-js/faker';
 import { MenuItem } from '@prisma/client';
 import request from 'supertest';
+import ExcelJS from 'exceljs';
 
 import app from '../../../src/app';
 import {
@@ -15,6 +16,7 @@ import {
 } from '../../test.constants';
 
 const mockImagePath = path.join(__dirname, '../../../public/avatar.jpg');
+const mockFontPath = path.join(__dirname, '../../../public/DINNextLTArabic.ttf');
 
 describe('Menu Items API', () => {
   let ownerToken: string;
@@ -165,6 +167,20 @@ describe('Menu Items API', () => {
 
       expect(res.statusCode).toBe(200);
       expect(res.body.data.data.image).toMatch(/\/uploads\/menu\//);
+    });
+
+    it('should not allow uploading non-image file when adding a menu item', async () => {
+      const res = await request(app)
+        .post(`/api/menu-items`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .field('name', 'Pizza Upload')
+        .field('price', 15.99)
+        .field('available', true)
+        .field('restaurantId', restaurantId)
+        .field('categoryId', categoryId)
+        .attach('image', mockFontPath);
+
+      expect(res.statusCode).toBe(400);
     });
 
     it('should return 401 if unauthenticated user tries to create a menu item', async () => {
@@ -334,6 +350,99 @@ describe('Menu Items API', () => {
       const res = await request(app).get(`/api/menu-items/!@#`);
 
       expect(res.statusCode).toBe(404);
+    });
+  });
+
+  describe('GET /api/menu-items/export', () => {
+    it('should export menu-items in CSV format', async () => {
+      const res = await request(app)
+        .get(`/api/menu-items/export?format=csv`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .buffer()
+        .parse((res, callback) => {
+          const chunks: Uint8Array<ArrayBufferLike>[] = [];
+          res.setEncoding('utf8');
+          res.on('data', (chunk) => chunks.push(chunk));
+          res.on('end', () => callback(null, chunks.join('')));
+        });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.headers['content-type']).toBe('text/csv; charset=utf-8');
+      expect(res.headers['content-disposition']).toContain('attachment; filename="Menu Items.csv"');
+
+      expect(typeof res.body).toBe('string');
+      expect(res.body).toContain('#');
+    });
+
+    it('should export menu-items in Excel format (xlsx)', async () => {
+      const res = await request(app)
+        .get(`/api/menu-items/export?format=xlsx`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .query({ restaurantId })
+        .buffer()
+        .parse((res, callback) => {
+          const chunks: Uint8Array<ArrayBufferLike>[] = [];
+          res.on('data', (chunk) => chunks.push(chunk));
+          res.on('end', () => callback(null, Buffer.concat(chunks)));
+        });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.headers['content-type']).toBe(
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      );
+      expect(res.headers['content-disposition']).toContain(
+        'attachment; filename="Menu Items.xlsx"'
+      );
+
+      expect(res.body).toBeInstanceOf(Buffer); // xlsx returns a buffer
+
+      // Load the workbook from buffer
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(res.body);
+
+      const worksheet = workbook.worksheets[0];
+
+      const map: Record<string, number> = {};
+      worksheet.getRow(1).eachCell((cell, colNumber) => {
+        map[cell.text.trim()] = colNumber;
+      });
+
+      // Basic validation
+      expect(worksheet).toBeDefined();
+
+      // Confirm data rows match expected content
+      worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber === 1) return; // Skip header
+
+        const restaurantId = row.getCell(map['restaurantId'])?.text?.toLowerCase() ?? '';
+
+        expect(restaurantId).toContain(restaurantId);
+      });
+    });
+
+    it('should export menu-items in PDF format', async () => {
+      const createdItem = await request(app)
+        .get(`/api/menu-items/${menuItemId}`)
+        .set('Authorization', `Bearer ${ownerToken}`);
+
+      const res = await request(app)
+        .get(`/api/menu-items/export`)
+        .query({ format: 'pdf', name: createdItem.body.data.data.name, available: false })
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .buffer()
+        .parse((res, callback) => {
+          const chunks: Uint8Array<ArrayBufferLike>[] = [];
+          res.on('data', (chunk) => chunks.push(chunk));
+          res.on('end', () => callback(null, Buffer.concat(chunks)));
+        });
+
+      expect(res.statusCode).toBe(200);
+
+      expect(res.body.slice(0, 4).toString()).toBe('%PDF');
+
+      expect(res.headers['content-type']).toBe('application/pdf');
+      expect(res.headers['content-disposition']).toContain('attachment; filename="Menu Items.pdf"');
+      expect(parseInt(res.headers['content-length'])).toBeGreaterThan(0);
     });
   });
 

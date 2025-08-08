@@ -1,6 +1,5 @@
 import { LogActionType, LogActorType, LogResourceType, Prisma, User } from '@prisma/client';
 import { Request } from 'express';
-import { ZodIssue } from 'zod';
 
 interface AuthenticatedRequest<
   Params = unknown,
@@ -39,7 +38,7 @@ interface BaseLogParams {
   actorId: string;
   actorType: LogActorType;
   resource: LogResourceType;
-  resourceId: string;
+  resourceId?: string;
   metadata?: Prisma.InputJsonObject;
 }
 
@@ -53,23 +52,3 @@ interface AuditLogParams extends BaseLogParams {
 interface ErrorLogParams extends BaseLogParams {
   metadata: Prisma.InputJsonObject;
 }
-
-type ErrorMiddlewareDetails = string | { message?: string; [key: string]: unknown } | ZodIssue[];
-
-interface ErrorMiddlewareResponse {
-  success: boolean;
-  message: string;
-  details?: ErrorMiddlewareDetails;
-  stack?: string;
-  path?: string;
-  method?: string;
-}
-
-export {
-  AuditLogParams,
-  AuthenticatedRequest,
-  ErrorLogParams,
-  ErrorMiddlewareDetails,
-  ErrorMiddlewareResponse,
-  ExtractedRequestInfo,
-};

@@ -82,7 +82,6 @@ describe('/auth/login - Validation Failures', () => {
 
     expect(res.statusCode).toBe(400);
     expect(res.body.success).toBe(false);
-    expect(res.body.details.length).toBeGreaterThan(0);
   });
 
   it('should fail when password is missing', async () => {
@@ -92,7 +91,6 @@ describe('/auth/login - Validation Failures', () => {
 
     expect(res.statusCode).toBe(400);
     expect(res.body.success).toBe(false);
-    expect(res.body.details.length).toBeGreaterThan(0);
   });
 
   it('should fail with invalid email format', async () => {

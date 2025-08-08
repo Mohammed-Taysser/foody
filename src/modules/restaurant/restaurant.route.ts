@@ -8,6 +8,7 @@ import authorize from '@/middleware/authorize.middleware';
 import requirePermission from '@/middleware/require-permission.middleware';
 import validateRequest from '@/middleware/validate-request.middleware';
 import { imageUploadMiddleware } from '@/utils/multer.utils';
+import multerErrorHandler from '@/middleware/multer-error-handler.middleware';
 
 const router = Router();
 
@@ -18,12 +19,19 @@ router.get(
   controller.getRestaurants
 );
 
+router.get(
+  '/export',
+  validateRequest(validator.exportRestaurantsSchema),
+  requirePermission(['export:restaurant'], true),
+  controller.exportRestaurants
+);
+
 router.post(
   '/',
   authenticate,
   authorize('OWNER', 'ADMIN'),
   requirePermission(['add:restaurant']),
-  imageUploadMiddleware.single('image'),
+  multerErrorHandler(imageUploadMiddleware.single('image')),
   validateRequest(validator.createRestaurantSchema),
   controller.createRestaurant
 );
@@ -50,7 +58,7 @@ router.patch(
   authenticate,
   authorize('OWNER', 'ADMIN'),
   requirePermission(['update:restaurant']),
-  imageUploadMiddleware.single('image'),
+  multerErrorHandler(imageUploadMiddleware.single('image')),
   validateRequest(validator.updateRestaurantSchema),
   controller.updateRestaurant
 );

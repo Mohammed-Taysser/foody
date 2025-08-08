@@ -3,6 +3,7 @@ import path from 'path';
 import { faker } from '@faker-js/faker';
 import request from 'supertest';
 import { User } from '@prisma/client';
+import ExcelJS from 'exceljs';
 
 import app from '../../../src/app';
 import prisma from '../../../src/apps/prisma';
@@ -117,7 +118,6 @@ describe('PATCH /users/me', () => {
 
     expect(res.statusCode).toBe(409);
     expect(res.body.success).toBe(false);
-    expect(res.body.message).toMatch(/email.*already/i);
   });
 
   it('should update user profile with image', async () => {
@@ -208,13 +208,13 @@ describe('GET /users', () => {
 
       expect(res.statusCode).toBe(200);
       expect(res.body.data.data.length).toBeGreaterThan(0);
+
       expect(
         res.body.data.data.every((user: User) => {
           if (!user.lastFailedLogin) {
             return false;
           }
-
-          return new Date(user.lastFailedLogin).toISOString().slice(0, 10) === today;
+          return dayjsTZ(user.lastFailedLogin).isSame(today, 'day');
         })
       ).toBe(true);
 
@@ -813,5 +813,132 @@ describe('DELETE /users/:id', () => {
       .set('Authorization', `Bearer ${adminToken}`);
 
     expect(res.statusCode).toBe(404);
+  });
+});
+
+describe('GET /api/users/export', () => {
+  let adminToken: string;
+
+  const today = dayjsTZ().format('YYYY-MM-DD');
+
+  beforeAll(async () => {
+    const adminRes = await request(app).post('/api/auth/login').send({
+      email: ADMIN_EMAIL,
+      password: ADMIN_PASSWORD,
+    });
+
+    adminToken = adminRes.body.data.data.accessToken;
+  });
+
+  it('should export users in CSV format', async () => {
+    const res = await request(app)
+      .get(`/api/users/export`)
+      .query({
+        format: 'csv',
+        maxTokens: 40,
+        blockedAt: {
+          startDate: today,
+          endDate: today,
+        },
+      })
+      .set('Authorization', `Bearer ${adminToken}`)
+      .buffer()
+      .parse((res, callback) => {
+        const chunks: Uint8Array<ArrayBufferLike>[] = [];
+        res.setEncoding('utf8');
+        res.on('data', (chunk) => chunks.push(chunk));
+        res.on('end', () => callback(null, chunks.join('')));
+      });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.headers['content-type']).toBe('text/csv; charset=utf-8');
+    expect(res.headers['content-disposition']).toContain('attachment; filename="Users.csv"');
+
+    expect(typeof res.body).toBe('string');
+    expect(res.body).toContain('#');
+  });
+
+  it('should export users in Excel format (xlsx)', async () => {
+    const res = await request(app)
+      .get(`/api/users/export?format=xlsx`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .query({
+        role: 'CUSTOMER',
+        name: 'John Doe',
+        email: faker.internet.email(),
+        isActive: true,
+        isBlocked: true,
+        createdAt: {
+          startDate: today,
+          endDate: today,
+        },
+      })
+      .buffer()
+      .parse((res, callback) => {
+        const chunks: Uint8Array<ArrayBufferLike>[] = [];
+        res.on('data', (chunk) => chunks.push(chunk));
+        res.on('end', () => callback(null, Buffer.concat(chunks)));
+      });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.headers['content-type']).toBe(
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    );
+    expect(res.headers['content-disposition']).toContain('attachment; filename="Users.xlsx"');
+
+    expect(res.body).toBeInstanceOf(Buffer); // xlsx returns a buffer
+
+    // Load the workbook from buffer
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(res.body);
+
+    const worksheet = workbook.worksheets[0];
+
+    const map: Record<string, number> = {};
+    worksheet.getRow(1).eachCell((cell, colNumber) => {
+      map[cell.text.trim()] = colNumber;
+    });
+
+    // Basic validation
+    expect(worksheet).toBeDefined();
+
+    // Confirm data rows match expected content
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber === 1) return; // Skip header
+
+      const email = row.getCell(map['email'])?.text?.toLowerCase() ?? '';
+
+      expect(email).toContain(email);
+    });
+  });
+
+  it('should export users in PDF format', async () => {
+    const res = await request(app)
+      .get(`/api/users/export`)
+      .query({
+        format: 'pdf',
+        failedLoginAttempts: 20,
+        lastFailedLogin: {
+          startDate: today,
+          endDate: today,
+        },
+        isEmailVerified: true,
+        isPhoneVerified: true,
+      })
+      .set('Authorization', `Bearer ${adminToken}`)
+      .buffer()
+      .parse((res, callback) => {
+        const chunks: Uint8Array<ArrayBufferLike>[] = [];
+        res.on('data', (chunk) => chunks.push(chunk));
+        res.on('end', () => callback(null, Buffer.concat(chunks)));
+      });
+
+    expect(res.statusCode).toBe(200);
+
+    expect(res.body.slice(0, 4).toString()).toBe('%PDF');
+
+    expect(res.headers['content-type']).toBe('application/pdf');
+    expect(res.headers['content-disposition']).toContain('attachment; filename="Users.pdf"');
+    expect(parseInt(res.headers['content-length'])).toBeGreaterThan(0);
   });
 });

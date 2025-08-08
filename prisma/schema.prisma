@@ -194,7 +194,7 @@ model AuditLog {
   actorType  LogActorType
   action     LogActionType
   resource   LogResourceType
-  resourceId String
+  resourceId String?
   diff       Json?
   metadata   Json?
   createdAt  DateTime        @default(now())
@@ -212,7 +212,7 @@ model ErrorLog {
   actorId    String?
   actorType  LogActorType
   resource   LogResourceType
-  resourceId String
+  resourceId String?
   metadata   Json?
   createdAt  DateTime        @default(now())
   User       User?           @relation(fields: [actorId], references: [id])
@@ -274,7 +274,6 @@ enum LogActionType {
 
   EXPORT
   IMPORT
-  DOWNLOAD
   UPLOAD
 
   REFRESH_TOKEN

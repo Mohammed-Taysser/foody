@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
 import request from 'supertest';
 import { Order, OrderItem, OrderStatus } from '@prisma/client';
+import ExcelJS from 'exceljs';
 
 import app from '../../../src/app';
 import prisma from '../../../src/apps/prisma';
@@ -26,6 +27,8 @@ describe('Order API', () => {
   let orderId: string;
   let categoryId: string;
   let adminToken: string;
+
+  const today = dayjsTZ().format('YYYY-MM-DD');
 
   beforeAll(async () => {
     const ownerRes = await request(app).post('/api/auth/login').send({
@@ -869,6 +872,110 @@ describe('Order API', () => {
         .set('Authorization', `Bearer ${customerToken}`);
 
       expect(res.statusCode).toBe(404);
+    });
+  });
+
+  describe('GET /api/orders/export', () => {
+    it('should export orders in CSV format', async () => {
+      const res = await request(app)
+        .get(`/api/orders/export`)
+        .query({
+          format: 'csv',
+          restaurantId,
+          userId: customerId,
+          createdAt: {
+            startDate: today,
+            endDate: today,
+          },
+        })
+        .set('Authorization', `Bearer ${adminToken}`)
+        .buffer()
+        .parse((res, callback) => {
+          const chunks: Uint8Array<ArrayBufferLike>[] = [];
+          res.setEncoding('utf8');
+          res.on('data', (chunk) => chunks.push(chunk));
+          res.on('end', () => callback(null, chunks.join('')));
+        });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.headers['content-type']).toBe('text/csv; charset=utf-8');
+      expect(res.headers['content-disposition']).toContain('attachment; filename="Orders.csv"');
+
+      expect(typeof res.body).toBe('string');
+      expect(res.body).toContain('#');
+    });
+
+    it('should export orders in Excel format (xlsx)', async () => {
+      const res = await request(app)
+        .get(`/api/orders/export?format=xlsx`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .query({
+          status: ['PENDING', 'PREPARING'].join(','),
+          restaurantId,
+        })
+        .buffer()
+        .parse((res, callback) => {
+          const chunks: Uint8Array<ArrayBufferLike>[] = [];
+          res.on('data', (chunk) => chunks.push(chunk));
+          res.on('end', () => callback(null, Buffer.concat(chunks)));
+        });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.headers['content-type']).toBe(
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      );
+      expect(res.headers['content-disposition']).toContain('attachment; filename="Orders.xlsx"');
+
+      expect(res.body).toBeInstanceOf(Buffer); // xlsx returns a buffer
+
+      // Load the workbook from buffer
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(res.body);
+
+      const worksheet = workbook.worksheets[0];
+
+      const map: Record<string, number> = {};
+      worksheet.getRow(1).eachCell((cell, colNumber) => {
+        map[cell.text.trim()] = colNumber;
+      });
+
+      // Basic validation
+      expect(worksheet).toBeDefined();
+
+      // Confirm data rows match expected content
+      worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber === 1) return; // Skip header
+
+        const restaurantId = row.getCell(map['restaurantId'])?.text?.toLowerCase() ?? '';
+
+        expect(restaurantId).toContain(restaurantId);
+      });
+    });
+
+    it('should export orders in PDF format', async () => {
+      const res = await request(app)
+        .get(`/api/orders/export`)
+        .query({
+          format: 'pdf',
+          paymentStatus: ['PAID', 'UNPAID'].join(','),
+          paymentMethod: ['CARD', 'ONLINE'].join(','),
+          tableNumber: 1,
+        })
+        .set('Authorization', `Bearer ${adminToken}`)
+        .buffer()
+        .parse((res, callback) => {
+          const chunks: Uint8Array<ArrayBufferLike>[] = [];
+          res.on('data', (chunk) => chunks.push(chunk));
+          res.on('end', () => callback(null, Buffer.concat(chunks)));
+        });
+
+      expect(res.statusCode).toBe(200);
+
+      expect(res.body.slice(0, 4).toString()).toBe('%PDF');
+
+      expect(res.headers['content-type']).toBe('application/pdf');
+      expect(res.headers['content-disposition']).toContain('attachment; filename="Orders.pdf"');
+      expect(parseInt(res.headers['content-length'])).toBeGreaterThan(0);
     });
   });
 });

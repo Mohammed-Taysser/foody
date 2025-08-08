@@ -86,12 +86,19 @@ const getOrderByIdSchema = {
   }),
 };
 
+const exportOrdersSchema = {
+  query: getOrdersListSchema.query.extend({
+    format: z.enum(['csv', 'xlsx', 'pdf']).default('xlsx'),
+  }),
+};
+
 type CreateOrderInput = z.infer<typeof createOrderSchema.body>;
 type UpdateOrderInput = z.infer<typeof updateOrderSchema.body>;
 type UpdateOrderStatusInput = z.infer<typeof updateOrderStatusSchema.body>;
 type PayOrderInput = z.infer<typeof payOrderSchema.body>;
 type GetOrdersListQuery = z.infer<typeof getOrdersListSchema.query>;
 type GetOrderByIdParams = z.infer<typeof getOrderByIdSchema.params>;
+type ExportOrdersQuery = z.infer<typeof exportOrdersSchema.query>;
 
 const orderValidator = {
   createOrderSchema,
@@ -100,6 +107,7 @@ const orderValidator = {
   updateOrderStatusSchema,
   getOrdersListSchema,
   getOrderByIdSchema,
+  exportOrdersSchema,
 };
 
 export default orderValidator;
@@ -110,4 +118,5 @@ export type {
   PayOrderInput,
   UpdateOrderInput,
   UpdateOrderStatusInput,
+  ExportOrdersQuery,
 };

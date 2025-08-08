@@ -5,6 +5,7 @@ import { DEFAULT_ROLE_PERMISSIONS } from '../auth/auth.constant';
 
 import {
   CreateUserInput,
+  ExportUsersQuery,
   GetUserByIdParams,
   GetUsersListQuery,
   UpdateMeInput,
@@ -13,13 +14,21 @@ import {
 
 import prisma from '@/apps/prisma';
 import databaseLogger from '@/services/database-log.service';
+import exportService from '@/services/export.service';
+import formatterService from '@/services/formatter.service';
 import tokenService from '@/services/token.service';
 import { AuthenticatedRequest } from '@/types/import';
+import { buildDateRangeFilter } from '@/utils/dayjs.utils';
 import { ConflictError, NotFoundError } from '@/utils/errors.utils';
 import { deleteImage, uploadImage } from '@/utils/multer.utils';
 import { getRequestInfo } from '@/utils/request.utils';
-import { sendPaginatedResponse, sendSuccessResponse } from '@/utils/send-response';
-import { buildDateRangeFilter } from '@/utils/dayjs.utils';
+import {
+  sendCSVResponse,
+  sendExcelResponse,
+  sendPaginatedResponse,
+  sendPDFResponse,
+  sendSuccessResponse,
+} from '@/utils/response.utils';
 
 async function getUserPermission(request: Request, response: Response) {
   const authenticatedRequest = request as AuthenticatedRequest;
@@ -473,6 +482,149 @@ async function deleteUser(request: Request, response: Response) {
   });
 }
 
+async function exportUsers(request: Request, response: Response) {
+  const authenticatedRequest = request as unknown as AuthenticatedRequest<
+    unknown,
+    unknown,
+    unknown,
+    ExportUsersQuery
+  >;
+
+  const { parsedQuery: query } = authenticatedRequest;
+
+  const format = query.format;
+
+  const filters: Prisma.UserWhereInput = {};
+
+  if (query.role) {
+    filters.role = {
+      in: query.role,
+    };
+  }
+
+  if (query.name) {
+    filters.name = {
+      contains: query.name,
+      mode: 'insensitive',
+    };
+  }
+
+  if (query.email) {
+    filters.email = {
+      contains: query.email,
+      mode: 'insensitive',
+    };
+  }
+
+  if (query.failedLoginAttempts) {
+    filters.failedLoginAttempts = {
+      equals: query.failedLoginAttempts,
+    };
+  }
+
+  if (query.lastFailedLogin) {
+    filters.lastFailedLogin = {
+      ...buildDateRangeFilter(query.lastFailedLogin),
+      not: null, // Exclude nulls explicitly
+    };
+  }
+
+  if (query.isEmailVerified) {
+    filters.isEmailVerified = {
+      equals: query.isEmailVerified,
+    };
+  }
+
+  if (query.isPhoneVerified) {
+    filters.isPhoneVerified = {
+      equals: query.isPhoneVerified,
+    };
+  }
+
+  if (query.isActive) {
+    filters.isActive = {
+      equals: query.isActive,
+    };
+  }
+
+  if (query.isBlocked) {
+    filters.isBlocked = {
+      equals: query.isBlocked,
+    };
+  }
+
+  if (query.maxTokens) {
+    filters.maxTokens = {
+      equals: query.maxTokens,
+    };
+  }
+
+  if (query.blockedAt) {
+    filters.blockedAt = {
+      ...buildDateRangeFilter(query.blockedAt),
+      not: null, // Exclude nulls explicitly
+    };
+  }
+
+  if (query.createdAt) {
+    filters.createdAt = buildDateRangeFilter(query.createdAt);
+  }
+
+  const usersResponse = await prisma.user.findMany({
+    orderBy: { createdAt: 'desc' },
+    where: filters,
+  });
+
+  const users = usersResponse.map((user, index) => ({
+    '#': index + 1,
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    image: user.image,
+    isEmailVerified: user.isEmailVerified,
+    isPhoneVerified: user.isPhoneVerified,
+    isActive: user.isActive,
+    isBlocked: user.isBlocked,
+    createdAt: formatterService.formatDateTime(user.createdAt),
+  }));
+
+  switch (format) {
+    case 'csv': {
+      const csv = exportService.toCSV(users);
+
+      sendCSVResponse(response, csv, 'Users');
+      break;
+    }
+
+    case 'xlsx': {
+      const buffer = await exportService.toExcel(users);
+
+      sendExcelResponse(response, buffer, 'Users');
+      break;
+    }
+
+    case 'pdf': {
+      const pdfBuffer = await exportService.toPDF(users, {
+        columnsToExclude: ['image'],
+        title: 'Users',
+      });
+
+      sendPDFResponse(response, pdfBuffer, 'Users');
+      break;
+    }
+  }
+
+  databaseLogger.audit({
+    requestInfo: getRequestInfo(authenticatedRequest),
+    actorId: authenticatedRequest.user.id,
+    actorType: 'USER',
+    action: 'EXPORT',
+    resource: 'USER',
+    metadata: { format, query },
+  });
+}
+
 const userController = {
   createUser,
   deleteUser,
@@ -483,6 +635,7 @@ const userController = {
   getUsersList,
   updateMe,
   updateUser,
+  exportUsers,
 };
 
 export default userController;

@@ -1,62 +1,59 @@
-import { ErrorMiddlewareDetails } from '@/types/import';
-
 class BaseError extends Error {
   public statusCode: number;
-  public isOperational: boolean;
-  public details: ErrorMiddlewareDetails;
 
-  constructor(error: ErrorMiddlewareDetails, statusCode: number, isOperational = true) {
-    const resolvedMessage = typeof error === 'string' ? error : 'An error occurred';
+  constructor(error: ErrorContent, statusCode: number) {
+    const resolvedMessage = JSON.stringify(error);
 
     super(resolvedMessage);
     this.statusCode = statusCode;
-    this.isOperational = isOperational;
-    this.details = typeof error === 'string' ? { error: resolvedMessage } : error;
 
+    // Maintain proper prototype chain
+    Object.setPrototypeOf(this, new.target.prototype);
+    this.name = this.constructor.name;
     Error.captureStackTrace(this, this.constructor);
   }
 }
 
 // Derived error classes
 class BadRequestError extends BaseError {
-  constructor(details: ErrorMiddlewareDetails = 'errors:bad-request') {
-    super(details, 400);
+  constructor(error: ErrorContent = 'errors:bad-request') {
+    super(error, 400);
   }
 }
 
 class UnauthorizedError extends BaseError {
-  constructor(details: ErrorMiddlewareDetails = 'errors:unauthorized') {
-    super(details, 401);
+  constructor(error: ErrorContent = 'errors:unauthorized') {
+    super(error, 401);
   }
 }
 
 class NotFoundError extends BaseError {
-  constructor(details: ErrorMiddlewareDetails = 'errors:not-found') {
-    super(details, 404);
+  constructor(error: ErrorContent = 'errors:not-found') {
+    super(error, 404);
   }
 }
 
 class ForbiddenError extends BaseError {
-  constructor(details: ErrorMiddlewareDetails = 'errors:forbidden') {
-    super(details, 403);
+  constructor(error: ErrorContent = 'errors:forbidden') {
+    super(error, 403);
   }
 }
 
 class ConflictError extends BaseError {
-  constructor(details: ErrorMiddlewareDetails = 'errors:conflict') {
-    super(details, 409);
+  constructor(error: ErrorContent = 'errors:conflict') {
+    super(error, 409);
   }
 }
 
 class InternalServerError extends BaseError {
-  constructor(details: ErrorMiddlewareDetails = 'errors:internal-server-error') {
-    super(details, 500);
+  constructor(error: ErrorContent = 'errors:internal-server-error') {
+    super(error, 500);
   }
 }
 
 class TooManyRequestsError extends BaseError {
-  constructor(details: ErrorMiddlewareDetails = 'errors:too-many-requests') {
-    super(details, 429);
+  constructor(error: ErrorContent = 'errors:too-many-requests') {
+    super(error, 429);
   }
 }
 

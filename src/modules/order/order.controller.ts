@@ -4,6 +4,7 @@ import { Request, Response } from 'express';
 import { VALID_TRANSITIONS } from './order.constant';
 import {
   CreateOrderInput,
+  ExportOrdersQuery,
   GetOrderByIdParams,
   GetOrdersListQuery,
   PayOrderInput,
@@ -13,11 +14,19 @@ import {
 
 import prisma from '@/apps/prisma';
 import databaseLogger from '@/services/database-log.service';
+import exportService from '@/services/export.service';
+import formatterService from '@/services/formatter.service';
 import { AuthenticatedRequest } from '@/types/import';
+import { buildDateRangeFilter } from '@/utils/dayjs.utils';
 import { BadRequestError, ForbiddenError, NotFoundError } from '@/utils/errors.utils';
 import { getRequestInfo } from '@/utils/request.utils';
-import { sendPaginatedResponse, sendSuccessResponse } from '@/utils/send-response';
-import { buildDateRangeFilter } from '@/utils/dayjs.utils';
+import {
+  sendCSVResponse,
+  sendExcelResponse,
+  sendPaginatedResponse,
+  sendPDFResponse,
+  sendSuccessResponse,
+} from '@/utils/response.utils';
 
 async function getOrders(request: Request, response: Response) {
   const authenticatedRequest = request as unknown as AuthenticatedRequest<
@@ -667,6 +676,137 @@ async function deleteOrder(request: Request, response: Response) {
   sendSuccessResponse({ response, message: 'Order deleted', data: order });
 }
 
+async function exportOrders(request: Request, response: Response) {
+  const authenticatedRequest = request as unknown as AuthenticatedRequest<
+    unknown,
+    unknown,
+    unknown,
+    ExportOrdersQuery
+  >;
+
+  const { parsedQuery: query } = authenticatedRequest;
+
+  const format = query.format;
+
+  const filters: Prisma.OrderWhereInput = {};
+
+  if (query.restaurantId) {
+    filters.restaurantId = {
+      equals: query.restaurantId,
+    };
+  }
+
+  if (query.userId) {
+    filters.userId = {
+      equals: query.userId,
+    };
+  }
+
+  if (query.status?.length) {
+    filters.status = {
+      in: query.status,
+    };
+  }
+
+  if (query.paymentStatus?.length) {
+    filters.paymentStatus = {
+      in: query.paymentStatus,
+    };
+  }
+
+  if (query.paymentMethod?.length) {
+    filters.paymentMethod = {
+      in: query.paymentMethod,
+    };
+  }
+
+  if (query.createdAt) {
+    filters.createdAt = buildDateRangeFilter(query.createdAt);
+  }
+
+  if (query.tableNumber) {
+    filters.tableNumber = {
+      equals: query.tableNumber,
+    };
+  }
+
+  const ordersResponse = await prisma.order.findMany({
+    orderBy: { createdAt: 'desc' },
+    where: filters,
+    include: {
+      restaurant: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        },
+      },
+      user: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        },
+      },
+    },
+  });
+
+  const orders = ordersResponse.map((order, index) => ({
+    '#': index + 1,
+    id: order.id,
+    userName: order.user.name,
+    userId: order.userId,
+    userImage: order.user.image,
+    restaurantId: order.restaurant.id,
+    restaurantName: order.restaurant.name,
+    restaurantImage: order.restaurant.image,
+    status: order.status,
+    total: order.total,
+    subtotal: order.subtotal,
+    discount: order.discount,
+    paymentStatus: order.paymentStatus,
+    paymentMethod: order.paymentMethod,
+    tableNumber: order.tableNumber,
+    createdAt: formatterService.formatDateTime(order.createdAt),
+  }));
+
+  switch (format) {
+    case 'csv': {
+      const csv = exportService.toCSV(orders);
+
+      sendCSVResponse(response, csv, 'Orders');
+      break;
+    }
+
+    case 'xlsx': {
+      const buffer = await exportService.toExcel(orders);
+
+      sendExcelResponse(response, buffer, 'Orders');
+      break;
+    }
+
+    case 'pdf': {
+      response.attachment('Orders.pdf');
+      const pdfBuffer = await exportService.toPDF(orders, {
+        columnsToExclude: ['userImage', 'restaurantImage', 'restaurantId', 'userId'],
+        title: 'Orders',
+      });
+
+      sendPDFResponse(response, pdfBuffer, 'Orders');
+      break;
+    }
+  }
+
+  databaseLogger.audit({
+    requestInfo: getRequestInfo(authenticatedRequest),
+    actorId: authenticatedRequest.user.id,
+    actorType: 'USER',
+    action: 'EXPORT',
+    resource: 'ORDER',
+    metadata: { format, query },
+  });
+}
+
 const orderController = {
   cancelOrder,
   createOrder,
@@ -677,6 +817,7 @@ const orderController = {
   payOrder,
   updateOrder,
   updateOrderStatus,
+  exportOrders,
 };
 
 export default orderController;

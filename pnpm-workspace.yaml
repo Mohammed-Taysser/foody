@@ -5,4 +5,5 @@ onlyBuiltDependencies:
   - bcrypt
   - msgpackr-extract
   - prisma
+  - puppeteer
   - sharp

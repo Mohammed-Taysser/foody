@@ -29,5 +29,9 @@
   "account-deactivated": "تم إلغاء تنشيط الحساب",
   "username-already-exists": "اسم المستخدم مستخدم بالفعل",
   "you-do-not-have-permission-to-access-this-resource": "لا تملك إذناً للوصول إلى هذا المورد",
-  "too-many-requests": "عدد كبير جداً من الطلبات"
+  "too-many-requests": "عدد كبير جداً من الطلبات",
+  "user-is-blocked": "تم حظر المستخدم",
+  "user-is-not-active": "المستخدم غير نشط",
+  "user-is-not-found": "لم يتم العثور على المستخدم",
+  "user-is-not-verified": "لم يتم التحقق من المستخدم"
 }

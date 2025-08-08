@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 
 import prisma from '@/apps/prisma';
 import dayjsTZ from '@/utils/dayjs.utils';
-import { sendSuccessResponse } from '@/utils/send-response';
+import { sendSuccessResponse } from '@/utils/response.utils';
 
 async function getAnalyticsMetrics(request: Request, response: Response) {
   const now = dayjsTZ();

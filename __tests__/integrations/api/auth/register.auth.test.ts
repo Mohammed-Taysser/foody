@@ -50,7 +50,6 @@ describe('POST /auth/register - Validation & Failure Cases', () => {
 
     expect(res.statusCode).toBe(400);
     expect(res.body.success).toBe(false);
-    expect(res.body.details.length).toBeGreaterThan(0);
   });
 
   it('should fail when name is missing', async () => {

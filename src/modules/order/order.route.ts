@@ -17,6 +17,14 @@ router.get(
   controller.getOrders
 );
 
+router.get(
+  '/export',
+  authenticate,
+  validateRequest(validator.exportOrdersSchema),
+  requirePermission(['export:order']),
+  controller.exportOrders
+);
+
 router.post(
   '/',
   authenticate,
