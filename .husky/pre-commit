@@ -26,5 +26,8 @@ npx lint-staged
 printf "\n${YELLOW}→ Checking missing translations ...${RESET}\n"
 npm run i18n:check-duplicate
 
+printf "\n${YELLOW}→ Linting OpenAPI spec (docs/swagger.yaml) ...${RESET}\n"
+npm run openapi:lint
+
 printf "\n${GREEN}✔ All pre-commit checks passed!${RESET}\n"
 exit 0

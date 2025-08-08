@@ -3,7 +3,9 @@ onlyBuiltDependencies:
   - '@prisma/engines'
   - '@scarf/scarf'
   - bcrypt
+  - core-js
   - msgpackr-extract
   - prisma
+  - protobufjs
   - puppeteer
   - sharp
