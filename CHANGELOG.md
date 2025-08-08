@@ -1,3 +1,21 @@
+# [1.3.0](https://github.com/mohammed-taysser/foody/compare/v1.2.0...v1.3.0) (2025-08-08)
+
+
+### Bug Fixes
+
+* **pdf:** update Puppeteer headless mode for TS compatibility ([b9890bc](https://github.com/mohammed-taysser/foody/commit/b9890bc56774d1adfd4e10cc4d6d9c9eef728dc9))
+* **tests:** increase timeout and properly close Puppeteer to prevent Jest teardown errors ([250d5a3](https://github.com/mohammed-taysser/foody/commit/250d5a3fa5d6c16ec3bf4091f3ceec996a48b4dd))
+* update Decimal usage to Prisma.Decimal in menu item and order controllers ([f32c1eb](https://github.com/mohammed-taysser/foody/commit/f32c1eb26ecb91a0d2cd90b3a47c0b8e1344b27e))
+* **users:** fix test, drop un-nessecery ([1b55e21](https://github.com/mohammed-taysser/foody/commit/1b55e219f8bf4a56285b57459029d8e88e1ec5d3))
+
+
+### Features
+
+* add system health check route and controller ([f083f96](https://github.com/mohammed-taysser/foody/commit/f083f96aa90259d589e81720cec99b4fd6bad6d1))
+* implement export feature with filters ([3a82a3c](https://github.com/mohammed-taysser/foody/commit/3a82a3c1e679b3620e6c0b44f3a4329558822780))
+* implement formatter service with various formatting methods ([84d35c8](https://github.com/mohammed-taysser/foody/commit/84d35c8c15e7ac1e49b559cffc10fbc271c0b377))
+* refactor validation and controller logic to utilize date range filtering ([573927d](https://github.com/mohammed-taysser/foody/commit/573927dcdd5521d3dd700277bd02a58b483480c1))
+
 ## [1.2.0](https://github.com/mohammed-taysser/foody/compare/v1.1.0...v1.2.0) (2025-07-18)
 
 ### Features
