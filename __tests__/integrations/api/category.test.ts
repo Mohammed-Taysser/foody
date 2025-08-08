@@ -1,8 +1,9 @@
 import path from 'path';
 
 import { faker } from '@faker-js/faker';
-import request from 'supertest';
 import { Category } from '@prisma/client';
+import ExcelJS from 'exceljs';
+import request from 'supertest';
 
 import app from '../../../src/app';
 import {
@@ -310,5 +311,100 @@ describe('Category API', () => {
 
       expect(res.statusCode).toBe(404);
     });
+  });
+
+  describe('GET /api/categories/export', () => {
+    it('should export categories in CSV format', async () => {
+      const res = await request(app)
+        .get(`/api/categories/export`)
+        .query({ format: 'csv', restaurantId })
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .buffer()
+        .parse((res, callback) => {
+          const chunks: Uint8Array<ArrayBufferLike>[] = [];
+          res.setEncoding('utf8');
+          res.on('data', (chunk) => chunks.push(chunk));
+          res.on('end', () => callback(null, chunks.join('')));
+        });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.headers['content-type']).toBe('text/csv; charset=utf-8');
+      expect(res.headers['content-disposition']).toContain('attachment; filename="Categories.csv"');
+
+      expect(typeof res.body).toBe('string');
+      expect(res.body).toContain('#');
+    });
+
+    it('should export categories in Excel format (xlsx)', async () => {
+      const res = await request(app)
+        .get(`/api/categories/export?format=xlsx`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .query({ name: faker.commerce.productName(), restaurantId })
+        .buffer()
+        .parse((res, callback) => {
+          const chunks: Uint8Array<ArrayBufferLike>[] = [];
+          res.on('data', (chunk) => chunks.push(chunk));
+          res.on('end', () => callback(null, Buffer.concat(chunks)));
+        });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.headers['content-type']).toBe(
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      );
+      expect(res.headers['content-disposition']).toContain(
+        'attachment; filename="Categories.xlsx"'
+      );
+
+      expect(res.body).toBeInstanceOf(Buffer); // xlsx returns a buffer
+
+      // Load the workbook from buffer
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(res.body);
+
+      const worksheet = workbook.worksheets[0];
+
+      const map: Record<string, number> = {};
+      worksheet.getRow(1).eachCell((cell, colNumber) => {
+        map[cell.text.trim()] = colNumber;
+      });
+
+      // Basic validation
+      expect(worksheet).toBeDefined();
+
+      // Confirm data rows match expected content
+      worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber === 1) return; // Skip header
+
+        const restaurantId = row.getCell(map['restaurantId'])?.text?.toLowerCase() ?? '';
+
+        expect(restaurantId).toContain(restaurantId);
+      });
+    });
+
+    it('should export categories in PDF format', async () => {
+      const createdCategory = await request(app)
+        .post(`/api/categories`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({ name: faker.commerce.productName(), restaurantId });
+
+      const res = await request(app)
+        .get(`/api/categories/export`)
+        .query({ format: 'pdf', name: createdCategory.body.data.data.name, restaurantId })
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .buffer()
+        .parse((res, callback) => {
+          const chunks: Uint8Array<ArrayBufferLike>[] = [];
+          res.on('data', (chunk) => chunks.push(chunk));
+          res.on('end', () => callback(null, Buffer.concat(chunks)));
+        });
+
+      expect(res.statusCode).toBe(200);
+
+      expect(res.body.slice(0, 4).toString()).toBe('%PDF');
+
+      expect(res.headers['content-type']).toBe('application/pdf');
+      expect(res.headers['content-disposition']).toContain('attachment; filename="Categories.pdf"');
+      expect(parseInt(res.headers['content-length'])).toBeGreaterThan(0);
+    }, 20000); // 20 seconds
   });
 });

@@ -21,7 +21,6 @@ Table User {
   isPhoneVerified Boolean [not null, default: false]
   phoneVerificationSentAt DateTime
   phoneVerificationToken String
-  phoneVerificationExpires DateTime
   isActive Boolean [not null, default: true]
   maxTokens Int [not null, default: 5]
   isBlocked Boolean [not null, default: false]
@@ -29,6 +28,7 @@ Table User {
   blockedById String
   blockReason String
   preferredLanguage String [not null, default: 'en']
+  timezone String [default: 'UTC']
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   restaurants Restaurant [not null]
@@ -157,7 +157,7 @@ Table AuditLog {
   actorType LogActorType [not null]
   action LogActionType [not null]
   resource LogResourceType [not null]
-  resourceId String [not null]
+  resourceId String
   diff Json
   metadata Json
   createdAt DateTime [default: `now()`, not null]
@@ -169,7 +169,7 @@ Table ErrorLog {
   actorId String
   actorType LogActorType [not null]
   resource LogResourceType [not null]
-  resourceId String [not null]
+  resourceId String
   metadata Json
   createdAt DateTime [default: `now()`, not null]
   User User
@@ -268,7 +268,6 @@ Enum LogActionType {
   CANCEL_ORDER
   EXPORT
   IMPORT
-  DOWNLOAD
   UPLOAD
   REFRESH_TOKEN
   SYNC

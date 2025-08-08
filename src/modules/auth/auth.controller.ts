@@ -8,7 +8,7 @@ import databaseLogger from '@/services/database-log.service';
 import tokenService from '@/services/token.service';
 import { BadRequestError, ConflictError, UnauthorizedError } from '@/utils/errors.utils';
 import { getRequestInfo } from '@/utils/request.utils';
-import { sendSuccessResponse } from '@/utils/send-response';
+import { sendSuccessResponse } from '@/utils/response.utils';
 
 async function register(request: Request<unknown, unknown, RegisterInput>, response: Response) {
   const data = request.body;

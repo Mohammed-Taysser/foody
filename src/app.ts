@@ -3,14 +3,17 @@ import express from 'express';
 import helmet from 'helmet';
 import hpp from 'hpp';
 import i18nextMiddleware from 'i18next-http-middleware';
+import qs from 'qs';
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
+
+import debugRouter from './modules/debug/debug.routes';
 
 import CONFIG from '@/apps/config';
 import i18n from '@/apps/i18n';
 import apiLimiter from '@/middleware/api-rate-limit.middleware';
 import compressionMiddleware from '@/middleware/compression.middleware';
-import errorHandlerMiddleware from '@/middleware/error.middleware';
+import errorHandlerMiddleware from '@/middleware/error-handler.middleware';
 import loggerMiddleware from '@/middleware/logger.middleware';
 import analyticsRoutes from '@/modules/analytics/analytics.route';
 import authRoutes from '@/modules/auth/auth.route';
@@ -19,6 +22,7 @@ import menuItemsRoutes from '@/modules/menu-items/menu-items.route';
 import orderRoutes from '@/modules/order/order.route';
 import permissionRoutes from '@/modules/permission/permission.route';
 import restaurantRoutes from '@/modules/restaurant/restaurant.route';
+import systemRoutes from '@/modules/system/system.route';
 import userRoutes from '@/modules/user/user.route';
 import { ForbiddenError, NotFoundError } from '@/utils/errors.utils';
 
@@ -65,19 +69,18 @@ app.use(compressionMiddleware);
 // i18next Middleware for internationalization
 app.use(i18nextMiddleware.handle(i18n));
 
+// Parse query strings using qs library
+app.set('query parser', (str: string) => qs.parse(str));
+
 // Serve static Files
 app.use(express.static('public'));
 app.use('/uploads', express.static('uploads'));
-
-// Health check route
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', message: 'Server is healthy 🚀' });
-});
 
 // API rate limiter
 app.use('/api', apiLimiter);
 
 // Routes
+app.use('/', systemRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/permissions', permissionRoutes);
@@ -86,6 +89,10 @@ app.use('/api/restaurants', restaurantRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/categories', categoriesRoutes);
 app.use('/api/menu-items', menuItemsRoutes);
+
+if (CONFIG.NODE_ENV === 'development') {
+  app.use('/api/debug', debugRouter);
+}
 
 // 404 Handler
 app.use((req, _res, next) => {

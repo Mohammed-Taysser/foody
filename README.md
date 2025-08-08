@@ -6,6 +6,27 @@
 
 ## Overview
 
+| Layer                    | Tech / Library                                       | Why?                                                                        |
+| ------------------------ | ---------------------------------------------------- | --------------------------------------------------------------------------- |
+| **Runtime**              | Node.js (v18+)                                       | Mature ecosystem, great async support                                       |
+| **Web Framework**        | Express JS                                           | Lightweight, unopinionated; pairs well with TypeScript                      |
+| **Language**             | TypeScript                                           | Early type-safety avoids runtime bugs                                       |
+| **Database**             | PostgreSQL                                           | Relational integrity for orders/inventory                                   |
+| **ORM/Query**            | Prisma                                               | Auto-generated types, migrations, great DX                                  |
+| **Authentication**       | JWT + Passport.js                                    | Flexible, supports sessions or stateless APIs                               |
+| **Real-Time**            | Socket.IO                                            | Push live order/kitchen updates                                             |
+| **Caching/Queue**        | Redis + Bull                                         | Fast cache (menus, sessions) and background jobs (emails)                   |
+| **File Uploads**         | Multer                                               | Handles images (menu photos)                                                |
+| **API Docs**             | Swagger (swagger-jsdoc + swagger-ui-express)         | Interactive, keeps backend/contracts in sync                                |
+| **Logging & Monitoring** | Winston; Sentry                                      | Structured logs + real-time error tracking                                  |
+| **Testing**              | Jest + Supertest                                     | Unit + integration tests for API routes                                     |
+| **Front-End**            | React (or Next.js) + TypeScript                      | Component-based, SSR option (Next.js), strong TS support                    |
+|                          | React Query (for data fetching) + Context or Zustand | Avoid Redux; React Query handles server state, Context/Zustand for UI state |
+|                          | Tailwind CSS                                         | Utility-first, fast to build responsive UIs                                 |
+| **DevOps**               | Docker + Docker Compose                              | Consistent environments                                                     |
+|                          | Nginx (reverse proxy) + PM2 (process manager)        | Production-ready                                                            |
+|                          | GitHub Actions                                       | Automated tests & deploy                                                    |
+
 ## Key Features
 
 ## Architecture
@@ -111,6 +132,41 @@ describe('Test Suite', () => {
 
 ## Development Guide
 
+### 1. IDE Configuration
+
+- Install extensions: TypeScript, ESLint, Prettier, etc.
+- Set up workspace folders
+- Configure linting and formatting
+
+### 2. Development Workflow
+
+1. Install dependencies: `pnpm install`
+2. Set up environment variables: `cp .env.example .env`
+3. Start development server: `pnpm run dev`
+
+### 3. Local Development Workflow
+
+- Create feature branch:
+
+  ```bash
+  git checkout -b feature/your-feature
+  ```
+
+- Make changes and commit:
+
+  ```bash
+  git add .
+  git commit -m "feat: add new feature"
+  ```
+
+- Push changes:
+
+  ```bash
+  git push origin feature/your-feature
+  ```
+
+- Create pull request
+
 ## Setup Guide
 
 ### Prerequisites
@@ -131,6 +187,160 @@ Before setting up the Foody Platform, ensure you have the following prerequisite
 3. Install dependencies: `pnpm install`
 4. Setup environment variables: `cp .env.example .env`
 5. Start the development server: `pnpm run dev`
+
+## Maintenance
+
+### 1. Regular Tasks
+
+- Monitor system health
+- Check error logs
+- Backup database
+- Update dependencies
+- Rotate logs
+
+### 2. Backup Procedures
+
+- Create a backup of the database
+- Upload backup to cloud storage
+- Delete old backups
+- Create cron job to run backups daily
+- Create backup of media files
+
+### 3. Update Procedures
+
+1. Backup current version
+2. Pull latest changes
+3. Update dependencies
+4. Run migrations
+5. Restart services
+6. Verify functionality
+
+### Compression
+
+```bash
+tar -czf foody.tar.gz foody
+```
+
+### Backup a PostgreSQL Database
+
+Using `pg_dump` (recommended for single databases)
+
+```bash
+pg_dump -U your_username -d your_database > backup.sql
+```
+
+- `-U`: Your PostgreSQL username
+- `-d`: Database name
+- `>`: Redirects the output to a file
+
+Example:
+
+```bash
+pg_dump -U postgres -d mydb > mydb_backup.sql
+```
+
+> You’ll be prompted for a password unless you use `.pgpass` or environment variables.
+
+### Restore a PostgreSQL Database
+
+Using `psql` to restore from `.sql` file
+
+Make sure the database exists first:
+
+```bash
+createdb -U your_username your_database
+```
+
+Then restore:
+
+```bash
+psql -U your_username -d your_database < backup.sql
+```
+
+Example:
+
+```bash
+psql -U postgres -d mydb < mydb_backup.sql
+```
+
+#### For Binary Backups (Custom Format)
+
+Using `pg_dump` with custom format
+
+```bash
+pg_dump -U your_username -F c -d your_database -f backup.dump
+```
+
+- `-F c`: Custom format
+- `-f`: Output file name
+
+Restore Custom Format using `pg_restore`
+
+Create the database if needed:
+
+```bash
+createdb -U your_username your_database
+```
+
+Then:
+
+```bash
+pg_restore -U your_username -d your_database backup.dump
+```
+
+> If you have multiple databases, you can use `pg_dumpall` and `pg_restoreall` instead.
+
+## Application SSL Configuration
+
+```ts
+import https from 'https';
+import fs from 'fs';
+
+const options = {
+  key: fs.readFileSync('/etc/letsencrypt/live/your-domain.com/privkey.pem'),
+  cert: fs.readFileSync('/etc/letsencrypt/live/your-domain.com/fullchain.pem'),
+};
+
+const server = https.createServer(options, app);
+```
+
+## Troubleshooting Guide
+
+### Database Connection Issues
+
+```bash
+# Check postgres status
+sudo systemctl status postgresql
+
+# Check postgres logs
+sudo journalctl -u postgresql.service
+
+# Test database connection
+psql -U your_username -d your_database
+```
+
+### API Issues
+
+```bash
+# Check API logs
+tail -f /logs/app.log
+
+# Test API endpoints
+curl -X GET http://localhost:3000/api/users
+```
+
+#### Redis Issues
+
+```bash
+# Check Redis status
+sudo systemctl status redis-server
+
+# Test Redis connection
+redis-cli ping
+
+# Monitor Redis
+redis-cli monitor
+```
 
 ## Why Add Refresh Tokens?
 
@@ -163,3 +373,12 @@ Before setting up the Foody Platform, ensure you have the following prerequisite
 - [Cypress Documentation](https://docs.cypress.io)
 - [Testing Best Practices](https://jestjs.io/docs/jest-object#jestspyonobject-methodname)
 - [NPM dotenv-flow](https://www.npmjs.com/package/dotenv-flow)
+
+## Support
+
+For additional support:
+
+- Check the documentation
+- Review error logs
+- Contact support team
+- Open GitHub issues

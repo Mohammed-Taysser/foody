@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import basePaginationSchema from '@/validations/base.validation';
+import { basePaginationSchema } from '@/validations/base.validation';
 
 const createCategorySchema = {
   body: z.object({
@@ -29,17 +29,31 @@ const getCategoriesSchema = {
   }),
 };
 
+const exportCategoriesSchema = {
+  query: getCategoriesSchema.query.extend({
+    format: z.enum(['csv', 'xlsx', 'pdf']).default('xlsx'),
+  }),
+};
+
 type CreateCategoryInput = z.infer<typeof createCategorySchema.body>;
 type UpdateCategoryInput = z.infer<typeof updateCategorySchema.body>;
 type GetCategoryByIdParams = z.infer<typeof getCategoryByIdSchema.params>;
 type GetCategoriesQuery = z.infer<typeof getCategoriesSchema.query>;
+type ExportCategoriesQuery = z.infer<typeof exportCategoriesSchema.query>;
 
 const categoryValidator = {
   createCategorySchema,
   getCategoriesSchema,
   updateCategorySchema,
   getCategoryByIdSchema,
+  exportCategoriesSchema,
 };
 
 export default categoryValidator;
-export type { CreateCategoryInput, GetCategoriesQuery, GetCategoryByIdParams, UpdateCategoryInput };
+export type {
+  CreateCategoryInput,
+  GetCategoriesQuery,
+  GetCategoryByIdParams,
+  UpdateCategoryInput,
+  ExportCategoriesQuery,
+};

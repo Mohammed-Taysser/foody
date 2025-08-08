@@ -2,6 +2,60 @@
 
 - OAuth / Social login (Google, Facebook, GitHub)
 - Multi-factor authentication (MFA)
+- Add user logged device tracking
+- Implement caching layer
+- Loyalty program integration
+- Table reservation system
+- Order history
+- Push notifications
+- Email notifications
+- SMS integration
+- Customer feedback system
+- Code documentation
+
+  ```ts
+  interface DeviceInfo {
+    userAgent: string;
+    ip: string;
+    location?: string;
+  }
+  ```
+
+- Add notification system
+
+  ```ts
+  interface NotificationPreferences {
+    email: boolean;
+    push: boolean;
+    inApp: boolean;
+  }
+  ```
+
+- Implement bulk operations (delete, update, etc.)
+
+```ts
+interface BulkOperationResult {
+  success: number;
+  failed: number;
+  errors?: Array<{
+    index: number;
+    error: string;
+  }>;
+}
+```
+
+## Advanced
+
+- Add load balancing
+- Microservices architecture
+- Horizontal scaling
+- Performance monitoring
+- Error tracking integration
+- Inventory management
+- Supplier management
+- Employee management
+- Customer management
+- Reporting system
 
 ## Research
 

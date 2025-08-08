@@ -8,6 +8,7 @@ import authorize from '@/middleware/authorize.middleware';
 import requirePermission from '@/middleware/require-permission.middleware';
 import validateRequest from '@/middleware/validate-request.middleware';
 import { imageUploadMiddleware } from '@/utils/multer.utils';
+import multerErrorHandler from '@/middleware/multer-error-handler.middleware';
 
 const router = Router();
 
@@ -26,6 +27,14 @@ router.get(
 );
 
 router.get(
+  '/export',
+  authenticate,
+  requirePermission(['export:category']),
+  validateRequest(validator.exportCategoriesSchema),
+  controller.exportCategories
+);
+
+router.get(
   '/:categoryId',
   requirePermission(['view:category'], true),
   validateRequest(validator.getCategoryByIdSchema),
@@ -37,7 +46,7 @@ router.post(
   authenticate,
   authorize('OWNER', 'ADMIN'),
   requirePermission(['add:category']),
-  imageUploadMiddleware.single('image'),
+  multerErrorHandler(imageUploadMiddleware.single('image')),
   validateRequest(validator.createCategorySchema),
   controller.createCategory
 );
@@ -47,7 +56,7 @@ router.patch(
   authenticate,
   authorize('OWNER', 'ADMIN'),
   requirePermission(['update:category']),
-  imageUploadMiddleware.single('image'),
+  multerErrorHandler(imageUploadMiddleware.single('image')),
   validateRequest(validator.updateCategorySchema),
   controller.updateCategory
 );

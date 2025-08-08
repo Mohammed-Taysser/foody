@@ -8,6 +8,7 @@ import authorize from '@/middleware/authorize.middleware';
 import requirePermission from '@/middleware/require-permission.middleware';
 import validateRequest from '@/middleware/validate-request.middleware';
 import { imageUploadMiddleware } from '@/utils/multer.utils';
+import multerErrorHandler from '@/middleware/multer-error-handler.middleware';
 
 const router = Router();
 
@@ -26,6 +27,14 @@ router.get(
 );
 
 router.get(
+  '/export',
+  authenticate,
+  requirePermission(['export:menuItem']),
+  validateRequest(validator.exportMenuItemsSchema),
+  controller.exportMenuItems
+);
+
+router.get(
   '/:menuId',
   requirePermission(['view:menuItem'], true),
   validateRequest(validator.geyMenuItemByIdSchema),
@@ -37,7 +46,7 @@ router.post(
   authenticate,
   authorize('OWNER', 'ADMIN'),
   requirePermission(['add:menuItem']),
-  imageUploadMiddleware.single('image'),
+  multerErrorHandler(imageUploadMiddleware.single('image')),
   validateRequest(validator.createMenuItemSchema),
   controller.createMenuItem
 );
@@ -47,7 +56,7 @@ router.patch(
   authenticate,
   authorize('OWNER', 'ADMIN'),
   requirePermission(['update:menuItem']),
-  imageUploadMiddleware.single('image'),
+  multerErrorHandler(imageUploadMiddleware.single('image')),
   validateRequest(validator.updateMenuItemSchema),
   controller.updateMenuItem
 );

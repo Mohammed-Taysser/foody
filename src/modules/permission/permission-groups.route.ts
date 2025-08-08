@@ -17,6 +17,14 @@ router.get(
   controller.getPermissionGroups
 );
 
+router.get(
+  '/export',
+  authenticate,
+  validateRequest(validator.exportPermissionGroupsSchema),
+  requirePermission(['export:permissionGroup']),
+  controller.exportPermissionGroups
+);
+
 router.post(
   '/',
   authenticate,

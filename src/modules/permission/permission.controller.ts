@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 
 import {
   CreatePermissionInput,
+  ExportPermissionsQuery,
   GetPermissionByIdParams,
   GetPermissionListQuery,
   UpdatePermissionInput,
@@ -10,10 +11,18 @@ import {
 
 import prisma from '@/apps/prisma';
 import databaseLogger from '@/services/database-log.service';
+import exportService from '@/services/export.service';
+import formatterService from '@/services/formatter.service';
 import { AuthenticatedRequest } from '@/types/import';
 import { ConflictError, NotFoundError } from '@/utils/errors.utils';
 import { getRequestInfo } from '@/utils/request.utils';
-import { sendPaginatedResponse, sendSuccessResponse } from '@/utils/send-response';
+import {
+  sendCSVResponse,
+  sendExcelResponse,
+  sendPaginatedResponse,
+  sendPDFResponse,
+  sendSuccessResponse,
+} from '@/utils/response.utils';
 
 async function getPermissions(request: Request, response: Response) {
   const authenticatedRequest = request as unknown as AuthenticatedRequest<
@@ -213,6 +222,76 @@ async function deletePermission(request: Request, response: Response) {
   });
 }
 
+async function exportPermissions(request: Request, response: Response) {
+  const authenticatedRequest = request as unknown as AuthenticatedRequest<
+    unknown,
+    unknown,
+    unknown,
+    ExportPermissionsQuery
+  >;
+
+  const { parsedQuery: query } = authenticatedRequest;
+
+  const format = query.format;
+
+  const filters: Prisma.PermissionWhereInput = {};
+
+  if (query.key) {
+    filters.key = {
+      contains: query.key,
+      mode: 'insensitive',
+    };
+  }
+
+  const permissionsResponse = await prisma.permission.findMany({
+    orderBy: { createdAt: 'desc' },
+    where: filters,
+  });
+
+  const permissions = permissionsResponse.map((permission, index) => ({
+    '#': index + 1,
+    id: permission.id,
+    key: permission.key,
+    description: permission.description,
+    createdAt: formatterService.formatDateTime(permission.createdAt),
+  }));
+
+  switch (format) {
+    case 'csv': {
+      const csv = exportService.toCSV(permissions);
+
+      sendCSVResponse(response, csv, 'Permissions');
+      break;
+    }
+
+    case 'xlsx': {
+      const buffer = await exportService.toExcel(permissions);
+
+      sendExcelResponse(response, buffer, 'Permissions');
+      break;
+    }
+
+    case 'pdf': {
+      response.attachment('Permissions.pdf');
+      const pdfBuffer = await exportService.toPDF(permissions, {
+        title: 'Permissions',
+      });
+
+      sendPDFResponse(response, pdfBuffer, 'Permissions');
+      break;
+    }
+  }
+
+  databaseLogger.audit({
+    requestInfo: getRequestInfo(authenticatedRequest),
+    actorId: authenticatedRequest.user.id,
+    actorType: 'USER',
+    action: 'EXPORT',
+    resource: 'PERMISSION',
+    metadata: { format, query },
+  });
+}
+
 const permissionController = {
   createPermission,
   deletePermission,
@@ -220,6 +299,7 @@ const permissionController = {
   getPermissionList,
   getPermissions,
   updatePermission,
+  exportPermissions,
 };
 
 export default permissionController;

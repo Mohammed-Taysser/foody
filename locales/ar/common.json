@@ -1,5 +1,9 @@
 {
   "paginated request successful": "تم تنفيذ الطلب مع التصفح بنجاح",
   "request-successful": "تم تنفيذ الطلب بنجاح",
-  "request-failed": "تعذر تنفيذ الطلب"
+  "request-failed": "تعذر تنفيذ الطلب",
+  "category-id": "معرف الفئة",
+  "category-name": "اسم الفئة",
+  "restaurant-id": "معرف المطعم",
+  "restaurant-name": "اسم المطعم"
 }

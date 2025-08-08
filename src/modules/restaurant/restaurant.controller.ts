@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 
 import {
   CreateRestaurantInput,
+  ExportRestaurantsQuery,
   GetRestaurantByIdParams,
   GetRestaurantListQuery,
   UpdateRestaurantInput,
@@ -14,7 +15,15 @@ import { AuthenticatedRequest } from '@/types/import';
 import { NotFoundError } from '@/utils/errors.utils';
 import { deleteImage, uploadImage } from '@/utils/multer.utils';
 import { getRequestInfo } from '@/utils/request.utils';
-import { sendPaginatedResponse, sendSuccessResponse } from '@/utils/send-response';
+import {
+  sendCSVResponse,
+  sendExcelResponse,
+  sendPaginatedResponse,
+  sendPDFResponse,
+  sendSuccessResponse,
+} from '@/utils/response.utils';
+import exportService from '@/services/export.service';
+import formatterService from '@/services/formatter.service';
 
 async function getRestaurants(request: Request, response: Response) {
   const authenticatedRequest = request as unknown as AuthenticatedRequest<
@@ -244,6 +253,91 @@ async function deleteRestaurant(request: Request, response: Response) {
   sendSuccessResponse({ response, message: 'Restaurant deleted', data: deletedRestaurant });
 }
 
+async function exportRestaurants(request: Request, response: Response) {
+  const authenticatedRequest = request as unknown as AuthenticatedRequest<
+    unknown,
+    unknown,
+    unknown,
+    ExportRestaurantsQuery
+  >;
+
+  const { parsedQuery: query } = authenticatedRequest;
+
+  const format = query.format;
+
+  const filters: Prisma.RestaurantWhereInput = {};
+
+  if (query.name) {
+    filters.name = {
+      contains: query.name,
+      mode: 'insensitive',
+    };
+  }
+
+  const restaurantsResponse = await prisma.restaurant.findMany({
+    orderBy: { createdAt: 'desc' },
+    where: filters,
+    include: {
+      owner: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+  });
+
+  const restaurants = restaurantsResponse.map((restaurant, index) => ({
+    '#': index + 1,
+    id: restaurant.id,
+    name: restaurant.name,
+    image: restaurant.image,
+    description: restaurant.description,
+    location: restaurant.location,
+    ownerId: restaurant.owner.id,
+    ownerName: restaurant.owner.name,
+    ownerEmail: restaurant.owner.email,
+    createdAt: formatterService.formatDateTime(restaurant.createdAt),
+  }));
+
+  switch (format) {
+    case 'csv': {
+      const csv = exportService.toCSV(restaurants);
+
+      sendCSVResponse(response, csv, 'Restaurants');
+      break;
+    }
+
+    case 'xlsx': {
+      const buffer = await exportService.toExcel(restaurants);
+
+      sendExcelResponse(response, buffer, 'Restaurants');
+      break;
+    }
+
+    case 'pdf': {
+      response.attachment('Restaurants.pdf');
+      const pdfBuffer = await exportService.toPDF(restaurants, {
+        columnsToExclude: ['image', 'restaurantImage', 'restaurantId'],
+        title: 'Restaurants',
+      });
+
+      sendPDFResponse(response, pdfBuffer, 'Restaurants');
+      break;
+    }
+  }
+
+  databaseLogger.audit({
+    requestInfo: getRequestInfo(authenticatedRequest),
+    actorId: authenticatedRequest.user.id,
+    actorType: 'USER',
+    action: 'EXPORT',
+    resource: 'RESTAURANT',
+    metadata: { format, query },
+  });
+}
+
 const restaurantController = {
   createRestaurant,
   deleteRestaurant,
@@ -251,6 +345,7 @@ const restaurantController = {
   getRestaurants,
   getRestaurantsList,
   updateRestaurant,
+  exportRestaurants,
 };
 
 export default restaurantController;

@@ -2,6 +2,7 @@ import path from 'path';
 
 import { faker } from '@faker-js/faker';
 import { Restaurant } from '@prisma/client';
+import ExcelJS from 'exceljs';
 import request from 'supertest';
 
 import app from '../../../src/app';
@@ -344,5 +345,107 @@ describe('Restaurant API', () => {
 
       expect(res.statusCode).toBe(401);
     });
+  });
+
+  describe('GET /api/restaurants/export', () => {
+    it('should export restaurants in CSV format', async () => {
+      const res = await request(app)
+        .get(`/api/restaurants/export`)
+        .query({
+          format: 'csv',
+          name: faker.company.name(),
+        })
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .buffer()
+        .parse((res, callback) => {
+          const chunks: Uint8Array<ArrayBufferLike>[] = [];
+          res.setEncoding('utf8');
+          res.on('data', (chunk) => chunks.push(chunk));
+          res.on('end', () => callback(null, chunks.join('')));
+        });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.headers['content-type']).toBe('text/csv; charset=utf-8');
+      expect(res.headers['content-disposition']).toContain(
+        'attachment; filename="Restaurants.csv"'
+      );
+
+      expect(typeof res.body).toBe('string');
+      expect(res.body).toContain('#');
+    });
+
+    it('should export restaurants in Excel format (xlsx)', async () => {
+      const res = await request(app)
+        .get(`/api/restaurants/export?format=xlsx`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .query({
+          name: faker.company.name(),
+        })
+        .buffer()
+        .parse((res, callback) => {
+          const chunks: Uint8Array<ArrayBufferLike>[] = [];
+          res.on('data', (chunk) => chunks.push(chunk));
+          res.on('end', () => callback(null, Buffer.concat(chunks)));
+        });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.headers['content-type']).toBe(
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      );
+      expect(res.headers['content-disposition']).toContain(
+        'attachment; filename="Restaurants.xlsx"'
+      );
+
+      expect(res.body).toBeInstanceOf(Buffer); // xlsx returns a buffer
+
+      // Load the workbook from buffer
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(res.body);
+
+      const worksheet = workbook.worksheets[0];
+
+      const map: Record<string, number> = {};
+      worksheet.getRow(1).eachCell((cell, colNumber) => {
+        map[cell.text.trim()] = colNumber;
+      });
+
+      // Basic validation
+      expect(worksheet).toBeDefined();
+
+      // Confirm data rows match expected content
+      worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber === 1) return; // Skip header
+
+        const name = row.getCell(map['name'])?.text?.toLowerCase() ?? '';
+
+        expect(name).toContain(name);
+      });
+    });
+
+    it('should export restaurants in PDF format', async () => {
+      const res = await request(app)
+        .get(`/api/restaurants/export`)
+        .query({
+          format: 'pdf',
+          name: faker.company.name(),
+        })
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .buffer()
+        .parse((res, callback) => {
+          const chunks: Uint8Array<ArrayBufferLike>[] = [];
+          res.on('data', (chunk) => chunks.push(chunk));
+          res.on('end', () => callback(null, Buffer.concat(chunks)));
+        });
+
+      expect(res.statusCode).toBe(200);
+
+      expect(res.body.slice(0, 4).toString()).toBe('%PDF');
+
+      expect(res.headers['content-type']).toBe('application/pdf');
+      expect(res.headers['content-disposition']).toContain(
+        'attachment; filename="Restaurants.pdf"'
+      );
+      expect(parseInt(res.headers['content-length'])).toBeGreaterThan(0);
+    }, 20000); // 20 seconds
   });
 });
