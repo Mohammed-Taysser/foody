@@ -1,9 +1,9 @@
 import { Prisma } from '@prisma/client';
 
-import prisma from '@/apps/prisma';
-import { formatDeepDiff } from '@/utils/deep-diff.utils';
-import { AuditLogParams } from '@/types/import';
 import CONFIG from '@/apps/config';
+import prisma from '@/apps/prisma';
+import { AuditLogParams } from '@/types/import';
+import { formatDeepDiff } from '@/utils/deep-diff.utils';
 import logger from '@/utils/logger.utils';
 
 class DatabaseLogger {

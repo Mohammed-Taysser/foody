@@ -1,19 +1,12 @@
-import path from 'path';
-
 import { faker } from '@faker-js/faker';
 import { Restaurant } from '@prisma/client';
+import { CUSTOMER_EMAIL, MOCK_IMAGE_PATH, OWNER_EMAIL } from '@tests/test.constants';
+import { parseCsvResponse, parseExcelResponse } from '@tests/test.utils';
 import ExcelJS from 'exceljs';
 import request from 'supertest';
 
-import app from '../../../src/app';
-import {
-  CUSTOMER_EMAIL,
-  CUSTOMER_PASSWORD,
-  OWNER_EMAIL,
-  OWNER_PASSWORD,
-} from '../../test.constants';
-
-const mockImagePath = path.join(__dirname, '../../../public/avatar.jpg');
+import app from '@/app';
+import CONFIG from '@/apps/config';
 
 describe('Restaurant API', () => {
   let ownerToken: string;
@@ -25,14 +18,14 @@ describe('Restaurant API', () => {
   beforeAll(async () => {
     const ownerRes = await request(app).post('/api/auth/login').send({
       email: OWNER_EMAIL,
-      password: OWNER_PASSWORD,
+      password: CONFIG.TEST_USER_PASSWORD,
     });
     ownerToken = ownerRes.body.data.data.accessToken;
     ownerId = ownerRes.body.data.data.user.id;
 
     const customerRes = await request(app).post('/api/auth/login').send({
       email: CUSTOMER_EMAIL,
-      password: CUSTOMER_PASSWORD,
+      password: CONFIG.TEST_USER_PASSWORD,
     });
     customerToken = customerRes.body.data.data.accessToken;
     customerId = customerRes.body.data.data.user.id;
@@ -217,7 +210,7 @@ describe('Restaurant API', () => {
         .field('name', faker.company.name())
         .field('ownerId', ownerId)
         .field('location', faker.location.city())
-        .attach('image', mockImagePath);
+        .attach('image', MOCK_IMAGE_PATH);
 
       expect(res.statusCode).toBe(201);
       expect(res.body.data.data.image).toMatch(/restaurant/);
@@ -265,7 +258,7 @@ describe('Restaurant API', () => {
         .field('name', faker.company.name())
         .field('ownerId', ownerId)
         .field('location', faker.location.city())
-        .attach('image', mockImagePath);
+        .attach('image', MOCK_IMAGE_PATH);
 
       const restaurantId = createRes.body.data.data.id;
 
@@ -273,7 +266,7 @@ describe('Restaurant API', () => {
         .patch(`/api/restaurants/${restaurantId}`)
         .set('Authorization', `Bearer ${ownerToken}`)
         .field('name', faker.company.name())
-        .attach('image', mockImagePath);
+        .attach('image', MOCK_IMAGE_PATH);
 
       expect(updateRes.statusCode).toBe(200);
       expect(updateRes.body.data.data.image).toMatch(/restaurant/);
@@ -357,12 +350,7 @@ describe('Restaurant API', () => {
         })
         .set('Authorization', `Bearer ${ownerToken}`)
         .buffer()
-        .parse((res, callback) => {
-          const chunks: Uint8Array<ArrayBufferLike>[] = [];
-          res.setEncoding('utf8');
-          res.on('data', (chunk) => chunks.push(chunk));
-          res.on('end', () => callback(null, chunks.join('')));
-        });
+        .parse(parseCsvResponse);
 
       expect(res.statusCode).toBe(200);
       expect(res.headers['content-type']).toBe('text/csv; charset=utf-8');
@@ -382,11 +370,7 @@ describe('Restaurant API', () => {
           name: faker.company.name(),
         })
         .buffer()
-        .parse((res, callback) => {
-          const chunks: Uint8Array<ArrayBufferLike>[] = [];
-          res.on('data', (chunk) => chunks.push(chunk));
-          res.on('end', () => callback(null, Buffer.concat(chunks)));
-        });
+        .parse(parseExcelResponse);
 
       expect(res.statusCode).toBe(200);
       expect(res.headers['content-type']).toBe(
@@ -431,11 +415,7 @@ describe('Restaurant API', () => {
         })
         .set('Authorization', `Bearer ${ownerToken}`)
         .buffer()
-        .parse((res, callback) => {
-          const chunks: Uint8Array<ArrayBufferLike>[] = [];
-          res.on('data', (chunk) => chunks.push(chunk));
-          res.on('end', () => callback(null, Buffer.concat(chunks)));
-        });
+        .parse(parseCsvResponse);
 
       expect(res.statusCode).toBe(200);
 
@@ -445,7 +425,7 @@ describe('Restaurant API', () => {
       expect(res.headers['content-disposition']).toContain(
         'attachment; filename="Restaurants.pdf"'
       );
-      expect(parseInt(res.headers['content-length'])).toBeGreaterThan(0);
+      expect(Number.parseInt(res.headers['content-length'])).toBeGreaterThan(0);
     }, 20000); // 20 seconds
   });
 });

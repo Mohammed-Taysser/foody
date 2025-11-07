@@ -2,7 +2,7 @@
 
 This project uses a custom wrapper around `dayjs` to ensure all date-time operations respect a consistent timezone defined in your environment.
 
-Here a list of [timezones](../../public/timezones.json)
+Here a list of [timezones](@/public/timezones.json)
 
 ## Features
 

@@ -12,8 +12,7 @@ function zodBoolean() {
       z.literal('no'),
     ])
     .transform((val) => {
-      if (val === true || val === 'true' || val === '1' || val === 'yes') return true;
-      return false;
+      return !!(val === true || val === 'true' || val === '1' || val === 'yes');
     });
 }
 

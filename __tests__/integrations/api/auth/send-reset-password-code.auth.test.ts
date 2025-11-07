@@ -1,8 +1,9 @@
 import { faker } from '@faker-js/faker';
 import request from 'supertest';
 
-import app from '../../../../src/app';
-import prisma from '../../../../src/apps/prisma';
+import app from '@/app';
+import CONFIG from '@/apps/config';
+import prisma from '@/apps/prisma';
 
 const endpoint = '/api/auth/send-reset-password-code';
 
@@ -36,7 +37,7 @@ describe('POST /auth/send-reset-password-code - Failure Cases', () => {
     await prisma.user.create({
       data: {
         email,
-        password: 'pass',
+        password: CONFIG.TEST_USER_PASSWORD,
         isActive: true,
         isBlocked: false,
         isEmailVerified: false,
@@ -55,7 +56,7 @@ describe('POST /auth/send-reset-password-code - Failure Cases', () => {
     await prisma.user.create({
       data: {
         email,
-        password: 'pass',
+        password: CONFIG.TEST_USER_PASSWORD,
         isActive: true,
         isBlocked: true,
         isEmailVerified: true,
@@ -74,7 +75,7 @@ describe('POST /auth/send-reset-password-code - Failure Cases', () => {
     await prisma.user.create({
       data: {
         email,
-        password: 'pass',
+        password: CONFIG.TEST_USER_PASSWORD,
         isActive: false,
         isBlocked: false,
         isEmailVerified: true,
@@ -95,7 +96,7 @@ describe('POST /auth/send-reset-password-code - Success Case', () => {
     await prisma.user.create({
       data: {
         email,
-        password: 'pass',
+        password: CONFIG.TEST_USER_PASSWORD,
         isActive: true,
         isBlocked: false,
         isEmailVerified: true,

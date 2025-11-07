@@ -1,8 +1,9 @@
 import { OrderStatus } from '@prisma/client';
+import { ADMIN_EMAIL } from '@tests/test.constants';
 import request from 'supertest';
 
-import app from '../../../src/app';
-import { ADMIN_EMAIL, ADMIN_PASSWORD } from '../../test.constants';
+import app from '@/app';
+import CONFIG from '@/apps/config';
 
 describe('Dashboard Analytics', () => {
   let adminToken: string;
@@ -10,7 +11,7 @@ describe('Dashboard Analytics', () => {
   beforeAll(async () => {
     const adminRes = await request(app).post('/api/auth/login').send({
       email: ADMIN_EMAIL,
-      password: ADMIN_PASSWORD,
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     adminToken = adminRes.body.data.data.accessToken;
@@ -28,41 +29,34 @@ describe('Dashboard Analytics', () => {
 
     const sections = ['users', 'restaurants', 'categories', 'menuItems', 'orders'];
 
-    sections.forEach((section) => {
+    for (const section of sections) {
       expect(res.body.data.data.totals).toHaveProperty(section);
       expect(res.body.data.data.thisWeek).toHaveProperty(section);
       expect(res.body.data.data.lastWeek).toHaveProperty(section);
       expect(res.body.data.data.growth).toHaveProperty(section);
-    });
+    }
   });
 
   describe('/analytics/orders/per-day', () => {
     it('should return order stats for the past 7 days', async () => {
       const res = await request(app)
         .get('/api/analytics/orders/per-day')
-        .set('Authorization', `Bearer ${adminToken}`); // adjust endpoint as needed
+        .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.statusCode).toBe(200);
       expect(res.body.success).toBe(true);
       expect(Array.isArray(res.body.data.data)).toBe(true);
       expect(res.body.data.data.length).toBe(7);
 
-      type Day = Record<OrderStatus, number> & {
-        date: string;
-      };
-
-      res.body.data.data.forEach((day: Day) => {
+      const expectedStatuses = ['PENDING', 'PREPARING', 'COMPLETED', 'CANCELLED'];
+      for (const day of res.body.data.data) {
         expect(day).toHaveProperty('date');
         expect(typeof day.date).toBe('string');
-
-        // These are the expected status keys
-        const expectedStatuses = ['PENDING', 'PREPARING', 'COMPLETED', 'CANCELLED'];
-
-        expectedStatuses.forEach((status) => {
+        for (const status of expectedStatuses) {
           expect(day).toHaveProperty(status);
           expect(typeof day[status as OrderStatus]).toBe('number');
-        });
-      });
+        }
+      }
     });
   });
 });

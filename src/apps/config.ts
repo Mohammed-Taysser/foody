@@ -3,7 +3,7 @@ import { config as loadEnvSafe } from 'dotenv-safe';
 import { SignOptions } from 'jsonwebtoken';
 import { z } from 'zod';
 
-import timezones from '../constants/timezones.json';
+import timezones from '@/constants/timezones.json';
 
 // Extract the list of valid timezone names
 const validTimezones = timezones.map((tz) => tz.tzCode);
@@ -38,6 +38,7 @@ try {
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.string().trim().transform(Number),
+  APP_NAME: z.string().trim(),
 
   ALLOWED_ORIGINS: z
     .string()
@@ -50,7 +51,10 @@ const envSchema = z.object({
       return origins;
     }),
 
-  DEFAULT_TIMEZONE: z.enum(validTimezones as [string, ...string[]]).default('UTC'),
+  DEFAULT_TIMEZONE: z
+    .enum(validTimezones as [string, ...string[]])
+    .optional()
+    .default('UTC'),
 
   JWT_SECRET: z.string().trim().min(10),
   JWT_ACCESS_EXPIRES_IN: z
@@ -77,6 +81,29 @@ const envSchema = z.object({
     .regex(/^\d+[smhd]$/, {
       message: 'JWT_EXPIRES_IN must be a duration like "7d", "15m", "1h", or "30s"',
     }) as z.ZodType<SignOptions['expiresIn']>,
+
+  ENABLE_RATE_LIMITING: z
+    .string()
+    .transform((val) => val === 'true')
+    .default('true'),
+  RATE_LIMIT_WINDOW_MS: z.coerce.number().default(60000),
+  RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(100),
+
+  TEST_DATABASE_URL: z.string().optional(),
+  TEST_USER_EMAIL: z
+    .string()
+    .email()
+    .refine(
+      (val) => process.env.NODE_ENV !== 'test' || !!val,
+      'TEST_USER_EMAIL is required in test environment'
+    ),
+  TEST_USER_PASSWORD: z
+    .string()
+    .min(6)
+    .refine(
+      (val) => process.env.NODE_ENV !== 'test' || !!val,
+      'TEST_USER_PASSWORD is required in test environment'
+    ),
 });
 
 // Validate and catch errors with friendly messages

@@ -1,9 +1,10 @@
 import { faker } from '@faker-js/faker';
 import request from 'supertest';
 
-import app from '../../../../src/app';
-import prisma from '../../../../src/apps/prisma';
-import tokenService from '../../../../src/services/token.service';
+import app from '@/app';
+import CONFIG from '@/apps/config';
+import prisma from '@/apps/prisma';
+import tokenService from '@/services/token.service';
 
 const endpoint = '/api/auth/send-verification-email';
 const loginEndpoint = '/api/auth/login';
@@ -14,7 +15,7 @@ describe('POST /auth/send-verification-email - Success', () => {
     await prisma.user.create({
       data: {
         email,
-        password: await tokenService.hash('pass-123456'),
+        password: await tokenService.hash(CONFIG.TEST_USER_PASSWORD),
         isActive: true,
         isBlocked: false,
         isEmailVerified: true,
@@ -44,7 +45,7 @@ describe('POST /auth/send-verification-email - Failure', () => {
     const res = await request(app).post(endpoint).send({
       email: faker.internet.email(),
       resetToken: 'invalid',
-      password: 'new-password',
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     expect(res.statusCode).toBe(400);
@@ -61,7 +62,7 @@ describe('POST /auth/send-verification-email - Failure', () => {
     await prisma.user.create({
       data: {
         email,
-        password: await tokenService.hash('pass-123456'),
+        password: await tokenService.hash(CONFIG.TEST_USER_PASSWORD),
         isActive: true,
         isBlocked: false,
         isEmailVerified: true,
@@ -71,7 +72,7 @@ describe('POST /auth/send-verification-email - Failure', () => {
 
     const loginResponse = await request(app).post(loginEndpoint).send({
       email,
-      password: 'pass-123456',
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     const token = loginResponse.body.data.data.accessToken;
@@ -97,7 +98,7 @@ describe('POST /auth/send-verification-email - Failure', () => {
     const user = await prisma.user.create({
       data: {
         email,
-        password: await tokenService.hash('pass-123456'),
+        password: await tokenService.hash(CONFIG.TEST_USER_PASSWORD),
         isActive: true,
         isBlocked: false,
         isEmailVerified: false,
@@ -107,7 +108,7 @@ describe('POST /auth/send-verification-email - Failure', () => {
 
     const loginResponse = await request(app).post(loginEndpoint).send({
       email,
-      password: 'pass-123456',
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     const token = loginResponse.body.data.data.accessToken;
@@ -133,7 +134,7 @@ describe('POST /auth/send-verification-email - Failure', () => {
     await prisma.user.create({
       data: {
         email,
-        password: await tokenService.hash('pass-123456'),
+        password: await tokenService.hash(CONFIG.TEST_USER_PASSWORD),
         isActive: true,
         isBlocked: false,
         isEmailVerified: true,
@@ -143,7 +144,7 @@ describe('POST /auth/send-verification-email - Failure', () => {
 
     const loginResponse = await request(app).post(loginEndpoint).send({
       email,
-      password: 'pass-123456',
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     const token = loginResponse.body.data.data.accessToken;

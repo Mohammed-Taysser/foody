@@ -1,21 +1,14 @@
 import { faker } from '@faker-js/faker';
-import request from 'supertest';
-import { Order, OrderItem, OrderStatus } from '@prisma/client';
+import { OrderItem, OrderStatus } from '@prisma/client';
+import { ADMIN_EMAIL, CUSTOMER_2_EMAIL, CUSTOMER_EMAIL, OWNER_EMAIL } from '@tests/test.constants';
+import { parseCsvResponse, parseExcelResponse } from '@tests/test.utils';
 import ExcelJS from 'exceljs';
+import request from 'supertest';
 
-import app from '../../../src/app';
-import prisma from '../../../src/apps/prisma';
-import {
-  ADMIN_EMAIL,
-  ADMIN_PASSWORD,
-  CUSTOMER_2_EMAIL,
-  CUSTOMER_2_PASSWORD,
-  CUSTOMER_EMAIL,
-  CUSTOMER_PASSWORD,
-  OWNER_EMAIL,
-  OWNER_PASSWORD,
-} from '../../test.constants';
-import dayjsTZ from '../../../src/utils/dayjs.utils';
+import app from '@/app';
+import CONFIG from '@/apps/config';
+import prisma from '@/apps/prisma';
+import dayjsTZ from '@/utils/dayjs.utils';
 
 describe('Order API', () => {
   let ownerToken: string;
@@ -33,27 +26,27 @@ describe('Order API', () => {
   beforeAll(async () => {
     const ownerRes = await request(app).post('/api/auth/login').send({
       email: OWNER_EMAIL,
-      password: OWNER_PASSWORD,
+      password: CONFIG.TEST_USER_PASSWORD,
     });
     ownerToken = ownerRes.body.data.data.accessToken;
 
     const customerRes = await request(app).post('/api/auth/login').send({
       email: CUSTOMER_EMAIL,
-      password: CUSTOMER_PASSWORD,
+      password: CONFIG.TEST_USER_PASSWORD,
     });
     customerId = customerRes.body.data.data.user.id;
     customerToken = customerRes.body.data.data.accessToken;
 
     const anotherCustomer = await request(app).post('/api/auth/login').send({
       email: CUSTOMER_2_EMAIL,
-      password: CUSTOMER_2_PASSWORD,
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     anotherToken = anotherCustomer.body.data.data.accessToken;
 
     const adminRes = await request(app).post('/api/auth/login').send({
       email: ADMIN_EMAIL,
-      password: ADMIN_PASSWORD,
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     adminToken = adminRes.body.data.data.accessToken;
@@ -175,7 +168,7 @@ describe('Order API', () => {
     it("should return 403 when a user tries to access another user's order", async () => {
       const anotherCustomerRes = await request(app).post('/api/auth/login').send({
         email: CUSTOMER_2_EMAIL,
-        password: CUSTOMER_2_PASSWORD,
+        password: CONFIG.TEST_USER_PASSWORD,
       });
 
       const anotherCustomerToken = anotherCustomerRes.body.data.data.accessToken;
@@ -195,7 +188,10 @@ describe('Order API', () => {
           .query({ restaurantId: restaurantId });
 
         expect(res.status).toBe(200);
-        const ids = res.body.data.data.map((o: Order) => o.restaurantId);
+        const ids: string[] = [];
+        for (const o of res.body.data.data) {
+          ids.push(o.restaurantId);
+        }
         expect(ids).toContain(restaurantId);
       });
 
@@ -206,7 +202,10 @@ describe('Order API', () => {
           .query({ userId: customerId });
 
         expect(res.status).toBe(200);
-        const ids = res.body.data.data.map((o: Order) => o.userId);
+        const ids: string[] = [];
+        for (const o of res.body.data.data) {
+          ids.push(o.userId);
+        }
         expect(ids).toContain(customerId);
       });
 
@@ -219,7 +218,9 @@ describe('Order API', () => {
           .query({ status: status.join(',') });
 
         expect(res.status).toBe(200);
-        expect(res.body.data.data.every((o: Order) => status.includes(o.status))).toBe(true);
+        for (const o of res.body.data.data) {
+          expect(status.includes(o.status)).toBe(true);
+        }
       });
 
       it('should filter by status (single value)', async () => {
@@ -250,8 +251,10 @@ describe('Order API', () => {
 
         expect(res.status).toBe(200);
         const data = res.body.data.data;
-        expect(data.every((o: Order) => o.paymentStatus === 'PAID')).toBe(true);
-        expect(data.every((o: Order) => o.paymentMethod === 'CARD')).toBe(true);
+        for (const o of data) {
+          expect(o.paymentStatus).toBe('PAID');
+          expect(o.paymentMethod).toBe('CARD');
+        }
       });
 
       it('should filter by createdAt[startDate, endDate]', async () => {
@@ -268,10 +271,10 @@ describe('Order API', () => {
           });
 
         expect(res.status).toBe(200);
-        res.body.data.data.forEach((order: Order) => {
+        for (const order of res.body.data.data) {
           const created = dayjsTZ(order.createdAt);
           expect(created.isBetween(today, today, 'day', '[]')).toBe(true);
-        });
+        }
       });
 
       it('should filter by createdAt[startDate]', async () => {
@@ -286,10 +289,10 @@ describe('Order API', () => {
           });
 
         expect(res.status).toBe(200);
-        res.body.data.data.forEach((user: Order) => {
+        for (const user of res.body.data.data) {
           const createdAt = dayjsTZ(user.createdAt);
           expect(createdAt.isSameOrAfter(today, 'day')).toBe(true);
-        });
+        }
       });
 
       it('should filter by createdAt[endDate]', async () => {
@@ -304,10 +307,10 @@ describe('Order API', () => {
           });
 
         expect(res.status).toBe(200);
-        res.body.data.data.forEach((user: Order) => {
+        for (const user of res.body.data.data) {
           const created = dayjsTZ(user.createdAt);
           expect(created.isSameOrBefore(today, 'day')).toBe(true);
-        });
+        }
       });
 
       it('should filter by tableNumber', async () => {
@@ -317,7 +320,9 @@ describe('Order API', () => {
           .query({ tableNumber: 5 });
 
         expect(res.status).toBe(200);
-        expect(res.body.data.data.every((o: Order) => o.tableNumber === 5)).toBe(true);
+        for (const o of res.body.data.data) {
+          expect(o.tableNumber).toBe(5);
+        }
       });
     });
   });
@@ -890,12 +895,7 @@ describe('Order API', () => {
         })
         .set('Authorization', `Bearer ${adminToken}`)
         .buffer()
-        .parse((res, callback) => {
-          const chunks: Uint8Array<ArrayBufferLike>[] = [];
-          res.setEncoding('utf8');
-          res.on('data', (chunk) => chunks.push(chunk));
-          res.on('end', () => callback(null, chunks.join('')));
-        });
+        .parse(parseCsvResponse);
 
       expect(res.statusCode).toBe(200);
       expect(res.headers['content-type']).toBe('text/csv; charset=utf-8');
@@ -914,11 +914,7 @@ describe('Order API', () => {
           restaurantId,
         })
         .buffer()
-        .parse((res, callback) => {
-          const chunks: Uint8Array<ArrayBufferLike>[] = [];
-          res.on('data', (chunk) => chunks.push(chunk));
-          res.on('end', () => callback(null, Buffer.concat(chunks)));
-        });
+        .parse(parseExcelResponse);
 
       expect(res.statusCode).toBe(200);
       expect(res.headers['content-type']).toBe(
@@ -963,11 +959,7 @@ describe('Order API', () => {
         })
         .set('Authorization', `Bearer ${adminToken}`)
         .buffer()
-        .parse((res, callback) => {
-          const chunks: Uint8Array<ArrayBufferLike>[] = [];
-          res.on('data', (chunk) => chunks.push(chunk));
-          res.on('end', () => callback(null, Buffer.concat(chunks)));
-        });
+        .parse(parseCsvResponse);
 
       expect(res.statusCode).toBe(200);
 

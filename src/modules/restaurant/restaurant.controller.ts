@@ -11,6 +11,8 @@ import {
 
 import prisma from '@/apps/prisma';
 import databaseLogger from '@/services/database-log.service';
+import exportService from '@/services/export.service';
+import formatterService from '@/services/formatter.service';
 import { AuthenticatedRequest } from '@/types/import';
 import { NotFoundError } from '@/utils/errors.utils';
 import { deleteImage, uploadImage } from '@/utils/multer.utils';
@@ -22,8 +24,6 @@ import {
   sendPDFResponse,
   sendSuccessResponse,
 } from '@/utils/response.utils';
-import exportService from '@/services/export.service';
-import formatterService from '@/services/formatter.service';
 
 async function getRestaurants(request: Request, response: Response) {
   const authenticatedRequest = request as unknown as AuthenticatedRequest<

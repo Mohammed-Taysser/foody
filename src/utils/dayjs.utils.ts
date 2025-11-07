@@ -1,14 +1,14 @@
 import { Prisma } from '@prisma/client';
 import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration';
 import isBetween from 'dayjs/plugin/isBetween';
+import isoWeek from 'dayjs/plugin/isoWeek';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
-import isoWeek from 'dayjs/plugin/isoWeek';
+import relativeTime from 'dayjs/plugin/relativeTime';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
-import relativeTime from 'dayjs/plugin/relativeTime';
-import duration from 'dayjs/plugin/duration';
 
 import CONFIG from '@/apps/config';
 import { DateRangeInput } from '@/validations/base.validation';

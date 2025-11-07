@@ -1,9 +1,12 @@
+import { randomUUID } from 'node:crypto';
+
 import { faker } from '@faker-js/faker';
 import request from 'supertest';
 
-import app from '../../../../src/app';
-import prisma from '../../../../src/apps/prisma';
-import tokenService from '../../../../src/services/token.service';
+import app from '@/app';
+import CONFIG from '@/apps/config';
+import prisma from '@/apps/prisma';
+import tokenService from '@/services/token.service';
 
 const endpoint = '/api/auth/verify-reset-password';
 
@@ -34,7 +37,7 @@ describe('POST /auth/verify-reset-password - Success', () => {
     const res = await request(app).post(endpoint).send({
       email,
       resetToken: token,
-      password: 'new-pass',
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     expect(res.statusCode).toBe(200);
@@ -48,19 +51,19 @@ describe('POST /auth/verify-reset-password - Failure', () => {
     await prisma.user.create({
       data: {
         email,
-        password: 'old',
+        password: CONFIG.TEST_USER_PASSWORD,
         isActive: true,
         isBlocked: false,
         isEmailVerified: true,
-        passwordResetToken: 'expired-token',
+        passwordResetToken: randomUUID(),
         passwordResetSentAt: new Date(Date.now() - 2 * 3600000),
         name: 'User',
       },
     });
 
     const res = await request(app).post(endpoint).send({
-      token: 'expired-token',
-      password: 'new-password',
+      token: randomUUID(),
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     expect(res.statusCode).toBe(400);
@@ -71,7 +74,7 @@ describe('POST /auth/verify-reset-password - Failure', () => {
     const res = await request(app).post(endpoint).send({
       email: faker.internet.email(),
       resetToken: 'invalid',
-      password: 'new-password',
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     expect(res.statusCode).toBe(400);
@@ -94,7 +97,7 @@ describe('POST /auth/verify-reset-password - Failure', () => {
     const res = await request(app).post(endpoint).send({
       email,
       resetToken: 'invalid',
-      password: 'new-password',
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     expect(res.statusCode).toBe(401);
@@ -117,7 +120,7 @@ describe('POST /auth/verify-reset-password - Failure', () => {
     const res = await request(app).post(endpoint).send({
       email,
       resetToken: 'invalid',
-      password: 'new-password',
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     expect(res.statusCode).toBe(401);
@@ -140,7 +143,7 @@ describe('POST /auth/verify-reset-password - Failure', () => {
     const res = await request(app).post(endpoint).send({
       email,
       resetToken: 'any-token',
-      password: 'new-password',
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     expect(res.statusCode).toBe(401);
@@ -163,7 +166,7 @@ describe('POST /auth/verify-reset-password - Failure', () => {
     const res = await request(app).post(endpoint).send({
       email,
       resetToken: 'some-token',
-      password: 'password123',
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     expect(res.statusCode).toBe(400);
@@ -180,15 +183,15 @@ describe('POST /auth/verify-reset-password - Failure', () => {
         isEmailVerified: true,
         password: await tokenService.hash('old-pass'),
         name: 'Expired Token',
-        passwordResetToken: 'expired-token',
+        passwordResetToken: randomUUID(),
         passwordResetSentAt: new Date(Date.now() - 2 * 3600000), // 2 hours ago
       },
     });
 
     const res = await request(app).post(endpoint).send({
       email,
-      resetToken: 'expired-token',
-      password: 'password123',
+      resetToken: randomUUID(),
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     expect(res.statusCode).toBe(400);
@@ -205,7 +208,7 @@ describe('POST /auth/verify-reset-password - Failure', () => {
         isEmailVerified: true,
         password: await tokenService.hash('old-pass'),
         name: 'Invalid Token',
-        passwordResetToken: 'valid-token',
+        passwordResetToken: randomUUID(),
         passwordResetSentAt: new Date(),
       },
     });
@@ -213,7 +216,7 @@ describe('POST /auth/verify-reset-password - Failure', () => {
     const res = await request(app).post(endpoint).send({
       email,
       resetToken: 'invalid-token',
-      password: 'password123',
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     expect(res.statusCode).toBe(400);
@@ -235,7 +238,7 @@ describe('POST /auth/verify-reset-password - Failure', () => {
         isEmailVerified: true,
         password: await tokenService.hash('old-pass'),
         name: 'Invalid Token',
-        passwordResetToken: 'valid-token',
+        passwordResetToken: randomUUID(),
         passwordResetSentAt: new Date(),
       },
     });
@@ -245,7 +248,7 @@ describe('POST /auth/verify-reset-password - Failure', () => {
     const res = await request(app).post(endpoint).send({
       email,
       resetToken: token,
-      password: '123',
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     expect(res.statusCode).toBe(400);

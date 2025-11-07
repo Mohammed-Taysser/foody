@@ -1,29 +1,22 @@
-import path from 'path';
+import { randomInt } from 'node:crypto';
 
 import { faker } from '@faker-js/faker';
-import request from 'supertest';
 import { User } from '@prisma/client';
+import { ADMIN_EMAIL, CUSTOMER_EMAIL, MOCK_IMAGE_PATH, OWNER_EMAIL } from '@tests/test.constants';
+import { parseCsvResponse, parseExcelResponse } from '@tests/test.utils';
 import ExcelJS from 'exceljs';
+import request from 'supertest';
 
-import app from '../../../src/app';
-import prisma from '../../../src/apps/prisma';
-import dayjsTZ from '../../../src/utils/dayjs.utils';
-import {
-  ADMIN_EMAIL,
-  ADMIN_PASSWORD,
-  CUSTOMER_EMAIL,
-  CUSTOMER_PASSWORD,
-  OWNER_EMAIL,
-  OWNER_PASSWORD,
-} from '../../test.constants';
-
-const mockImagePath = path.join(__dirname, '../../../public/avatar.jpg');
+import app from '@/app';
+import CONFIG from '@/apps/config';
+import prisma from '@/apps/prisma';
+import dayjsTZ from '@/utils/dayjs.utils';
 
 describe('GET /users/me', () => {
   it('should get profile', async () => {
     const res = await request(app).post('/api/auth/login').send({
       email: CUSTOMER_EMAIL,
-      password: CUSTOMER_PASSWORD,
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     const accessToken = res.body.data.data.accessToken;
@@ -48,7 +41,7 @@ describe('GET /me/permissions', () => {
   it('should get permissions', async () => {
     const res = await request(app).post('/api/auth/login').send({
       email: CUSTOMER_EMAIL,
-      password: CUSTOMER_PASSWORD,
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     const accessToken = res.body.data.data.accessToken;
@@ -67,7 +60,7 @@ describe('PATCH /users/me', () => {
   beforeAll(async () => {
     const res = await request(app).post('/api/auth/login').send({
       email: OWNER_EMAIL,
-      password: OWNER_PASSWORD,
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     accessToken = res.body.data.data.accessToken;
@@ -105,7 +98,7 @@ describe('PATCH /users/me', () => {
     // Register a second user to create an existing email conflict
     const secondUserRes = await request(app).post('/api/auth/login').send({
       email: CUSTOMER_EMAIL,
-      password: CUSTOMER_PASSWORD,
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     const existingEmail = secondUserRes.body.data.data.user.email;
@@ -133,7 +126,7 @@ describe('PATCH /users/me', () => {
       .patch('/api/users/me')
       .set('Authorization', `Bearer ${accessToken}`)
       .field('name', newName)
-      .attach('image', mockImagePath);
+      .attach('image', MOCK_IMAGE_PATH);
 
     expect(res.statusCode).toBe(200);
     expect(res.body.data.data.name).toBe(newName);
@@ -175,7 +168,7 @@ describe('GET /users', () => {
     });
 
     it('should filter by failedLoginAttempts', async () => {
-      const attempts = Math.ceil(Math.random() * 5); // Random number between 1 and 5
+      const attempts = randomInt(0, 5); // Random number between 1 and 5
       const res = await request(app).get('/api/users').query({ failedLoginAttempts: attempts });
 
       expect(res.statusCode).toBe(200);
@@ -189,7 +182,7 @@ describe('GET /users', () => {
         data: {
           name: faker.person.fullName(),
           email: faker.internet.email(),
-          password: '123456789',
+          password: CONFIG.TEST_USER_PASSWORD,
           role: 'CUSTOMER',
           lastFailedLogin: new Date(), // Set lastFailedLogin to today
           failedLoginAttempts: 1,
@@ -228,7 +221,7 @@ describe('GET /users', () => {
         data: {
           name: faker.person.fullName(),
           email: faker.internet.email(),
-          password: '123456789',
+          password: CONFIG.TEST_USER_PASSWORD,
           role: 'CUSTOMER',
           lastFailedLogin: new Date(), // Set lastFailedLogin to today
           failedLoginAttempts: 1,
@@ -258,7 +251,7 @@ describe('GET /users', () => {
         data: {
           name: faker.person.fullName(),
           email: faker.internet.email(),
-          password: '123456789',
+          password: CONFIG.TEST_USER_PASSWORD,
           role: 'CUSTOMER',
           lastFailedLogin: new Date(), // Set lastFailedLogin to today
           failedLoginAttempts: 1,
@@ -287,7 +280,7 @@ describe('GET /users', () => {
       await request(app).post('/api/auth/register').send({
         name: faker.person.fullName(),
         email: faker.internet.email(),
-        password: '123456789',
+        password: CONFIG.TEST_USER_PASSWORD,
         role: 'CUSTOMER',
       });
 
@@ -312,7 +305,7 @@ describe('GET /users', () => {
       await request(app).post('/api/auth/register').send({
         name: faker.person.fullName(),
         email: faker.internet.email(),
-        password: '123456789',
+        password: CONFIG.TEST_USER_PASSWORD,
         role: 'CUSTOMER',
       });
 
@@ -337,7 +330,7 @@ describe('GET /users', () => {
       await request(app).post('/api/auth/register').send({
         name: faker.person.fullName(),
         email: faker.internet.email(),
-        password: '123456789',
+        password: CONFIG.TEST_USER_PASSWORD,
         role: 'CUSTOMER',
       });
 
@@ -399,7 +392,7 @@ describe('GET /users', () => {
         data: {
           name: faker.person.fullName(),
           email: faker.internet.email(),
-          password: '123456789',
+          password: CONFIG.TEST_USER_PASSWORD,
           role: 'CUSTOMER',
           isBlocked: true,
           blockedAt: new Date(),
@@ -429,7 +422,7 @@ describe('GET /users', () => {
         data: {
           name: faker.person.fullName(),
           email: faker.internet.email(),
-          password: '123456789',
+          password: CONFIG.TEST_USER_PASSWORD,
           role: 'CUSTOMER',
           isBlocked: true,
           blockedAt: new Date(),
@@ -459,7 +452,7 @@ describe('GET /users', () => {
         data: {
           name: faker.person.fullName(),
           email: faker.internet.email(),
-          password: '123456789',
+          password: CONFIG.TEST_USER_PASSWORD,
           role: 'CUSTOMER',
           isBlocked: true,
           blockedAt: new Date(),
@@ -490,7 +483,7 @@ describe('GET /users', () => {
         data: {
           name: faker.person.fullName(),
           email: faker.internet.email(),
-          password: '123456789',
+          password: CONFIG.TEST_USER_PASSWORD,
           role: 'CUSTOMER',
           isBlocked: true,
           blockedAt: new Date(),
@@ -574,7 +567,7 @@ describe('GET /users/:id', () => {
   beforeAll(async () => {
     const adminRes = await request(app).post('/api/auth/login').send({
       email: ADMIN_EMAIL,
-      password: ADMIN_PASSWORD,
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     adminToken = adminRes.body.data.data.accessToken;
@@ -587,7 +580,7 @@ describe('GET /users/:id', () => {
       .send({
         name: faker.person.fullName(),
         email: faker.internet.email(),
-        password: '123456789',
+        password: CONFIG.TEST_USER_PASSWORD,
         role: 'CUSTOMER',
       });
 
@@ -610,7 +603,7 @@ describe('POST /users', () => {
   beforeAll(async () => {
     const adminRes = await request(app).post('/api/auth/login').send({
       email: ADMIN_EMAIL,
-      password: ADMIN_PASSWORD,
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     adminToken = adminRes.body.data.data.accessToken;
@@ -626,7 +619,7 @@ describe('POST /users', () => {
       .send({
         name,
         email,
-        password: '123456789',
+        password: CONFIG.TEST_USER_PASSWORD,
         role: 'CUSTOMER',
       });
 
@@ -645,9 +638,9 @@ describe('POST /users', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .field('name', name)
       .field('email', email)
-      .field('password', '123456789')
+      .field('password', CONFIG.TEST_USER_PASSWORD)
       .field('role', 'CUSTOMER')
-      .attach('image', mockImagePath);
+      .attach('image', MOCK_IMAGE_PATH);
 
     expect(res.statusCode).toBe(201);
     expect(res.body.success).toBe(true);
@@ -662,7 +655,7 @@ describe('POST /users', () => {
       .send({
         name: 'A', // too short
         email: 'invalid-email',
-        password: '123', // too short
+        password: randomInt(0, 3), // too short
       });
 
     expect(res.statusCode).toBe(400);
@@ -675,7 +668,7 @@ describe('POST /users', () => {
     await request(app).post('/api/users').set('Authorization', `Bearer ${adminToken}`).send({
       name: faker.person.fullName(),
       email,
-      password: '123456789',
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     const res = await request(app)
@@ -684,7 +677,7 @@ describe('POST /users', () => {
       .send({
         name: faker.person.fullName(),
         email, // same email
-        password: '123456789',
+        password: CONFIG.TEST_USER_PASSWORD,
       });
 
     expect(res.statusCode).toBe(409);
@@ -698,7 +691,7 @@ describe('PATCH /users/:id', () => {
   beforeAll(async () => {
     const adminRes = await request(app).post('/api/auth/login').send({
       email: ADMIN_EMAIL,
-      password: ADMIN_PASSWORD,
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     adminToken = adminRes.body.data.data.accessToken;
@@ -715,7 +708,7 @@ describe('PATCH /users/:id', () => {
       .send({
         name,
         email,
-        password: '123456789',
+        password: CONFIG.TEST_USER_PASSWORD,
         role: 'CUSTOMER',
       });
 
@@ -753,7 +746,7 @@ describe('PATCH /users/:id', () => {
       .send({
         name,
         email,
-        password: '123456789',
+        password: CONFIG.TEST_USER_PASSWORD,
         role: 'CUSTOMER',
       });
 
@@ -761,7 +754,7 @@ describe('PATCH /users/:id', () => {
       .patch(`/api/users/${user.body.data.data.id}`)
       .set('Authorization', `Bearer ${adminToken}`)
       .field('name', name)
-      .attach('image', mockImagePath);
+      .attach('image', MOCK_IMAGE_PATH);
 
     expect(res.statusCode).toBe(200);
     expect(res.body.data.data.name).toBe(name);
@@ -774,7 +767,7 @@ describe('DELETE /users/:id', () => {
   beforeAll(async () => {
     const adminRes = await request(app).post('/api/auth/login').send({
       email: ADMIN_EMAIL,
-      password: ADMIN_PASSWORD,
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     adminToken = adminRes.body.data.data.accessToken;
@@ -787,7 +780,7 @@ describe('DELETE /users/:id', () => {
       .send({
         name: faker.person.fullName(),
         email: faker.internet.email(),
-        password: '123456789',
+        password: CONFIG.TEST_USER_PASSWORD,
         role: 'CUSTOMER',
       });
 
@@ -815,7 +808,7 @@ describe('GET /api/users/export', () => {
   beforeAll(async () => {
     const adminRes = await request(app).post('/api/auth/login').send({
       email: ADMIN_EMAIL,
-      password: ADMIN_PASSWORD,
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     adminToken = adminRes.body.data.data.accessToken;
@@ -834,12 +827,7 @@ describe('GET /api/users/export', () => {
       })
       .set('Authorization', `Bearer ${adminToken}`)
       .buffer()
-      .parse((res, callback) => {
-        const chunks: Uint8Array<ArrayBufferLike>[] = [];
-        res.setEncoding('utf8');
-        res.on('data', (chunk) => chunks.push(chunk));
-        res.on('end', () => callback(null, chunks.join('')));
-      });
+      .parse(parseCsvResponse);
 
     expect(res.statusCode).toBe(200);
     expect(res.headers['content-type']).toBe('text/csv; charset=utf-8');
@@ -865,11 +853,7 @@ describe('GET /api/users/export', () => {
         },
       })
       .buffer()
-      .parse((res, callback) => {
-        const chunks: Uint8Array<ArrayBufferLike>[] = [];
-        res.on('data', (chunk) => chunks.push(chunk));
-        res.on('end', () => callback(null, Buffer.concat(chunks)));
-      });
+      .parse(parseExcelResponse);
 
     expect(res.statusCode).toBe(200);
     expect(res.headers['content-type']).toBe(
@@ -918,11 +902,7 @@ describe('GET /api/users/export', () => {
       })
       .set('Authorization', `Bearer ${adminToken}`)
       .buffer()
-      .parse((res, callback) => {
-        const chunks: Uint8Array<ArrayBufferLike>[] = [];
-        res.on('data', (chunk) => chunks.push(chunk));
-        res.on('end', () => callback(null, Buffer.concat(chunks)));
-      });
+      .parse(parseCsvResponse);
 
     expect(res.statusCode).toBe(200);
 
@@ -930,6 +910,6 @@ describe('GET /api/users/export', () => {
 
     expect(res.headers['content-type']).toBe('application/pdf');
     expect(res.headers['content-disposition']).toContain('attachment; filename="Users.pdf"');
-    expect(parseInt(res.headers['content-length'])).toBeGreaterThan(0);
+    expect(Number.parseInt(res.headers['content-length'])).toBeGreaterThan(0);
   }, 20000); // 20 seconds
 });

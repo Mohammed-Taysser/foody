@@ -1,24 +1,24 @@
 import { faker } from '@faker-js/faker';
 import request from 'supertest';
 
-import app from '../../../../src/app';
+import app from '@/app';
+import CONFIG from '@/apps/config';
 
 const endpoint = '/api/auth/refresh-token';
 
 describe('POST /auth/refresh-token - Success Cases', () => {
   it('should refresh token with valid refreshToken', async () => {
     const dummyEmail = faker.internet.email();
-    const dummyPassword = '123456789';
 
     await request(app).post('/api/auth/register').send({
       name: faker.person.fullName(),
       email: dummyEmail,
-      password: dummyPassword,
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     const loginResponse = await request(app).post('/api/auth/login').send({
       email: dummyEmail,
-      password: dummyPassword,
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     const refreshToken = loginResponse.body.data.data.refreshToken;

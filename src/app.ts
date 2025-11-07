@@ -7,8 +7,6 @@ import qs from 'qs';
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
 
-import debugRouter from './modules/debug/debug.routes';
-
 import CONFIG from '@/apps/config';
 import i18n from '@/apps/i18n';
 import apiLimiter from '@/middleware/api-rate-limit.middleware';
@@ -18,6 +16,7 @@ import loggerMiddleware from '@/middleware/logger.middleware';
 import analyticsRoutes from '@/modules/analytics/analytics.route';
 import authRoutes from '@/modules/auth/auth.route';
 import categoriesRoutes from '@/modules/category/category.route';
+import debugRouter from '@/modules/debug/debug.routes';
 import menuItemsRoutes from '@/modules/menu-items/menu-items.route';
 import orderRoutes from '@/modules/order/order.route';
 import permissionRoutes from '@/modules/permission/permission.route';

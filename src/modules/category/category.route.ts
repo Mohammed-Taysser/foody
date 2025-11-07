@@ -5,10 +5,10 @@ import validator from './category.validator';
 
 import authenticate from '@/middleware/authenticate.middleware';
 import authorize from '@/middleware/authorize.middleware';
+import multerErrorHandler from '@/middleware/multer-error-handler.middleware';
 import requirePermission from '@/middleware/require-permission.middleware';
 import validateRequest from '@/middleware/validate-request.middleware';
 import { imageUploadMiddleware } from '@/utils/multer.utils';
-import multerErrorHandler from '@/middleware/multer-error-handler.middleware';
 
 const router = Router();
 

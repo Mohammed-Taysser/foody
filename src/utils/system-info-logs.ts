@@ -1,4 +1,4 @@
-import os from 'os';
+import os from 'node:os';
 
 import chalk from 'chalk';
 
@@ -20,24 +20,27 @@ function logServerInfo(startTime: number, port: number) {
 
   const header = `${pkg.name} v${pkg.version} ready in ${duration} ms`;
 
-  console.log('\n' + chalk.green.bold(header) + '\n');
+  console.warn('\n' + chalk.green.bold(header) + '\n');
 
-  console.log(chalk.gray('🕒 Started at:'), chalk.white(startedAt));
-  console.log(chalk.gray('🧩 Node:      '), chalk.white(process.version));
-  console.log(
+  console.warn(chalk.gray('🕒 Started at:'), chalk.white(startedAt));
+  console.warn(chalk.gray('🧩 Node:      '), chalk.white(process.version));
+  console.warn(
     chalk.gray('🖥️  Platform:  '),
     chalk.white(`${os.type()} ${os.arch()} (${os.platform()})`)
   );
-  console.log(
+  console.warn(
     `🔧 ${chalk.gray('ENV:')}        ${chalk.white(ennValidation.NODE_ENV.toUpperCase())}`
   );
-  console.log();
+  console.warn();
 
-  console.log(chalk.green('➜') + '  Local:   ' + chalk.cyan(localUrl));
-  console.log(chalk.yellow('➜') + '  Network: ' + chalk.white(networkUrl));
-  console.log(chalk.gray('➜') + '  Docs:    ' + chalk.magenta(docsUrl));
-  console.log(chalk.gray('➜') + '  Health:  ' + chalk.blue(healthUrl));
-  console.log('\n' + chalk.gray('💡 Tip:'), chalk.white('Press Ctrl+C to stop the server.') + '\n');
+  console.warn(chalk.green('➜') + '  Local:   ' + chalk.cyan(localUrl));
+  console.warn(chalk.yellow('➜') + '  Network: ' + chalk.white(networkUrl));
+  console.warn(chalk.gray('➜') + '  Docs:    ' + chalk.magenta(docsUrl));
+  console.warn(chalk.gray('➜') + '  Health:  ' + chalk.blue(healthUrl));
+  console.warn(
+    '\n' + chalk.gray('💡 Tip:'),
+    chalk.white('Press Ctrl+C to stop the server.') + '\n'
+  );
 }
 
 export { logServerInfo };

@@ -3,10 +3,10 @@ import { Router } from 'express';
 import controller from './auth.controller';
 import validator from './auth.validator';
 
-import validateRequest from '@/middleware/validate-request.middleware';
-import requirePermission from '@/middleware/require-permission.middleware';
-import authorizeMiddleware from '@/middleware/authorize.middleware';
 import authenticateMiddleware from '@/middleware/authenticate.middleware';
+import authorizeMiddleware from '@/middleware/authorize.middleware';
+import requirePermission from '@/middleware/require-permission.middleware';
+import validateRequest from '@/middleware/validate-request.middleware';
 
 const router = Router();
 

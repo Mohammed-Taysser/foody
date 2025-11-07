@@ -18,7 +18,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Required: fetch full Git history for tags
+          fetch-depth: 0 # Required: fetch full Git history for tags
 
       - name: Setup Node.js 20
         uses: actions/setup-node@v3

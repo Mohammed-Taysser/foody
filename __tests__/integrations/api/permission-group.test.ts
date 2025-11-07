@@ -1,10 +1,12 @@
 import { faker } from '@faker-js/faker';
 import { PermissionGroup } from '@prisma/client';
-import request from 'supertest';
+import { ADMIN_EMAIL } from '@tests/test.constants';
+import { parseCsvResponse, parseExcelResponse } from '@tests/test.utils';
 import ExcelJS from 'exceljs';
+import request from 'supertest';
 
-import app from '../../../src/app';
-import { ADMIN_EMAIL, ADMIN_PASSWORD } from '../../test.constants';
+import app from '@/app';
+import CONFIG from '@/apps/config';
 
 describe('Permission Group API', () => {
   let permissionGroupId: string;
@@ -13,11 +15,15 @@ describe('Permission Group API', () => {
   beforeAll(async () => {
     const adminRes = await request(app).post('/api/auth/login').send({
       email: ADMIN_EMAIL,
-      password: ADMIN_PASSWORD,
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     adminToken = adminRes.body.data.data.accessToken;
   });
+
+  const getPermissionNames = (groups: PermissionGroup[]) => {
+    return groups.map((p: PermissionGroup) => p.name);
+  };
 
   describe('POST /api/permissions/permission-groups', () => {
     it('should create a new permission group', async () => {
@@ -148,7 +154,7 @@ describe('Permission Group API', () => {
 
         const res = await request(app).get('/api/permissions/permission-groups').query({ name });
 
-        const names = res.body.data.data.map((p: PermissionGroup) => p.name);
+        const names = getPermissionNames(res.body.data.data);
         expect(names).toEqual(expect.arrayContaining([name]));
       });
     });
@@ -163,12 +169,7 @@ describe('Permission Group API', () => {
         })
         .set('Authorization', `Bearer ${adminToken}`)
         .buffer()
-        .parse((res, callback) => {
-          const chunks: Uint8Array<ArrayBufferLike>[] = [];
-          res.setEncoding('utf8');
-          res.on('data', (chunk) => chunks.push(chunk));
-          res.on('end', () => callback(null, chunks.join('')));
-        });
+        .parse(parseCsvResponse);
 
       expect(res.statusCode).toBe(200);
       expect(res.headers['content-type']).toBe('text/csv; charset=utf-8');
@@ -188,11 +189,7 @@ describe('Permission Group API', () => {
           name: 'Test Group',
         })
         .buffer()
-        .parse((res, callback) => {
-          const chunks: Uint8Array<ArrayBufferLike>[] = [];
-          res.on('data', (chunk) => chunks.push(chunk));
-          res.on('end', () => callback(null, Buffer.concat(chunks)));
-        });
+        .parse(parseExcelResponse);
 
       expect(res.statusCode).toBe(200);
       expect(res.headers['content-type']).toBe(
@@ -237,11 +234,7 @@ describe('Permission Group API', () => {
         })
         .set('Authorization', `Bearer ${adminToken}`)
         .buffer()
-        .parse((res, callback) => {
-          const chunks: Uint8Array<ArrayBufferLike>[] = [];
-          res.on('data', (chunk) => chunks.push(chunk));
-          res.on('end', () => callback(null, Buffer.concat(chunks)));
-        });
+        .parse(parseCsvResponse);
 
       expect(res.statusCode).toBe(200);
 
@@ -251,7 +244,7 @@ describe('Permission Group API', () => {
       expect(res.headers['content-disposition']).toContain(
         'attachment; filename="Permission Groups.pdf"'
       );
-      expect(parseInt(res.headers['content-length'])).toBeGreaterThan(0);
+      expect(Number.parseInt(res.headers['content-length'])).toBeGreaterThan(0);
     }, 20000); // 20 seconds
   });
 });

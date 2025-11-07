@@ -1,12 +1,12 @@
 import { RequestHandler } from 'express';
 
+import CONFIG from '@/apps/config';
 import {
   BadRequestError,
   ForbiddenError,
   NotFoundError,
   UnauthorizedError,
 } from '@/utils/errors.utils';
-import CONFIG from '@/apps/config';
 
 type QueryType =
   | 'bad-request'

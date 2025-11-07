@@ -1,21 +1,11 @@
-import path from 'path';
-
 import { faker } from '@faker-js/faker';
-import { Category } from '@prisma/client';
+import { ADMIN_EMAIL, MOCK_IMAGE_PATH, OWNER_2_EMAIL, OWNER_EMAIL } from '@tests/test.constants';
+import { parseCsvResponse, parseExcelResponse } from '@tests/test.utils';
 import ExcelJS from 'exceljs';
 import request from 'supertest';
 
-import app from '../../../src/app';
-import {
-  ADMIN_EMAIL,
-  ADMIN_PASSWORD,
-  OWNER_2_EMAIL,
-  OWNER_2_PASSWORD,
-  OWNER_EMAIL,
-  OWNER_PASSWORD,
-} from '../../test.constants';
-
-const mockImagePath = path.join(__dirname, '../../../public/avatar.jpg');
+import app from '@/app';
+import CONFIG from '@/apps/config';
 
 describe('Category API', () => {
   let ownerToken: string;
@@ -26,7 +16,7 @@ describe('Category API', () => {
   beforeAll(async () => {
     const ownerRes = await request(app).post('/api/auth/login').send({
       email: OWNER_EMAIL,
-      password: OWNER_PASSWORD,
+      password: CONFIG.TEST_USER_PASSWORD,
     });
     ownerToken = ownerRes.body.data.data.accessToken;
     const ownerId = ownerRes.body.data.data.user.id;
@@ -45,7 +35,7 @@ describe('Category API', () => {
 
     const adminRes = await request(app).post('/api/auth/login').send({
       email: ADMIN_EMAIL,
-      password: ADMIN_PASSWORD,
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     adminToken = adminRes.body.data.data.accessToken;
@@ -76,7 +66,7 @@ describe('Category API', () => {
     it('should forbid another owner from creating a category', async () => {
       const otherOwner = await request(app).post('/api/auth/login').send({
         email: OWNER_2_EMAIL,
-        password: OWNER_2_PASSWORD,
+        password: CONFIG.TEST_USER_PASSWORD,
       });
 
       const res = await request(app)
@@ -117,7 +107,7 @@ describe('Category API', () => {
         .set('Authorization', `Bearer ${ownerToken}`)
         .field('name', 'Pizza Upload')
         .field('restaurantId', restaurantId)
-        .attach('image', mockImagePath);
+        .attach('image', MOCK_IMAGE_PATH);
 
       expect(res.statusCode).toBe(200);
       expect(res.body.data.data.image).toMatch(/\/uploads\/category\//);
@@ -162,9 +152,9 @@ describe('Category API', () => {
 
         expect(res.statusCode).toBe(200);
 
-        res.body.data.data.forEach((category: Category) => {
+        for (const category of res.body.data.data) {
           expect(category.name.toLowerCase()).toContain('appetizers');
-        });
+        }
       });
 
       it('should filter categories by restaurantId', async () => {
@@ -172,9 +162,9 @@ describe('Category API', () => {
 
         expect(res.statusCode).toBe(200);
 
-        res.body.data.data.forEach((category: Category) => {
+        for (const category of res.body.data.data) {
           expect(category.restaurantId).toBe(restaurantId);
-        });
+        }
       });
     });
   });
@@ -220,7 +210,7 @@ describe('Category API', () => {
     it('should forbid another owner from updating category', async () => {
       const otherOwner = await request(app).post('/api/auth/login').send({
         email: OWNER_2_EMAIL,
-        password: OWNER_2_PASSWORD,
+        password: CONFIG.TEST_USER_PASSWORD,
       });
 
       const res = await request(app)
@@ -256,7 +246,7 @@ describe('Category API', () => {
         .set('Authorization', `Bearer ${ownerToken}`)
         .field('name', 'Image Replace')
         .field('restaurantId', restaurantId)
-        .attach('image', mockImagePath);
+        .attach('image', MOCK_IMAGE_PATH);
 
       const categoryId = createRes.body.data.data.id;
 
@@ -265,7 +255,7 @@ describe('Category API', () => {
         .patch(`/api/categories/${categoryId}`)
         .set('Authorization', `Bearer ${ownerToken}`)
         .field('restaurantId', restaurantId)
-        .attach('image', mockImagePath);
+        .attach('image', MOCK_IMAGE_PATH);
 
       expect(updateRes.statusCode).toBe(200);
       expect(updateRes.body.data.data.image).toMatch(/\/uploads\/category\//);
@@ -285,7 +275,7 @@ describe('Category API', () => {
     it('should forbid owner who does not own the restaurant', async () => {
       const anotherOwner = await request(app).post('/api/auth/login').send({
         email: OWNER_2_EMAIL,
-        password: OWNER_2_PASSWORD,
+        password: CONFIG.TEST_USER_PASSWORD,
       });
 
       const res = await request(app)
@@ -320,12 +310,7 @@ describe('Category API', () => {
         .query({ format: 'csv', restaurantId })
         .set('Authorization', `Bearer ${ownerToken}`)
         .buffer()
-        .parse((res, callback) => {
-          const chunks: Uint8Array<ArrayBufferLike>[] = [];
-          res.setEncoding('utf8');
-          res.on('data', (chunk) => chunks.push(chunk));
-          res.on('end', () => callback(null, chunks.join('')));
-        });
+        .parse(parseCsvResponse);
 
       expect(res.statusCode).toBe(200);
       expect(res.headers['content-type']).toBe('text/csv; charset=utf-8');
@@ -341,11 +326,7 @@ describe('Category API', () => {
         .set('Authorization', `Bearer ${ownerToken}`)
         .query({ name: faker.commerce.productName(), restaurantId })
         .buffer()
-        .parse((res, callback) => {
-          const chunks: Uint8Array<ArrayBufferLike>[] = [];
-          res.on('data', (chunk) => chunks.push(chunk));
-          res.on('end', () => callback(null, Buffer.concat(chunks)));
-        });
+        .parse(parseExcelResponse);
 
       expect(res.statusCode).toBe(200);
       expect(res.headers['content-type']).toBe(
@@ -392,11 +373,7 @@ describe('Category API', () => {
         .query({ format: 'pdf', name: createdCategory.body.data.data.name, restaurantId })
         .set('Authorization', `Bearer ${ownerToken}`)
         .buffer()
-        .parse((res, callback) => {
-          const chunks: Uint8Array<ArrayBufferLike>[] = [];
-          res.on('data', (chunk) => chunks.push(chunk));
-          res.on('end', () => callback(null, Buffer.concat(chunks)));
-        });
+        .parse(parseCsvResponse);
 
       expect(res.statusCode).toBe(200);
 

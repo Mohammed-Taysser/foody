@@ -1,22 +1,18 @@
-import path from 'path';
-
 import { faker } from '@faker-js/faker';
 import { MenuItem } from '@prisma/client';
-import request from 'supertest';
-import ExcelJS from 'exceljs';
-
-import app from '../../../src/app';
 import {
   ADMIN_EMAIL,
-  ADMIN_PASSWORD,
+  MOCK_BINARY_PATH,
+  MOCK_IMAGE_PATH,
   OWNER_2_EMAIL,
-  OWNER_2_PASSWORD,
   OWNER_EMAIL,
-  OWNER_PASSWORD,
-} from '../../test.constants';
+} from '@tests/test.constants';
+import { parseCsvResponse, parseExcelResponse } from '@tests/test.utils';
+import ExcelJS from 'exceljs';
+import request from 'supertest';
 
-const mockImagePath = path.join(__dirname, '../../../public/avatar.jpg');
-const mockFontPath = path.join(__dirname, '../../../public/DINNextLTArabic.ttf');
+import app from '@/app';
+import CONFIG from '@/apps/config';
 
 describe('Menu Items API', () => {
   let ownerToken: string;
@@ -31,7 +27,7 @@ describe('Menu Items API', () => {
     // Register an OWNER
     const ownerRes = await request(app).post('/api/auth/login').send({
       email: OWNER_EMAIL,
-      password: OWNER_PASSWORD,
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     ownerToken = ownerRes.body.data.data.accessToken;
@@ -39,7 +35,7 @@ describe('Menu Items API', () => {
 
     const adminRes = await request(app).post('/api/auth/login').send({
       email: ADMIN_EMAIL,
-      password: ADMIN_PASSWORD,
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     adminToken = adminRes.body.data.data.accessToken;
@@ -105,7 +101,7 @@ describe('Menu Items API', () => {
     it("should forbid adding menu item to someone else's restaurant", async () => {
       const otherOwnerRes = await request(app).post('/api/auth/login').send({
         email: OWNER_2_EMAIL,
-        password: OWNER_2_PASSWORD,
+        password: CONFIG.TEST_USER_PASSWORD,
       });
 
       const token = otherOwnerRes.body.data.data.accessToken;
@@ -163,7 +159,7 @@ describe('Menu Items API', () => {
         .field('available', true)
         .field('restaurantId', restaurantId)
         .field('categoryId', categoryId)
-        .attach('image', mockImagePath);
+        .attach('image', MOCK_IMAGE_PATH);
 
       expect(res.statusCode).toBe(200);
       expect(res.body.data.data.image).toMatch(/\/uploads\/menu\//);
@@ -178,7 +174,7 @@ describe('Menu Items API', () => {
         .field('available', true)
         .field('restaurantId', restaurantId)
         .field('categoryId', categoryId)
-        .attach('image', mockFontPath);
+        .attach('image', MOCK_BINARY_PATH);
 
       expect(res.statusCode).toBe(400);
     });
@@ -249,9 +245,9 @@ describe('Menu Items API', () => {
 
         expect(res.statusCode).toBe(200);
 
-        res.body.data.data.forEach((item: MenuItem) => {
+        for (const item of res.body.data.data) {
           expect(item.name.toLowerCase()).toContain('pizza');
-        });
+        }
       });
 
       it('should filter by restaurantId', async () => {
@@ -259,9 +255,9 @@ describe('Menu Items API', () => {
 
         expect(res.statusCode).toBe(200);
 
-        res.body.data.data.forEach((item: MenuItem) => {
+        for (const item of res.body.data.data) {
           expect(item.restaurantId).toBe(restaurantId);
-        });
+        }
       });
 
       it('should filter by available status=true', async () => {
@@ -269,9 +265,9 @@ describe('Menu Items API', () => {
 
         expect(res.statusCode).toBe(200);
 
-        res.body.data.data.forEach((item: MenuItem) => {
+        for (const item of res.body.data.data) {
           expect(item.available).toBe(true);
-        });
+        }
       });
 
       it('should filter by available status=false', async () => {
@@ -279,9 +275,9 @@ describe('Menu Items API', () => {
 
         expect(res.statusCode).toBe(200);
 
-        res.body.data.data.forEach((item: MenuItem) => {
+        for (const item of res.body.data.data) {
           expect(item.available).toBe(false);
-        });
+        }
       });
     });
   });
@@ -300,9 +296,9 @@ describe('Menu Items API', () => {
 
         expect(res.statusCode).toBe(200);
 
-        res.body.data.data.forEach((item: MenuItem) => {
+        for (const item of res.body.data.data) {
           expect(item.name.toLowerCase()).toContain('pizza');
-        });
+        }
       });
 
       it('should filter by restaurantId', async () => {
@@ -359,12 +355,7 @@ describe('Menu Items API', () => {
         .get(`/api/menu-items/export?format=csv`)
         .set('Authorization', `Bearer ${ownerToken}`)
         .buffer()
-        .parse((res, callback) => {
-          const chunks: Uint8Array<ArrayBufferLike>[] = [];
-          res.setEncoding('utf8');
-          res.on('data', (chunk) => chunks.push(chunk));
-          res.on('end', () => callback(null, chunks.join('')));
-        });
+        .parse(parseCsvResponse);
 
       expect(res.statusCode).toBe(200);
       expect(res.headers['content-type']).toBe('text/csv; charset=utf-8');
@@ -380,11 +371,7 @@ describe('Menu Items API', () => {
         .set('Authorization', `Bearer ${ownerToken}`)
         .query({ restaurantId })
         .buffer()
-        .parse((res, callback) => {
-          const chunks: Uint8Array<ArrayBufferLike>[] = [];
-          res.on('data', (chunk) => chunks.push(chunk));
-          res.on('end', () => callback(null, Buffer.concat(chunks)));
-        });
+        .parse(parseExcelResponse);
 
       expect(res.statusCode).toBe(200);
       expect(res.headers['content-type']).toBe(
@@ -430,11 +417,7 @@ describe('Menu Items API', () => {
         .query({ format: 'pdf', name: createdItem.body.data.data.name, available: false })
         .set('Authorization', `Bearer ${ownerToken}`)
         .buffer()
-        .parse((res, callback) => {
-          const chunks: Uint8Array<ArrayBufferLike>[] = [];
-          res.on('data', (chunk) => chunks.push(chunk));
-          res.on('end', () => callback(null, Buffer.concat(chunks)));
-        });
+        .parse(parseCsvResponse);
 
       expect(res.statusCode).toBe(200);
 
@@ -478,7 +461,7 @@ describe('Menu Items API', () => {
     it('should return 403 if another owner tries to update the menu item', async () => {
       const otherOwner = await request(app).post('/api/auth/login').send({
         email: OWNER_2_EMAIL,
-        password: OWNER_2_PASSWORD,
+        password: CONFIG.TEST_USER_PASSWORD,
       });
 
       const token = otherOwner.body.data.data.accessToken;
@@ -501,7 +484,7 @@ describe('Menu Items API', () => {
         .field('available', true)
         .field('restaurantId', restaurantId)
         .field('categoryId', categoryId)
-        .attach('image', mockImagePath);
+        .attach('image', MOCK_IMAGE_PATH);
 
       const itemId = createRes.body.data.data.id;
 
@@ -509,7 +492,7 @@ describe('Menu Items API', () => {
       const updateRes = await request(app)
         .patch(`/api/menu-items/${itemId}`)
         .set('Authorization', `Bearer ${ownerToken}`)
-        .attach('image', mockImagePath);
+        .attach('image', MOCK_IMAGE_PATH);
 
       expect(updateRes.statusCode).toBe(200);
       expect(updateRes.body.data.data.image).toMatch(/\/uploads\/menu\//);
@@ -543,7 +526,7 @@ describe('Menu Items API', () => {
     it('should return 403 if another owner tries to delete the menu item', async () => {
       const otherOwner = await request(app).post('/api/auth/login').send({
         email: OWNER_2_EMAIL,
-        password: OWNER_2_PASSWORD,
+        password: CONFIG.TEST_USER_PASSWORD,
       });
 
       const token = otherOwner.body.data.data.accessToken;

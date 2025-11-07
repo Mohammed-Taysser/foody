@@ -8,7 +8,7 @@ interface CleanDiff {
   };
 }
 
-const excludeFields = ['updatedAt', 'createdAt', 'lastLogin', 'id', 'password'];
+const excludeFields = new Set(['updatedAt', 'createdAt', 'lastLogin', 'id', 'password']);
 
 function formatDeepDiff(
   oldData: Record<string, unknown>,
@@ -16,7 +16,7 @@ function formatDeepDiff(
 ): CleanDiff {
   const differences = deepDiff(oldData, newData, (path, key) => {
     // Ignore fields at any level that match one of the excluded keys
-    return excludeFields.includes(key);
+    return excludeFields.has(key);
   });
   const result: CleanDiff = {};
 

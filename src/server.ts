@@ -1,12 +1,11 @@
 import chalk from 'chalk';
 
-import logger from './utils/logger.utils';
-import { isPortAvailable } from './utils/network';
-import { promptYesNo } from './utils/prompts';
-import { logServerInfo } from './utils/system-info-logs';
-
 import app from '@/app';
 import ennValidation from '@/apps/config';
+import logger from '@/utils/logger.utils';
+import { isPortAvailable } from '@/utils/network';
+import { promptYesNo } from '@/utils/prompts';
+import { logServerInfo } from '@/utils/system-info-logs';
 
 const startTime = Date.now();
 
@@ -14,10 +13,10 @@ async function startServer() {
   let port = ennValidation.PORT;
 
   while (!(await isPortAvailable(port))) {
-    console.log(chalk.red(`Port ${port} is already in use.`));
+    console.warn(chalk.red(`Port ${port} is already in use.`));
     const useAnother = await promptYesNo(`Do you want to use port ${port + 1} instead?`);
     if (!useAnother) {
-      console.log(chalk.yellow('Server start cancelled.'));
+      console.warn(chalk.yellow('Server start cancelled.'));
       process.exit(1);
     }
     port++;

@@ -312,7 +312,7 @@ export const API_VERSIONS = {
 ```typescript
 // middleware/version.ts
 import { Request, Response, NextFunction } from 'express';
-import { API_VERSIONS } from '../config/versions';
+import { API_VERSIONS } from '@/config/versions';
 
 export const validateVersion = (req: Request, res: Response, next: NextFunction) => {
   const version = req.apiVersion;

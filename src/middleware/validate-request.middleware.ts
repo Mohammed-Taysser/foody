@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response } from 'express';
 import { ZodError, ZodSchema } from 'zod';
 
-import { BadRequestError } from '@/utils/errors.utils';
 import { AuthenticatedRequest } from '@/types/import';
+import { BadRequestError } from '@/utils/errors.utils';
 
 interface Schemas {
   body?: ZodSchema;

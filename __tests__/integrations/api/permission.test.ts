@@ -1,10 +1,14 @@
+import { randomUUID } from 'node:crypto';
+
 import { faker } from '@faker-js/faker';
 import { Permission } from '@prisma/client';
-import request from 'supertest';
+import { ADMIN_EMAIL } from '@tests/test.constants';
+import { parseCsvResponse, parseExcelResponse } from '@tests/test.utils';
 import ExcelJS from 'exceljs';
+import request from 'supertest';
 
-import app from '../../../src/app';
-import { ADMIN_EMAIL, ADMIN_PASSWORD } from '../../test.constants';
+import app from '@/app';
+import CONFIG from '@/apps/config';
 
 describe('Permission API', () => {
   let permissionId: string;
@@ -13,7 +17,7 @@ describe('Permission API', () => {
   beforeAll(async () => {
     const adminRes = await request(app).post('/api/auth/login').send({
       email: ADMIN_EMAIL,
-      password: ADMIN_PASSWORD,
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     adminToken = adminRes.body.data.data.accessToken;
@@ -105,7 +109,7 @@ describe('Permission API', () => {
     });
 
     it('should filter permissions by key', async () => {
-      const randomKey = `filter:${faker.food.dish()} ${Math.floor(Math.random() * 1000)}`;
+      const randomKey = `filter:${faker.food.dish()} ${randomUUID()}`;
 
       // First, create a permission with a known key
       const createRes = await request(app)
@@ -161,12 +165,7 @@ describe('Permission API', () => {
         })
         .set('Authorization', `Bearer ${adminToken}`)
         .buffer()
-        .parse((res, callback) => {
-          const chunks: Uint8Array<ArrayBufferLike>[] = [];
-          res.setEncoding('utf8');
-          res.on('data', (chunk) => chunks.push(chunk));
-          res.on('end', () => callback(null, chunks.join('')));
-        });
+        .parse(parseCsvResponse);
 
       expect(res.statusCode).toBe(200);
       expect(res.headers['content-type']).toBe('text/csv; charset=utf-8');
@@ -186,11 +185,7 @@ describe('Permission API', () => {
           key: 'add:test',
         })
         .buffer()
-        .parse((res, callback) => {
-          const chunks: Uint8Array<ArrayBufferLike>[] = [];
-          res.on('data', (chunk) => chunks.push(chunk));
-          res.on('end', () => callback(null, Buffer.concat(chunks)));
-        });
+        .parse(parseExcelResponse);
 
       expect(res.statusCode).toBe(200);
       expect(res.headers['content-type']).toBe(
@@ -235,11 +230,7 @@ describe('Permission API', () => {
         })
         .set('Authorization', `Bearer ${adminToken}`)
         .buffer()
-        .parse((res, callback) => {
-          const chunks: Uint8Array<ArrayBufferLike>[] = [];
-          res.on('data', (chunk) => chunks.push(chunk));
-          res.on('end', () => callback(null, Buffer.concat(chunks)));
-        });
+        .parse(parseCsvResponse);
 
       expect(res.statusCode).toBe(200);
 
@@ -249,7 +240,7 @@ describe('Permission API', () => {
       expect(res.headers['content-disposition']).toContain(
         'attachment; filename="Permissions.pdf"'
       );
-      expect(parseInt(res.headers['content-length'])).toBeGreaterThan(0);
+      expect(Number.parseInt(res.headers['content-length'])).toBeGreaterThan(0);
     }, 20000); // 20 seconds
   });
 });

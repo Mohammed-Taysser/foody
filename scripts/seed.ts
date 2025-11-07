@@ -1,17 +1,18 @@
 import { faker } from '@faker-js/faker';
 import chalk from 'chalk';
 
-import prisma from '../src/apps/prisma';
+import CONFIG from '@/apps/config';
+import prisma from '@/apps/prisma';
 import {
   DEFAULT_ROLE_PERMISSIONS,
   PERMISSION_GROUPS,
   PERMISSION_IDS,
   PERMISSION_MODULES,
-} from '../src/modules/auth/auth.constant';
-import tokenService from '../src/services/token.service';
+} from '@/modules/auth/auth.constant';
+import tokenService from '@/services/token.service';
 
 async function seedDummyData() {
-  console.log(chalk.blue('\n🌱 Seeding data...\n'));
+  console.warn(chalk.blue('\n🌱 Seeding data...\n'));
 
   // 🧹 Clear existing data
   await prisma.category.deleteMany();
@@ -26,21 +27,21 @@ async function seedDummyData() {
   await prisma.permissionGroup.deleteMany();
   await prisma.permission.deleteMany();
 
-  console.log(chalk.yellow(`Database cleared`));
+  console.warn(chalk.yellow(`Database cleared`));
 
-  const hashedPassword = await tokenService.hash('123456789');
+  const hashedPassword = await tokenService.hash(CONFIG.TEST_USER_PASSWORD);
 
-  console.log(`Password hashed from '123456789' successfully`);
+  console.warn(`Password hashed from "${CONFIG.TEST_USER_PASSWORD}" successfully`);
 
   // permissions
   await prisma.permission.createMany({
     data: PERMISSION_IDS.map((id) => ({ key: id, description: id })),
   });
 
-  console.log(chalk.green(`\n🔐 Permissions created (${PERMISSION_IDS.length})`));
+  console.warn(chalk.green(`\n🔐 Permissions created (${PERMISSION_IDS.length})`));
 
   PERMISSION_MODULES.forEach((module) => {
-    console.log(`  - ${module}`);
+    console.warn(`  - ${module}`);
   });
 
   // Groups
@@ -56,9 +57,9 @@ async function seedDummyData() {
     });
   }
 
-  console.log(chalk.green(`\n👥 Permission groups created:`));
+  console.warn(chalk.green(`\n👥 Permission groups created:`));
   Object.keys(PERMISSION_GROUPS).forEach((group) => {
-    console.log(`  - ${group}`);
+    console.warn(`  - ${group}`);
   });
 
   // Seed users
@@ -80,7 +81,7 @@ async function seedDummyData() {
     },
   });
 
-  console.log(chalk.green(`Admin user created:`), chalk.whiteBright(admin.email));
+  console.warn(chalk.green(`Admin user created:`), chalk.whiteBright(admin.email));
 
   // Seed customers
   const customers = await Promise.all(
@@ -104,7 +105,7 @@ async function seedDummyData() {
     })
   );
 
-  console.log(`\n${customers.length} customers created`);
+  console.warn(`\n${customers.length} customers created`);
 
   const owners = await Promise.all(
     Array.from({ length: 3 }).map((_, index) => {
@@ -129,10 +130,10 @@ async function seedDummyData() {
     })
   );
 
-  console.log(`\n${owners.length} owners created`);
+  console.warn(`\n${owners.length} owners created`);
 
   for (const owner of owners) {
-    console.log(`  - Owner created: ${chalk.gray(owner.email)}`);
+    console.warn(`  - Owner created: ${chalk.gray(owner.email)}`);
   }
 
   // Seed restaurants + categories + menu items
@@ -146,7 +147,7 @@ async function seedDummyData() {
       },
     });
 
-    console.log(`\nRestaurant created: "${restaurant.name}"`);
+    console.warn(`\nRestaurant created: "${restaurant.name}"`);
 
     const categories = await Promise.all(
       ['Appetizers', 'Mains', 'Desserts'].map((cat) =>
@@ -159,7 +160,7 @@ async function seedDummyData() {
       )
     );
 
-    console.log(
+    console.warn(
       chalk.magenta(`Restaurant "${restaurant.name}" created with ${categories.length} categories`)
     );
 
@@ -170,8 +171,8 @@ async function seedDummyData() {
             data: {
               name: faker.commerce.productName(),
               description: faker.lorem.words(6),
-              price: parseFloat(faker.commerce.price({ min: 5, max: 30 })),
-              available: Math.random() > 0.2,
+              price: Number.parseFloat(faker.commerce.price({ min: 5, max: 30 })),
+              available: faker.datatype.boolean(),
               categoryId: category.id,
               restaurantId: restaurant.id,
             },
@@ -180,14 +181,14 @@ async function seedDummyData() {
       );
     }
 
-    console.log(
+    console.warn(
       chalk.blue(`"${restaurant.name}" now has`),
       chalk.bold(await prisma.menuItem.count()),
       chalk.blue('menu items.')
     );
   }
 
-  console.log(chalk.green('\n🏗 Seed complete!'));
+  console.warn(chalk.green('\n🏗 Seed complete!'));
 }
 
 seedDummyData()

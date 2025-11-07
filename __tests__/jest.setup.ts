@@ -1,6 +1,6 @@
 import * as matchers from 'jest-extended';
 
-import prisma from '../src/apps/prisma';
+import prisma from '@/apps/prisma';
 
 expect.extend(matchers);
 

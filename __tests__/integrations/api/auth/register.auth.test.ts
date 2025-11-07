@@ -1,8 +1,11 @@
+import { randomInt, randomUUID } from 'node:crypto';
+
 import { faker } from '@faker-js/faker';
 import request from 'supertest';
 
-import app from '../../../../src/app';
-import prisma from '../../../../src/apps/prisma';
+import app from '@/app';
+import CONFIG from '@/apps/config';
+import prisma from '@/apps/prisma';
 
 const endpoint = '/api/auth/register';
 
@@ -13,7 +16,7 @@ describe('POST /auth/register - Success Cases', () => {
     const res = await request(app).post(endpoint).send({
       name: faker.person.fullName(),
       email: dummyEmail,
-      password: 'StrongPassword123!',
+      password: randomUUID(), // Random password
     });
 
     expect(res.statusCode).toBe(201);
@@ -30,13 +33,13 @@ describe('POST /auth/register - Validation & Failure Cases', () => {
     await request(app).post(endpoint).send({
       name: faker.person.fullName(),
       email: dummyEmail,
-      password: '123456789',
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     const res = await request(app).post(endpoint).send({
       name: faker.person.fullName(),
       email: dummyEmail,
-      password: '123456789',
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     expect(res.statusCode).toBe(409);
@@ -55,7 +58,7 @@ describe('POST /auth/register - Validation & Failure Cases', () => {
   it('should fail when name is missing', async () => {
     const res = await request(app).post(endpoint).send({
       email: faker.internet.email(),
-      password: '123456789',
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     expect(res.statusCode).toBe(400);
@@ -74,7 +77,7 @@ describe('POST /auth/register - Validation & Failure Cases', () => {
     const res = await request(app).post(endpoint).send({
       name: faker.person.fullName(),
       email: 'not-an-email',
-      password: '123456789',
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     expect(res.statusCode).toBe(400);
@@ -82,11 +85,13 @@ describe('POST /auth/register - Validation & Failure Cases', () => {
   });
 
   it('should fail with weak password', async () => {
-    const res = await request(app).post(endpoint).send({
-      name: faker.person.fullName(),
-      email: faker.internet.email(),
-      password: '123',
-    });
+    const res = await request(app)
+      .post(endpoint)
+      .send({
+        name: faker.person.fullName(),
+        email: faker.internet.email(),
+        password: randomInt(0, 100), // Weak password
+      });
 
     expect(res.statusCode).toBe(400);
   });
@@ -97,7 +102,7 @@ describe('POST /auth/register - Validation & Failure Cases', () => {
       .send({
         name: faker.lorem.words(50),
         email: `verylongemail${'a'.repeat(250)}@test.com`,
-        password: 'StrongPassword123!',
+        password: CONFIG.TEST_USER_PASSWORD,
       });
 
     expect(res.statusCode).toBe(400);
@@ -109,7 +114,7 @@ describe('🔒 Security Checks', () => {
     const payload = {
       name: faker.person.fullName(),
       email: faker.internet.email(),
-      password: 'StrongPass123!',
+      password: CONFIG.TEST_USER_PASSWORD,
     };
     payload.name = `<script>alert("xss")</script>`;
 
@@ -122,7 +127,7 @@ describe('🔒 Security Checks', () => {
     const payload = {
       name: faker.person.fullName(),
       email: faker.internet.email(),
-      password: 'StrongPass123!',
+      password: CONFIG.TEST_USER_PASSWORD,
     };
     payload.email = `' OR 1=1; --@test.com`;
 
@@ -136,7 +141,7 @@ describe('🧪 Internal Integrity', () => {
     const payload = {
       name: faker.person.fullName(),
       email: faker.internet.email(),
-      password: 'StrongPass123!',
+      password: CONFIG.TEST_USER_PASSWORD,
     };
 
     await request(app).post(endpoint).send(payload);

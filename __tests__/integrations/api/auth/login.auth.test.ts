@@ -1,9 +1,12 @@
+import { randomUUID } from 'node:crypto';
+
 import { faker } from '@faker-js/faker';
 import request from 'supertest';
 
-import app from '../../../../src/app';
-import prisma from '../../../../src/apps/prisma';
-import tokenService from '../../../../src/services/token.service';
+import app from '@/app';
+import CONFIG from '@/apps/config';
+import prisma from '@/apps/prisma';
+import tokenService from '@/services/token.service';
 
 const endpoint = '/api/auth/login';
 const registerEndpoint = '/api/auth/register';
@@ -11,17 +14,16 @@ const registerEndpoint = '/api/auth/register';
 describe('/auth/login - Success Cases', () => {
   it('should login and return tokens + user', async () => {
     const dummyEmail = faker.internet.email();
-    const dummyPassword = '123456789';
 
     await request(app).post(registerEndpoint).send({
       name: faker.person.fullName(),
       email: dummyEmail,
-      password: dummyPassword,
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     const res = await request(app).post(endpoint).send({
       email: dummyEmail,
-      password: dummyPassword,
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     expect(res.statusCode).toBe(200);
@@ -32,26 +34,25 @@ describe('/auth/login - Success Cases', () => {
 
   it('should reset failed login attempts on successful login', async () => {
     const dummyEmail = faker.internet.email();
-    const dummyPassword = '123456789';
 
     await request(app).post(registerEndpoint).send({
       name: faker.person.fullName(),
       email: dummyEmail,
-      password: dummyPassword,
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     // 2 failed logins
     for (let i = 0; i < 2; i++) {
       await request(app).post(endpoint).send({
         email: dummyEmail,
-        password: 'wrong_pass',
+        password: randomUUID(), // Wrong password
       });
     }
 
     // Successful login
     const res = await request(app).post(endpoint).send({
       email: dummyEmail,
-      password: dummyPassword,
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     expect(res.statusCode).toBe(200);
@@ -68,7 +69,7 @@ describe('/auth/login - Validation Failures', () => {
   it('should reject login with invalid credentials', async () => {
     const res = await request(app).post(endpoint).send({
       email: 'wrong@example.com',
-      password: 'wrong_pass',
+      password: randomUUID(), // Wrong password
     });
 
     expect(res.statusCode).toBe(400);
@@ -77,7 +78,7 @@ describe('/auth/login - Validation Failures', () => {
 
   it('should fail when email is missing', async () => {
     const res = await request(app).post(endpoint).send({
-      password: '123456789',
+      password: randomUUID(), // Wrong password
     });
 
     expect(res.statusCode).toBe(400);
@@ -96,7 +97,7 @@ describe('/auth/login - Validation Failures', () => {
   it('should fail with invalid email format', async () => {
     const res = await request(app).post(endpoint).send({
       email: 'not-an-email',
-      password: '123456789',
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     expect(res.statusCode).toBe(400);
@@ -110,17 +111,16 @@ describe('/auth/login - Validation Failures', () => {
 
   it('should fail when password is incorrect', async () => {
     const dummyEmail = faker.internet.email();
-    const dummyPassword = '123456789';
 
     await request(app).post(registerEndpoint).send({
       name: faker.person.fullName(),
       email: dummyEmail,
-      password: dummyPassword,
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     const res = await request(app).post(endpoint).send({
       email: dummyEmail,
-      password: 'wrong_pass',
+      password: randomUUID(), // Wrong password
     });
 
     expect(res.statusCode).toBe(400);
@@ -135,7 +135,7 @@ describe('/auth/login - Security & Account States', () => {
       data: {
         name: faker.person.fullName(),
         email,
-        password: await tokenService.hash('123456789'),
+        password: await tokenService.hash(randomUUID()),
         isActive: true,
         isBlocked: false,
         isEmailVerified: true,
@@ -144,7 +144,7 @@ describe('/auth/login - Security & Account States', () => {
 
     await request(app).post(endpoint).send({
       email,
-      password: 'wrongpass',
+      password: randomUUID(), // Wrong password
     });
 
     const updated = await prisma.user.findUnique({ where: { id: user.id } });
@@ -153,24 +153,23 @@ describe('/auth/login - Security & Account States', () => {
 
   it('should block user after 5 failed login attempts', async () => {
     const dummyEmail = faker.internet.email();
-    const dummyPassword = '123456789';
 
     await request(app).post(registerEndpoint).send({
       name: faker.person.fullName(),
       email: dummyEmail,
-      password: dummyPassword,
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     for (let i = 0; i < 5; i++) {
       await request(app).post(endpoint).send({
         email: dummyEmail,
-        password: 'wrong_pass',
+        password: randomUUID(), // Wrong password
       });
     }
 
     const res = await request(app).post(endpoint).send({
       email: dummyEmail,
-      password: 'wrong_pass',
+      password: randomUUID(), // Wrong password
     });
 
     expect(res.statusCode).toBe(401);
@@ -179,12 +178,11 @@ describe('/auth/login - Security & Account States', () => {
 
   it('should not allow login if user is blocked', async () => {
     const dummyEmail = faker.internet.email();
-    const dummyPassword = '123456789';
 
     await request(app).post(registerEndpoint).send({
       name: faker.person.fullName(),
       email: dummyEmail,
-      password: dummyPassword,
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     await prisma.user.update({
@@ -194,7 +192,7 @@ describe('/auth/login - Security & Account States', () => {
 
     const res = await request(app).post(endpoint).send({
       email: dummyEmail,
-      password: dummyPassword,
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     expect(res.statusCode).toBe(401);
@@ -203,12 +201,11 @@ describe('/auth/login - Security & Account States', () => {
 
   it('should not allow login if user is inactive', async () => {
     const dummyEmail = faker.internet.email();
-    const dummyPassword = '123456789';
 
     await request(app).post(registerEndpoint).send({
       name: faker.person.fullName(),
       email: dummyEmail,
-      password: dummyPassword,
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     await prisma.user.update({
@@ -218,7 +215,7 @@ describe('/auth/login - Security & Account States', () => {
 
     const res = await request(app).post(endpoint).send({
       email: dummyEmail,
-      password: dummyPassword,
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     expect(res.statusCode).toBe(401);

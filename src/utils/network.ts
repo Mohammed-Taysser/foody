@@ -1,6 +1,6 @@
-import { exec } from 'child_process';
-import net from 'net';
-import os from 'os';
+import { exec } from 'node:child_process';
+import net from 'node:net';
+import os from 'node:os';
 
 function getLocalIp(): string {
   const nets = os.networkInterfaces();
@@ -32,12 +32,17 @@ function isPortAvailable(port: number): Promise<boolean> {
   });
 }
 
-async function findAvailablePort(startPort: number, maxPort = 65535): Promise<number> {
+async function findAvailablePort(startPort: number, maxPort = 65535): Promise<number | null> {
   for (let port = startPort; port <= maxPort; port++) {
-    if (await isPortAvailable(port)) return port;
+    try {
+      if (await isPortAvailable(port)) return port;
+    } catch (err) {
+      console.error(`Error checking port ${port}:`, err);
+    }
   }
 
-  throw new Error('No available port found');
+  console.warn('No available port found');
+  return null; // instead of throwing
 }
 
 function getAllLocalIps(): string[] {
@@ -77,6 +82,7 @@ function ping(host: string, timeout = 1000): Promise<boolean> {
         ? `ping -n 1 -w ${timeout} ${host}`
         : `ping -c 1 -W ${timeout / 1000} ${host}`;
 
+    // eslint-disable-next-line sonarjs/os-command
     exec(cmd, (error) => {
       resolve(!error);
     });

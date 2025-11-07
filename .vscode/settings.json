@@ -1,12 +1,30 @@
 {
-  "cSpell.words": [
-    "foody",
-    "Taysser"
-  ],
-  "i18n-ally.localesPaths": [
-    "src/i18n",
-    "src/i18n/locales",
-    "locales"
-  ],
-  "i18n-ally.keystyle": "flat"
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "files.autoSave": "afterDelay",
+  "editor.tabSize": 2,
+  "prettier.tabWidth": 2,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit",
+    "source.organizeImports": "explicit"
+  },
+
+  "editor.guides.bracketPairs": true,
+  "editor.wordWrap": "on",
+  "editor.rulers": [80, 120],
+  "editor.fontLigatures": true,
+  "editor.cursorBlinking": "expand",
+  "editor.renderWhitespace": "boundary",
+  "editor.mouseWheelZoom": true,
+
+  "git.enableCommitSigning": true,
+  "git.confirmSync": false,
+  "terminal.integrated.tabs.enabled": true,
+  "terminal.integrated.tabs.location": "left",
+
+  "javascript.format.semicolons": "insert",
+  "typescript.format.semicolons": "insert",
+  "i18n-ally.localesPaths": ["locales"],
+  "[typescript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  }
 }

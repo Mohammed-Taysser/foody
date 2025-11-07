@@ -107,34 +107,34 @@ const hasDuplicates = Object.keys(duplicates).length > 0;
 const hasMissing = Object.keys(missing).length > 0;
 
 if (!hasDuplicates && !hasMissing) {
-  console.log('🎉 All translation files are consistent — no duplicate or missing keys found!');
-  console.log(`🌐 Total languages checked: ${languages.length}`);
-  console.log(`🔑 Total keys found: ${allKeys.size}`);
+  console.warn('🎉 All translation files are consistent — no duplicate or missing keys found!');
+  console.warn(`🌐 Total languages checked: ${languages.length}`);
+  console.warn(`🔑 Total keys found: ${allKeys.size}`);
 
   process.exit(0);
 }
 
-console.log('\n📋 Translation Validation Report\n');
+console.warn('\n📋 Translation Validation Report\n');
 
 if (hasDuplicates) {
-  console.log('🔁 Duplicate Translation Keys Found:\n');
+  console.warn('🔁 Duplicate Translation Keys Found:\n');
   Object.entries(duplicates).forEach(([lang, entries]) => {
-    console.log(`🌍 Language: ${lang}`);
+    console.warn(`🌍 Language: ${lang}`);
     entries.forEach(({ key, sources }) => {
-      console.log(`  🔁 "${key}" found in: ${sources.join(', ')}`);
+      console.warn(`  🔁 "${key}" found in: ${sources.join(', ')}`);
     });
-    console.log('');
+    console.warn('');
   });
 }
 
 if (hasMissing) {
-  console.log('🚫 Missing Translation Keys:\n');
+  console.warn('🚫 Missing Translation Keys:\n');
   Object.entries(missing).forEach(([lang, keys]) => {
-    console.log(`🌍 Language: ${lang}`);
+    console.warn(`🌍 Language: ${lang}`);
     keys.forEach((key) => {
-      console.log(`  ❌ Missing: "${key}"`);
+      console.warn(`  ❌ Missing: "${key}"`);
     });
-    console.log('');
+    console.warn('');
   });
 }
 

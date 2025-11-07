@@ -1,9 +1,12 @@
+import { randomInt } from 'node:crypto';
+
 import { faker } from '@faker-js/faker';
+import { ADMIN_EMAIL } from '@tests/test.constants';
 import request from 'supertest';
 
-import app from '../../../../src/app';
-import prisma from '../../../../src/apps/prisma';
-import { ADMIN_EMAIL, ADMIN_PASSWORD } from '../../../test.constants';
+import app from '@/app';
+import CONFIG from '@/apps/config';
+import prisma from '@/apps/prisma';
 
 const endpoint = '/api/auth/reset-password';
 const loginEndpoint = '/api/auth/login';
@@ -14,7 +17,7 @@ describe('reset-password - Failure Cases', () => {
   beforeAll(async () => {
     const adminRes = await request(app).post(loginEndpoint).send({
       email: ADMIN_EMAIL,
-      password: ADMIN_PASSWORD,
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     adminToken = adminRes.body.data.data.accessToken;
@@ -26,7 +29,7 @@ describe('reset-password - Failure Cases', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         email: faker.internet.email(),
-        password: 'new-password',
+        password: CONFIG.TEST_USER_PASSWORD,
       });
 
     expect(res.statusCode).toBe(400);
@@ -38,7 +41,7 @@ describe('reset-password - Failure Cases', () => {
       .post(endpoint)
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
-        password: 'new-password',
+        password: CONFIG.TEST_USER_PASSWORD,
       });
 
     expect(res.statusCode).toBe(400);
@@ -60,7 +63,7 @@ describe('reset-password - Failure Cases', () => {
     await prisma.user.create({
       data: {
         email,
-        password: 'old-pass',
+        password: faker.internet.password(),
         name: 'User',
         isActive: true,
         isBlocked: false,
@@ -73,7 +76,7 @@ describe('reset-password - Failure Cases', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         email,
-        password: 'new-password',
+        password: CONFIG.TEST_USER_PASSWORD,
       });
 
     expect(res.statusCode).toBe(401);
@@ -85,7 +88,7 @@ describe('reset-password - Failure Cases', () => {
     await prisma.user.create({
       data: {
         email,
-        password: 'old-pass',
+        password: faker.internet.password(),
         name: 'User',
         isActive: true,
         isBlocked: true,
@@ -98,7 +101,7 @@ describe('reset-password - Failure Cases', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         email,
-        password: 'new-password',
+        password: CONFIG.TEST_USER_PASSWORD,
       });
 
     expect(res.statusCode).toBe(401);
@@ -110,7 +113,7 @@ describe('reset-password - Failure Cases', () => {
     await prisma.user.create({
       data: {
         email,
-        password: 'old-pass',
+        password: faker.internet.password(),
         name: 'User',
         isActive: false,
         isBlocked: false,
@@ -123,7 +126,7 @@ describe('reset-password - Failure Cases', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         email,
-        password: 'new-password',
+        password: CONFIG.TEST_USER_PASSWORD,
       });
 
     expect(res.statusCode).toBe(401);
@@ -135,7 +138,7 @@ describe('reset-password - Failure Cases', () => {
     await prisma.user.create({
       data: {
         email,
-        password: 'old-pass',
+        password: faker.internet.password(),
         name: 'User',
         isActive: true,
         isBlocked: false,
@@ -148,7 +151,7 @@ describe('reset-password - Failure Cases', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         email,
-        password: '123',
+        password: randomInt(0, 3),
       });
 
     expect(res.statusCode).toBe(400);
@@ -161,7 +164,7 @@ describe('reset-password - Success Case', () => {
   beforeAll(async () => {
     const adminRes = await request(app).post(loginEndpoint).send({
       email: ADMIN_EMAIL,
-      password: ADMIN_PASSWORD,
+      password: CONFIG.TEST_USER_PASSWORD,
     });
 
     adminToken = adminRes.body.data.data.accessToken;
@@ -172,7 +175,7 @@ describe('reset-password - Success Case', () => {
     await prisma.user.create({
       data: {
         email,
-        password: 'old-pass',
+        password: faker.internet.password(),
         isActive: true,
         isBlocked: false,
         isEmailVerified: true,
@@ -185,7 +188,7 @@ describe('reset-password - Success Case', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         email,
-        password: 'new-password',
+        password: CONFIG.TEST_USER_PASSWORD,
       });
 
     expect(res.statusCode).toBe(200);
