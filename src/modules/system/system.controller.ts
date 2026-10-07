@@ -2,7 +2,7 @@ import os from 'os';
 
 import { Request, Response } from 'express';
 
-import { sendSuccessResponse } from '@/utils/send-response';
+import { sendSuccessResponse } from '@/utils/response.utils';
 
 async function getHealthCheck(request: Request, response: Response) {
   const cpus = os.cpus();

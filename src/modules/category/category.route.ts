@@ -26,6 +26,14 @@ router.get(
 );
 
 router.get(
+  '/export',
+  authenticate,
+  requirePermission(['export:category']),
+  validateRequest(validator.exportCategoriesSchema),
+  controller.exportCategories
+);
+
+router.get(
   '/:categoryId',
   requirePermission(['view:category'], true),
   validateRequest(validator.getCategoryByIdSchema),

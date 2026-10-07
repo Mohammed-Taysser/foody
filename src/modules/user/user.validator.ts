@@ -52,11 +52,18 @@ const updateMeSchema = {
   }),
 };
 
+const exportUsersQuery = {
+  query: getUsersListSchema.query.extend({
+    format: z.enum(['csv', 'xlsx', 'pdf']).default('xlsx'),
+  }),
+};
+
 type CreateUserInput = z.infer<typeof createUserSchema.body>;
 type UpdateUserInput = z.infer<typeof updateUserSchema.body>;
 type UpdateMeInput = z.infer<typeof updateMeSchema.body>;
 type GetUsersListQuery = z.infer<typeof getUsersListSchema.query>;
 type GetUserByIdParams = z.infer<typeof getUserByIdSchema.params>;
+type ExportUsersQuery = z.infer<typeof exportUsersQuery.query>;
 
 const userValidator = {
   createUserSchema,
@@ -64,6 +71,7 @@ const userValidator = {
   getUsersListSchema,
   getUserByIdSchema,
   updateMeSchema,
+  exportUsersQuery,
 };
 
 export type {
@@ -72,6 +80,7 @@ export type {
   GetUsersListQuery,
   UpdateUserInput,
   UpdateMeInput,
+  ExportUsersQuery,
 };
 
 export default userValidator;

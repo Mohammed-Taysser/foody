@@ -18,6 +18,13 @@ router.get(
   controller.getRestaurants
 );
 
+router.get(
+  '/',
+  validateRequest(validator.exportRestaurantsSchema),
+  requirePermission(['export:restaurant'], true),
+  controller.exportRestaurants
+);
+
 router.post(
   '/',
   authenticate,

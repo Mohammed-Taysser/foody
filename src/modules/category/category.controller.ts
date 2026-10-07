@@ -1,15 +1,18 @@
 import { Prisma } from '@prisma/client';
-import { Request, Response } from 'express';
+import { Request, RequestHandler, Response } from 'express';
 
 import type {
   CreateCategoryInput,
+  ExportCategoriesQuery,
   GetCategoriesQuery,
-  UpdateCategoryInput,
   GetCategoryByIdParams,
+  UpdateCategoryInput,
 } from './category.validator';
 
 import prisma from '@/apps/prisma';
 import databaseLogger from '@/services/database-log.service';
+import exportService from '@/services/export.service';
+import formatterService from '@/services/formatter.service';
 import { AuthenticatedRequest } from '@/types/import';
 import {
   BadRequestError,
@@ -19,7 +22,13 @@ import {
 } from '@/utils/errors.utils';
 import { deleteImage, uploadImage } from '@/utils/multer.utils';
 import { getRequestInfo } from '@/utils/request.utils';
-import { sendPaginatedResponse, sendSuccessResponse } from '@/utils/send-response';
+import {
+  sendCSVResponse,
+  sendExcelResponse,
+  sendPaginatedResponse,
+  sendPDFResponse,
+  sendSuccessResponse,
+} from '@/utils/response.utils';
 
 async function getCategories(request: Request, response: Response) {
   const authenticatedRequest = request as unknown as AuthenticatedRequest<
@@ -109,15 +118,8 @@ async function getCategoriesList(request: Request, response: Response) {
   sendSuccessResponse({ response, message: 'Categories list', data });
 }
 
-async function getCategoryById(request: Request, response: Response) {
-  const authenticatedRequest = request as unknown as AuthenticatedRequest<
-    GetCategoryByIdParams,
-    unknown,
-    unknown,
-    unknown
-  >;
-
-  const categoryId = authenticatedRequest.params.categoryId;
+const getCategoryById: RequestHandler<GetCategoryByIdParams> = async (request, response) => {
+  const categoryId = request.params.categoryId;
 
   const category = await prisma.category.findUnique({
     where: { id: categoryId },
@@ -137,7 +139,7 @@ async function getCategoryById(request: Request, response: Response) {
   }
 
   sendSuccessResponse({ response, message: 'Category found', data: category });
-}
+};
 
 async function createCategory(request: Request, response: Response) {
   const authenticatedRequest = request as AuthenticatedRequest<
@@ -313,6 +315,95 @@ async function deleteCategory(request: Request, response: Response) {
   sendSuccessResponse({ response, message: 'Category deleted', data: deletedCategory });
 }
 
+async function exportCategories(request: Request, response: Response) {
+  const authenticatedRequest = request as unknown as AuthenticatedRequest<
+    unknown,
+    unknown,
+    unknown,
+    ExportCategoriesQuery
+  >;
+
+  const { parsedQuery: query } = authenticatedRequest;
+
+  const format = query.format;
+
+  const filters: Prisma.CategoryWhereInput = {};
+
+  if (query.name) {
+    filters.name = {
+      contains: query.name,
+      mode: 'insensitive',
+    };
+  }
+
+  if (query.restaurantId) {
+    filters.restaurantId = {
+      equals: query.restaurantId,
+    };
+  }
+
+  const categoriesResponse = await prisma.category.findMany({
+    orderBy: { createdAt: 'desc' },
+    where: filters,
+    include: {
+      restaurant: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        },
+      },
+    },
+  });
+
+  const categories = categoriesResponse.map((category, index) => ({
+    '#': index + 1,
+    id: category.id,
+    name: category.name,
+    image: category.image,
+    restaurantId: category.restaurant.id,
+    restaurantName: category.restaurant.name,
+    restaurantImage: category.restaurant.image,
+    createdAt: formatterService.formatDateTime(category.createdAt),
+  }));
+
+  switch (format) {
+    case 'csv': {
+      const csv = exportService.toCSV(categories);
+
+      sendCSVResponse(response, csv, 'Categories');
+      break;
+    }
+
+    case 'xlsx': {
+      const buffer = await exportService.toExcel(categories);
+
+      sendExcelResponse(response, buffer, 'Categories');
+      break;
+    }
+
+    case 'pdf': {
+      response.attachment('Categories.pdf');
+      const pdfBuffer = await exportService.toPDF(categories, {
+        columnsToExclude: ['image', 'restaurantImage', 'restaurantId'],
+        title: 'Categories',
+      });
+
+      sendPDFResponse(response, pdfBuffer, 'Categories');
+      break;
+    }
+  }
+
+  databaseLogger.audit({
+    requestInfo: getRequestInfo(authenticatedRequest),
+    actorId: authenticatedRequest.user.id,
+    actorType: 'USER',
+    action: 'EXPORT',
+    resource: 'CATEGORY',
+    metadata: { format, query },
+  });
+}
+
 const categoryController = {
   createCategory,
   deleteCategory,
@@ -320,6 +411,7 @@ const categoryController = {
   getCategoriesList,
   getCategoryById,
   updateCategory,
+  exportCategories,
 };
 
 export default categoryController;

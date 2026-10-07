@@ -34,6 +34,13 @@ router.get(
   controller.getUsers
 );
 router.get(
+  '/export',
+  authenticateMiddleware,
+  requirePermission(['export:user']),
+  validateRequest(validator.exportUsersQuery),
+  controller.exportUsers
+);
+router.get(
   '/:userId',
   requirePermission(['view:user'], true),
   validateRequest(validator.getUserByIdSchema),

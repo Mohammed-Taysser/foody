@@ -29,9 +29,16 @@
   "resource-already-exists": "Resource already exists",
   "you-are-not-authorized-to-access-this-resource": "You are not authorized to access this resource",
   "invalid-or-expired-refresh-token": "Invalid or expired refresh token",
-  "you-do-not-have-permission-to-access-this-resource": "You do not has permission to access this resource",
+  "you-do-not-have-permission-to-access-this-resource": "You do not have permission to access this resource",
   "user-is-blocked": "User is blocked",
   "user-is-not-verified": "User is not verified",
   "user-is-not-active": "User is not active",
-  "user-is-not-found": "User is not found"
+  "user-is-not-found": "User is not found",
+  "email-already-verified": "Email already verified",
+  "invalid-reset-token": "Invalid reset token",
+  "reset-token-expired": "Reset token expired",
+  "reset-token-not-found": "Reset token not found",
+  "invalid-verification-token": "Invalid verification token",
+  "verification-token-expired": "Verification token expired",
+  "verification-token-not-found": "Verification token not found"
 }

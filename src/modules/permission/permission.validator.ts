@@ -30,6 +30,12 @@ const updatePermissionSchema = {
   }),
 };
 
+const exportPermissionSchema = {
+  query: getPermissionListSchema.query.extend({
+    format: z.enum(['csv', 'xlsx', 'pdf']).default('xlsx'),
+  }),
+};
+
 const getPermissionGroupListSchema = {
   query: basePaginationSchema.extend({
     name: z.string().trim().max(100).optional(),
@@ -58,15 +64,23 @@ const updatePermissionGroupSchema = {
   }),
 };
 
+const exportPermissionGroupsSchema = {
+  query: getPermissionGroupListSchema.query.extend({
+    format: z.enum(['csv', 'xlsx', 'pdf']).default('xlsx'),
+  }),
+};
+
 type CreatePermissionInput = z.infer<typeof createPermissionSchema.body>;
 type UpdatePermissionInput = z.infer<typeof updatePermissionSchema.body>;
 type GetPermissionListQuery = z.infer<typeof getPermissionListSchema.query>;
 type GetPermissionByIdParams = z.infer<typeof getPermissionByIdSchema.params>;
+type ExportPermissionsQuery = z.infer<typeof exportPermissionSchema.query>;
 
 type CreatePermissionGroupInput = z.infer<typeof createPermissionGroupSchema.body>;
 type UpdatePermissionGroupInput = z.infer<typeof updatePermissionGroupSchema.body>;
 type GetPermissionGroupListQuery = z.infer<typeof getPermissionGroupListSchema.query>;
 type GetPermissionGroupByIdParams = z.infer<typeof getPermissionGroupByIdSchema.params>;
+type ExportPermissionGroupsQuery = z.infer<typeof exportPermissionGroupsSchema.query>;
 
 const permissionValidator = {
   createPermissionGroupSchema,
@@ -77,6 +91,8 @@ const permissionValidator = {
   getPermissionByIdSchema,
   getPermissionGroupListSchema,
   getPermissionGroupByIdSchema,
+  exportPermissionSchema,
+  exportPermissionGroupsSchema,
 };
 
 export type {
@@ -88,6 +104,8 @@ export type {
   GetPermissionListQuery,
   UpdatePermissionGroupInput,
   UpdatePermissionInput,
+  ExportPermissionsQuery,
+  ExportPermissionGroupsQuery,
 };
 
 export default permissionValidator;

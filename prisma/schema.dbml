@@ -157,7 +157,7 @@ Table AuditLog {
   actorType LogActorType [not null]
   action LogActionType [not null]
   resource LogResourceType [not null]
-  resourceId String [not null]
+  resourceId String
   diff Json
   metadata Json
   createdAt DateTime [default: `now()`, not null]
@@ -169,7 +169,7 @@ Table ErrorLog {
   actorId String
   actorType LogActorType [not null]
   resource LogResourceType [not null]
-  resourceId String [not null]
+  resourceId String
   metadata Json
   createdAt DateTime [default: `now()`, not null]
   User User
@@ -268,7 +268,6 @@ Enum LogActionType {
   CANCEL_ORDER
   EXPORT
   IMPORT
-  DOWNLOAD
   UPLOAD
   REFRESH_TOKEN
   SYNC

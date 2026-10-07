@@ -26,6 +26,14 @@ router.get(
 );
 
 router.get(
+  '/export',
+  authenticate,
+  requirePermission(['export:menuItem']),
+  validateRequest(validator.exportMenuItemsSchema),
+  controller.exportMenuItems
+);
+
+router.get(
   '/:menuId',
   requirePermission(['view:menuItem'], true),
   validateRequest(validator.geyMenuItemByIdSchema),

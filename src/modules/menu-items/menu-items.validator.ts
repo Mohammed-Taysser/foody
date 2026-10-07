@@ -39,17 +39,31 @@ const getMenuItemsSchema = {
   }),
 };
 
+const exportMenuItemsSchema = {
+  query: getMenuItemsSchema.query.extend({
+    format: z.enum(['csv', 'xlsx', 'pdf']).default('xlsx'),
+  }),
+};
+
 type CreateMenuItemInput = z.infer<typeof createMenuItemSchema.body>;
 type UpdateMenuItemInput = z.infer<typeof updateMenuItemSchema.body>;
 type GetMenuItemByIdParams = z.infer<typeof geyMenuItemByIdSchema.params>;
 type GetMenuItemQuery = z.infer<typeof getMenuItemsSchema.query>;
+type ExportMenuItemQuery = z.infer<typeof exportMenuItemsSchema.query>;
 
 const menuItemValidator = {
   createMenuItemSchema,
   getMenuItemsSchema,
   updateMenuItemSchema,
   geyMenuItemByIdSchema,
+  exportMenuItemsSchema,
 };
 
 export default menuItemValidator;
-export type { CreateMenuItemInput, GetMenuItemByIdParams, GetMenuItemQuery, UpdateMenuItemInput };
+export type {
+  CreateMenuItemInput,
+  GetMenuItemByIdParams,
+  GetMenuItemQuery,
+  UpdateMenuItemInput,
+  ExportMenuItemQuery,
+};

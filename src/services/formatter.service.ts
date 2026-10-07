@@ -9,6 +9,14 @@ class FormatterService {
     return dayjsTZ(date).format(format);
   }
 
+  formatTime(date: Date, format = 'HH:mm:ss'): string {
+    return dayjsTZ(date).format(format);
+  }
+
+  formatDateTime(date: Date, format = 'YYYY-MM-DD HH:mm:ss'): string {
+    return dayjsTZ(date).format(format);
+  }
+
   formatCurrency(amount: number, currencyCode = 'USD') {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -42,5 +50,4 @@ class FormatterService {
 
 const formatterService = new FormatterService();
 
-export { FormatterService };
 export default formatterService;

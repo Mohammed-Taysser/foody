@@ -133,7 +133,7 @@ describe('Permission Group API', () => {
 
     describe('Filters', () => {
       it('should filter by name', async () => {
-        const name = faker.company.name + Math.floor(Math.random() * 1000).toFixed(0);
+        const name = faker.company.name + faker.number.hex({ min: 0, max: 65535 });
 
         const createRes = await request(app)
           .post('/api/permissions/permission-groups')

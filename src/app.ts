@@ -3,15 +3,17 @@ import express from 'express';
 import helmet from 'helmet';
 import hpp from 'hpp';
 import i18nextMiddleware from 'i18next-http-middleware';
+import qs from 'qs';
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
-import qs from 'qs';
+
+import debugRouter from './modules/debug/debug.routes';
 
 import CONFIG from '@/apps/config';
 import i18n from '@/apps/i18n';
 import apiLimiter from '@/middleware/api-rate-limit.middleware';
 import compressionMiddleware from '@/middleware/compression.middleware';
-import errorHandlerMiddleware from '@/middleware/error.middleware';
+import errorHandlerMiddleware from '@/middleware/error-handler.middleware';
 import loggerMiddleware from '@/middleware/logger.middleware';
 import analyticsRoutes from '@/modules/analytics/analytics.route';
 import authRoutes from '@/modules/auth/auth.route';
@@ -19,8 +21,8 @@ import categoriesRoutes from '@/modules/category/category.route';
 import menuItemsRoutes from '@/modules/menu-items/menu-items.route';
 import orderRoutes from '@/modules/order/order.route';
 import permissionRoutes from '@/modules/permission/permission.route';
-import systemRoutes from '@/modules/system/system.route';
 import restaurantRoutes from '@/modules/restaurant/restaurant.route';
+import systemRoutes from '@/modules/system/system.route';
 import userRoutes from '@/modules/user/user.route';
 import { ForbiddenError, NotFoundError } from '@/utils/errors.utils';
 
@@ -87,6 +89,10 @@ app.use('/api/restaurants', restaurantRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/categories', categoriesRoutes);
 app.use('/api/menu-items', menuItemsRoutes);
+
+if (CONFIG.NODE_ENV === 'development') {
+  app.use('/api/debug', debugRouter);
+}
 
 // 404 Handler
 app.use((req, _res, next) => {

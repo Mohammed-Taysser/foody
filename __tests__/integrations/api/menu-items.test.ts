@@ -15,6 +15,7 @@ import {
 } from '../../test.constants';
 
 const mockImagePath = path.join(__dirname, '../../../public/avatar.jpg');
+const mockFontPath = path.join(__dirname, '../../../public/DINNextLTArabic.ttf');
 
 describe('Menu Items API', () => {
   let ownerToken: string;
@@ -165,6 +166,20 @@ describe('Menu Items API', () => {
 
       expect(res.statusCode).toBe(200);
       expect(res.body.data.data.image).toMatch(/\/uploads\/menu\//);
+    });
+
+    it('should not allow uploading non-image file when adding a menu item', async () => {
+      const res = await request(app)
+        .post(`/api/menu-items`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .field('name', 'Pizza Upload')
+        .field('price', 15.99)
+        .field('available', true)
+        .field('restaurantId', restaurantId)
+        .field('categoryId', categoryId)
+        .attach('image', mockFontPath);
+
+      expect(res.statusCode).toBe(400);
     });
 
     it('should return 401 if unauthenticated user tries to create a menu item', async () => {

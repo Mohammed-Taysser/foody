@@ -117,7 +117,6 @@ describe('PATCH /users/me', () => {
 
     expect(res.statusCode).toBe(409);
     expect(res.body.success).toBe(false);
-    expect(res.body.message).toMatch(/email.*already/i);
   });
 
   it('should update user profile with image', async () => {

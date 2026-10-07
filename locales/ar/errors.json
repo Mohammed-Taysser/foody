@@ -29,5 +29,16 @@
   "account-deactivated": "تم إلغاء تنشيط الحساب",
   "username-already-exists": "اسم المستخدم مستخدم بالفعل",
   "you-do-not-have-permission-to-access-this-resource": "لا تملك إذناً للوصول إلى هذا المورد",
-  "too-many-requests": "عدد كبير جداً من الطلبات"
+  "too-many-requests": "عدد كبير جداً من الطلبات",
+  "user-is-blocked": "تم حظر المستخدم",
+  "user-is-not-active": "المستخدم غير نشط",
+  "user-is-not-found": "لم يتم العثور على المستخدم",
+  "user-is-not-verified": "لم يتم التحقق من المستخدم",
+  "email-already-verified": "تم التحقق من البريد الإلكتروني بالفعل",
+  "invalid-reset-token": "رمز إعادة التعيين غير صالح",
+  "reset-token-expired": "انتهت صلاحية رمز إعادة التعيين",
+  "reset-token-not-found": "رمز إعادة التعيين غير موجود",
+  "invalid-verification-token": "رمز التحقق غير صالح",
+  "verification-token-expired": "انتهت صلاحية رمز التحقق",
+  "verification-token-not-found": "رمز التحقق غير موجود"
 }

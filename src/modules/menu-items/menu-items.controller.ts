@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 
 import {
   CreateMenuItemInput,
+  ExportMenuItemQuery,
   GetMenuItemByIdParams,
   GetMenuItemQuery,
   UpdateMenuItemInput,
@@ -14,7 +15,15 @@ import { AuthenticatedRequest } from '@/types/import';
 import { ConflictError, ForbiddenError, NotFoundError } from '@/utils/errors.utils';
 import { deleteImage, uploadImage } from '@/utils/multer.utils';
 import { getRequestInfo } from '@/utils/request.utils';
-import { sendPaginatedResponse, sendSuccessResponse } from '@/utils/send-response';
+import {
+  sendCSVResponse,
+  sendExcelResponse,
+  sendPaginatedResponse,
+  sendPDFResponse,
+  sendSuccessResponse,
+} from '@/utils/response.utils';
+import formatterService from '@/services/formatter.service';
+import exportService from '@/services/export.service';
 
 async function getMenuItems(req: Request, response: Response) {
   const authenticatedRequest = req as unknown as AuthenticatedRequest<
@@ -378,6 +387,119 @@ async function deleteMenuItem(request: Request, response: Response) {
   sendSuccessResponse({ response, message: 'Menu item deleted', data: deletedMenu });
 }
 
+async function exportMenuItems(request: Request, response: Response) {
+  const authenticatedRequest = request as unknown as AuthenticatedRequest<
+    unknown,
+    unknown,
+    unknown,
+    ExportMenuItemQuery
+  >;
+
+  const { parsedQuery: query } = authenticatedRequest;
+
+  const format = query.format;
+
+  const filters: Prisma.MenuItemWhereInput = {};
+
+  if (query.name) {
+    filters.name = {
+      contains: query.name,
+      mode: 'insensitive',
+    };
+  }
+
+  if (query.restaurantId) {
+    filters.restaurantId = {
+      equals: query.restaurantId,
+    };
+  }
+
+  if (query.available !== undefined) {
+    filters.available = {
+      equals: query.available,
+    };
+  }
+
+  const menuItemsResponse = await prisma.menuItem.findMany({
+    orderBy: { createdAt: 'desc' },
+    where: filters,
+    include: {
+      restaurant: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        },
+      },
+      category: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        },
+      },
+    },
+  });
+
+  const menuItems = menuItemsResponse.map((item, index) => ({
+    '#': index + 1,
+    id: item.id,
+    name: item.name,
+    image: item.image,
+    restaurantId: item.restaurant.id,
+    restaurantName: item.restaurant.name,
+    restaurantImage: item.restaurant.image,
+    categoryId: item.category.id,
+    categoryName: item.category.name,
+    categoryImage: item.category.image,
+    price: item.price,
+    available: item.available,
+    createdAt: formatterService.formatDateTime(item.createdAt),
+  }));
+
+  switch (format) {
+    case 'csv': {
+      const csv = exportService.toCSV(menuItems);
+
+      sendCSVResponse(response, csv, 'Menu Items');
+      break;
+    }
+
+    case 'xlsx': {
+      const buffer = await exportService.toExcel(menuItems);
+
+      sendExcelResponse(response, buffer, 'Menu Items');
+      break;
+    }
+
+    case 'pdf': {
+      response.attachment('Menu Items.pdf');
+      const pdfBuffer = await exportService.toPDF(menuItems, {
+        columnsToExclude: [
+          'image',
+          'restaurantImage',
+          'restaurantId',
+          'categoryImage',
+          'categoryId',
+        ],
+        title: 'Menu Items',
+      });
+
+      sendPDFResponse(response, pdfBuffer, 'Menu Items');
+      break;
+    }
+  }
+
+  databaseLogger.audit({
+    requestInfo: getRequestInfo(authenticatedRequest),
+    actorId: authenticatedRequest.user.id,
+    actorType: 'USER',
+    action: 'EXPORT',
+    resource: 'MENU_ITEM',
+    metadata: { format, query },
+  });
+}
+
 const menuItemsController = {
   createMenuItem,
   deleteMenuItem,
@@ -385,6 +507,7 @@ const menuItemsController = {
   getMenuItems,
   getMenuItemsList,
   updateMenuItem,
+  exportMenuItems,
 };
 
 export default menuItemsController;

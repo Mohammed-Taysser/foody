@@ -3,16 +3,25 @@ import { Request, Response } from 'express';
 
 import type {
   CreatePermissionGroupInput,
+  ExportPermissionGroupsQuery,
   GetPermissionGroupByIdParams,
   GetPermissionGroupListQuery,
 } from './permission.validator';
 
 import prisma from '@/apps/prisma';
 import databaseLogger from '@/services/database-log.service';
+import exportService from '@/services/export.service';
+import formatterService from '@/services/formatter.service';
 import { AuthenticatedRequest } from '@/types/import';
 import { NotFoundError } from '@/utils/errors.utils';
 import { getRequestInfo } from '@/utils/request.utils';
-import { sendPaginatedResponse, sendSuccessResponse } from '@/utils/send-response';
+import {
+  sendCSVResponse,
+  sendExcelResponse,
+  sendPaginatedResponse,
+  sendPDFResponse,
+  sendSuccessResponse,
+} from '@/utils/response.utils';
 
 async function getPermissionGroups(request: Request, response: Response) {
   const authenticatedRequest = request as unknown as AuthenticatedRequest<
@@ -208,6 +217,76 @@ async function deletePermissionGroup(request: Request, response: Response) {
   });
 }
 
+async function exportPermissionGroups(request: Request, response: Response) {
+  const authenticatedRequest = request as unknown as AuthenticatedRequest<
+    unknown,
+    unknown,
+    unknown,
+    ExportPermissionGroupsQuery
+  >;
+
+  const { parsedQuery: query } = authenticatedRequest;
+
+  const format = query.format;
+
+  const filters: Prisma.PermissionGroupWhereInput = {};
+
+  if (query.name) {
+    filters.name = {
+      contains: query.name,
+      mode: 'insensitive',
+    };
+  }
+
+  const permissionGroupsResponse = await prisma.permissionGroup.findMany({
+    orderBy: { createdAt: 'desc' },
+    where: filters,
+  });
+
+  const permissionGroup = permissionGroupsResponse.map((group, index) => ({
+    '#': index + 1,
+    id: group.id,
+    name: group.name,
+    description: group.description,
+    createdAt: formatterService.formatDateTime(group.createdAt),
+  }));
+
+  switch (format) {
+    case 'csv': {
+      const csv = exportService.toCSV(permissionGroup);
+
+      sendCSVResponse(response, csv, 'Permission Groups');
+      break;
+    }
+
+    case 'xlsx': {
+      const buffer = await exportService.toExcel(permissionGroup);
+
+      sendExcelResponse(response, buffer, 'Permission Groups');
+      break;
+    }
+
+    case 'pdf': {
+      response.attachment('Permission Groups.pdf');
+      const pdfBuffer = await exportService.toPDF(permissionGroup, {
+        title: 'Permission Groups',
+      });
+
+      sendPDFResponse(response, pdfBuffer, 'Permission Groups');
+      break;
+    }
+  }
+
+  databaseLogger.audit({
+    requestInfo: getRequestInfo(authenticatedRequest),
+    actorId: authenticatedRequest.user.id,
+    actorType: 'USER',
+    action: 'EXPORT',
+    resource: 'PERMISSION_GROUP',
+    metadata: { format, query },
+  });
+}
+
 const permissionGroupController = {
   createPermissionGroup,
   deletePermissionGroup,
@@ -215,6 +294,7 @@ const permissionGroupController = {
   getPermissionGroupList,
   getPermissionGroups,
   updatePermissionGroup,
+  exportPermissionGroups,
 };
 
 export default permissionGroupController;

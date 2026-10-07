@@ -20,6 +20,14 @@ router.get(
   controller.getPermissions
 );
 
+router.get(
+  '/export',
+  authenticate,
+  validateRequest(validator.exportPermissionSchema),
+  requirePermission(['export:permission']),
+  controller.exportPermissions
+);
+
 router.post(
   '/',
   authenticate,

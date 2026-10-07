@@ -1,18 +1,10 @@
-# [1.2.0](https://github.com/mohammed-taysser/foody/compare/v1.1.0...v1.2.0) (2025-07-18)
-
+## [1.2.0](https://github.com/mohammed-taysser/foody/compare/v1.1.0...v1.2.0) (2025-07-18)
 
 ### Features
 
-* implement internationalization support with i18next and add Arabic translations ([0fd5874](https://github.com/mohammed-taysser/foody/commit/0fd58740775a64308a5d98313cf1fb332c40a987))
-* refactor logging system to use a new structured logger with daily rotation ([3c5a78a](https://github.com/mohammed-taysser/foody/commit/3c5a78ac00662ced83b3cb0592b83d751cd533f0))
-* **test:** add auth test for new endpoints ([2083b61](https://github.com/mohammed-taysser/foody/commit/2083b614b3b8e2b098b47efee41460e890ba4445))
-
-# CHANGELOG
-
-All notable changes to this project will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+- implement internationalization support with i18next and add Arabic translations ([0fd5874](https://github.com/mohammed-taysser/foody/commit/0fd58740775a64308a5d98313cf1fb332c40a987))
+- refactor logging system to use a new structured logger with daily rotation ([3c5a78a](https://github.com/mohammed-taysser/foody/commit/3c5a78ac00662ced83b3cb0592b83d751cd533f0))
+- **test:** add auth test for new endpoints ([2083b61](https://github.com/mohammed-taysser/foody/commit/2083b614b3b8e2b098b47efee41460e890ba4445))
 
 ## [1.1.0](https://github.com/mohammed-taysser/foody/compare/v1.0.42...v1.1.0) (2025-06-30)
 
